@@ -75,7 +75,7 @@ def load_settings():
         return defaults
 
 # ──────────────────────────────────────────────
-# ROMANIZATION TABLES
+# ROMANIZATION TABLES (kept but not used in preview anymore)
 # ──────────────────────────────────────────────
 DEVANAGARI_ROMAN = {
     'अ': 'a',   'आ': 'aa',  'इ': 'e',   'ई': 'i',  'उ': 'u',   'ऊ': 'oo',
@@ -260,7 +260,7 @@ class NotyCaptionWindow(QMainWindow):
 
         self.caption_edit = QTextEdit()
         self.caption_edit.setReadOnly(True)
-        self.caption_edit.selectionChanged.connect(self.on_text_select)
+        # Removed: self.caption_edit.selectionChanged.connect(self.on_text_select)
         self.caption_edit.setFont(QFont("Consolas", 13))
         self.caption_edit.setStyleSheet("background:#1e2225; color:#e0f0ff; border:1px solid #3f4a52;")
         self.left_layout.addWidget(self.caption_edit, 1)
@@ -398,7 +398,7 @@ class NotyCaptionWindow(QMainWindow):
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
-        self.subtitles = []           # list of dicts: {"index":int, "start":timedelta, "end":timedelta, "text":str (with roman), "raw_text":str}
+        self.subtitles = []
         self.player = QMediaPlayer()
         self.player.mediaStatusChanged.connect(self.media_status)
         self.player.positionChanged.connect(self.position_changed)
@@ -549,47 +549,30 @@ class NotyCaptionWindow(QMainWindow):
         cursor = QTextCursor(doc)
         cursor.beginEditBlock()
 
-        # Clear previous highlights
         clear_fmt = cursor.charFormat()
-        clear_fmt.setBackground(QColor(30, 30, 34))
+        clear_fmt.setBackground(QColor(30,30,34))
         cursor.select(QTextCursor.Document)
         cursor.setCharFormat(clear_fmt)
         cursor.clearSelection()
 
         for sub in self.subtitles:
             if sub["start"].total_seconds() <= sec < sub["end"].total_seconds():
-                # Find block by index (line number = index - 1)
-                block_num = sub["index"] - 1
-                block = doc.findBlockByNumber(block_num)
-                if block.isValid():
-                    cursor.setPosition(block.position())
-                    cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-                    fmt = cursor.charFormat()
-                    fmt.setBackground(QColor(255, 215, 0, 160))  # semi-transparent yellow
-                    cursor.setCharFormat(fmt)
-                    self.caption_edit.setTextCursor(cursor)
-                    self.caption_edit.ensureCursorVisible()
+                cursor = QTextCursor(doc)
+                cursor.movePosition(QTextCursor.Start)
+                for _ in range(sub["index"] - 1):
+                    cursor.movePosition(QTextCursor.NextBlock)
+                cursor.movePosition(QTextCursor.StartOfBlock)
+                cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                fmt = cursor.charFormat()
+                fmt.setBackground(QColor(255, 215, 0, 160))
+                cursor.setCharFormat(fmt)
+                self.caption_edit.setTextCursor(cursor)
+                self.caption_edit.ensureCursorVisible()
                 break
 
         cursor.endEditBlock()
 
-    def on_text_select(self):
-        if self.edit_active or not self.generated:
-            return
-
-        cursor = self.caption_edit.textCursor()
-        if cursor.hasSelection():
-            sel = cursor.selectedText().strip()
-            if not sel:
-                return
-
-            # Try to match selected text to raw_text or full display text
-            for sub in self.subtitles:
-                if sel == sub["raw_text"] or sel == sub["text"] or sel in sub["text"]:
-                    ms = int(sub["start"].total_seconds() * 1000)
-                    self.player.setPosition(ms)
-                    self.player.play()
-                    break
+    # Removed on_text_select completely — no jump/play on select
 
     def import_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Video or Audio", "", "Media (*.mp4 *.mkv *.avi *.mov *.mp3 *.wav)")
@@ -670,7 +653,6 @@ class NotyCaptionWindow(QMainWindow):
             self.subtitles = []
             idx = 1
             last_end = 0.0
-            show_rom = self.settings.get("show_romanization", True)
 
             for seg in result.get("segments", []):
                 txt = seg.get("text", "").strip()
@@ -700,14 +682,12 @@ class NotyCaptionWindow(QMainWindow):
                     st = w_s[i]
                     en = w_e[min(i + wpl - 1, len(w_e)-1)]
 
-                    display = format_with_roman(line, lang, show_rom)
-
                     self.subtitles.append({
                         "index": idx,
                         "start": timedelta(seconds=st),
                         "end": timedelta(seconds=en),
-                        "text": display,
-                        "raw_text": line
+                        "text": line,           # clean text only in preview
+                        "raw_text": line        # same for export
                     })
                     idx += 1
 
@@ -715,7 +695,8 @@ class NotyCaptionWindow(QMainWindow):
 
             self.prog_main.setValue(92)
 
-            preview = "\n".join(f"{s['index']}\n{s['text']}\n" for s in self.subtitles)
+            # Preview: only index + clean text (no romanization)
+            preview = "\n".join(f"{s['index']}\n{s['text']}" for s in self.subtitles)
             self.caption_edit.setText(preview.strip())
 
             fmt = self.format_combo.currentText()
@@ -787,7 +768,7 @@ class NotyCaptionWindow(QMainWindow):
                 for sub in self.subtitles:
                     if sub["index"] == idx:
                         sub["text"] = content
-                        sub["raw_text"] = content.split('\n[')[0] if '\n[' in content else content
+                        sub["raw_text"] = content  # no romanization
                         updated.append(sub)
                         break
             except:
