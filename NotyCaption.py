@@ -58,7 +58,6 @@ def load_settings():
         "theme": "Dark",
         "temp_dir": QDir.tempPath(),
         "models_dir": CURRENT_DIR,
-        "show_romanization": True,
     }
     if not os.path.exists(SETTINGS_FILE):
         save_settings(defaults)
@@ -73,53 +72,6 @@ def load_settings():
     except:
         save_settings(defaults)
         return defaults
-
-# ──────────────────────────────────────────────
-# ROMANIZATION TABLES (kept but not used in preview anymore)
-# ──────────────────────────────────────────────
-DEVANAGARI_ROMAN = {
-    'अ': 'a',   'आ': 'aa',  'इ': 'e',   'ई': 'i',  'उ': 'u',   'ऊ': 'oo',
-    'ए': 'a',   'ऐ': 'ae',  'ओ': 'o',   'औ': 'ao',  'अं': 'am', 'अः': 'a:',
-    'क': 'k',   'ख': 'kh',  'ग': 'g',   'घ': 'gh',  'ङ': 'ng',
-    'च': 'ch',  'छ': 'chh', 'ज': 'j',   'झ': 'jh',  'ञ': 'ny',
-    'ट': 't',   'ठ': 'th',  'ड': 'd',   'ढ': 'dh',  'ण': 'n',
-    'त': 't',   'थ': 'th',  'द': 'd',   'ध': 'dh',  'न': 'n',
-    'प': 'p',   'फ': 'ph',  'ब': 'b',   'भ': 'bh',  'म': 'm',
-    'य': 'y',   'र': 'r',   'ल': 'l',   'व': 'v',
-    'श': 'sh',  'ष': 'sh',  'स': 's',   'ह': 'h',
-    'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gya',
-    'ऋ': 'ri',  'ॠ': 'rr',
-}
-
-JAPANESE_ROMAJI = {
-    'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
-    'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
-    'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
-    'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
-    'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
-    'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
-    'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
-    'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
-    'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
-    'わ': 'wa', 'を': 'wo', 'ん': 'n',
-    'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
-    'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
-}
-
-def romanize_text(text, lang):
-    if lang == "hindi":
-        return ''.join(DEVANAGARI_ROMAN.get(c, c) for c in text)
-    elif lang == "japlish":
-        return ''.join(JAPANESE_ROMAJI.get(c, c) for c in text)
-    return text
-
-def format_with_roman(text, lang, show=True):
-    if not show:
-        return text
-    roman = romanize_text(text, lang)
-    if roman:
-        return f"{text}\n[{roman}]"
-    return text
 
 # ──────────────────────────────────────────────
 # SETTINGS DIALOG
@@ -160,14 +112,6 @@ class SettingsDialog(QDialog):
         sc_lay.addWidget(self.scale_combo)
         sc_gb.setLayout(sc_lay)
         lay.addWidget(sc_gb)
-
-        rom_gb = QGroupBox("Display")
-        rom_lay = QVBoxLayout()
-        self.roman_cb = QCheckBox("Show Romanization (Hindi / Japanese)")
-        self.roman_cb.setChecked(current_settings.get("show_romanization", True))
-        rom_lay.addWidget(self.roman_cb)
-        rom_gb.setLayout(rom_lay)
-        lay.addWidget(rom_gb)
 
         tmp_gb = QGroupBox("Temp Files Folder")
         tmp_lay = QHBoxLayout()
@@ -215,7 +159,6 @@ class SettingsDialog(QDialog):
                      "Light" if self.rb_light.isChecked() else "Dark",
             "temp_dir": self.tmp_edit.text(),
             "models_dir": self.mod_edit.text(),
-            "show_romanization": self.roman_cb.isChecked(),
         }
         save_settings(new)
         self.settingsChanged.emit(new)
@@ -260,7 +203,7 @@ class NotyCaptionWindow(QMainWindow):
 
         self.caption_edit = QTextEdit()
         self.caption_edit.setReadOnly(True)
-        # Removed: self.caption_edit.selectionChanged.connect(self.on_text_select)
+        # Removed selectionChanged signal → no jump on select
         self.caption_edit.setFont(QFont("Consolas", 13))
         self.caption_edit.setStyleSheet("background:#1e2225; color:#e0f0ff; border:1px solid #3f4a52;")
         self.left_layout.addWidget(self.caption_edit, 1)
@@ -297,7 +240,7 @@ class NotyCaptionWindow(QMainWindow):
         l.setFont(QFont("Segoe UI", 12))
         self.right_layout.addWidget(l, r, 0)
         self.lang_combo = QComboBox()
-        self.lang_combo.addItems(["english", "hindi", "japlish"])
+        self.lang_combo.addItems(["english", "japlish"])
         self.lang_combo.setMinimumHeight(54)
         self.right_layout.addWidget(self.lang_combo, r, 1)
         r += 1
@@ -398,7 +341,8 @@ class NotyCaptionWindow(QMainWindow):
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
-        self.subtitles = []
+        self.subtitles = []           # list of dicts with start, end, text
+        self.display_lines = []       # list of plain text lines shown in editor (for highlighting)
         self.player = QMediaPlayer()
         self.player.mediaStatusChanged.connect(self.media_status)
         self.player.positionChanged.connect(self.position_changed)
@@ -555,12 +499,11 @@ class NotyCaptionWindow(QMainWindow):
         cursor.setCharFormat(clear_fmt)
         cursor.clearSelection()
 
-        for sub in self.subtitles:
+        for i, sub in enumerate(self.subtitles):
             if sub["start"].total_seconds() <= sec < sub["end"].total_seconds():
                 cursor = QTextCursor(doc)
                 cursor.movePosition(QTextCursor.Start)
-                for _ in range(sub["index"] - 1):
-                    cursor.movePosition(QTextCursor.NextBlock)
+                cursor.movePosition(QTextCursor.NextBlock, n=i)  # move to correct line
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 fmt = cursor.charFormat()
@@ -571,8 +514,6 @@ class NotyCaptionWindow(QMainWindow):
                 break
 
         cursor.endEditBlock()
-
-    # Removed on_text_select completely — no jump/play on select
 
     def import_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Video or Audio", "", "Media (*.mp4 *.mkv *.avi *.mov *.mp3 *.wav)")
@@ -632,7 +573,7 @@ class NotyCaptionWindow(QMainWindow):
             enhanced_audio = self.audio_file
 
         lang = self.lang_combo.currentText()
-        lang_code = "ja" if lang == "japlish" else "hi" if lang == "hindi" else "en"
+        lang_code = "ja" if lang == "japlish" else "en"
         task = "translate" if lang == "japlish" else "transcribe"
 
         wpl = self.words_spin.value()
@@ -651,6 +592,7 @@ class NotyCaptionWindow(QMainWindow):
             self.prog_frame.setFormat("Frames done")
 
             self.subtitles = []
+            self.display_lines = []
             idx = 1
             last_end = 0.0
 
@@ -686,17 +628,17 @@ class NotyCaptionWindow(QMainWindow):
                         "index": idx,
                         "start": timedelta(seconds=st),
                         "end": timedelta(seconds=en),
-                        "text": line,           # clean text only in preview
-                        "raw_text": line        # same for export
+                        "text": line
                     })
+                    self.display_lines.append(line)
                     idx += 1
 
                 last_end = e
 
             self.prog_main.setValue(92)
 
-            # Preview: only index + clean text (no romanization)
-            preview = "\n".join(f"{s['index']}\n{s['text']}" for s in self.subtitles)
+            # Show clean lines only — no index, no romanization
+            preview = "\n".join(self.display_lines)
             self.caption_edit.setText(preview.strip())
 
             fmt = self.format_combo.currentText()
@@ -710,7 +652,7 @@ class NotyCaptionWindow(QMainWindow):
                         index=s["index"],
                         start=pysrt.SubRipTime.from_ordinal(s["start"].total_seconds()*1000),
                         end=pysrt.SubRipTime.from_ordinal(s["end"].total_seconds()*1000),
-                        text=s["raw_text"]
+                        text=s["text"]
                     )
                     srt.append(item)
                 srt.save(out_path, encoding='utf-8')
@@ -720,7 +662,7 @@ class NotyCaptionWindow(QMainWindow):
                     ev = pysubs2.SSAEvent(
                         start=int(s["start"].total_seconds()*1000),
                         end=int(s["end"].total_seconds()*1000),
-                        text=s["raw_text"]
+                        text=s["text"]
                     )
                     ass.events.append(ev)
                 ass.save(out_path)
@@ -756,24 +698,12 @@ class NotyCaptionWindow(QMainWindow):
 
     def apply_edit_changes(self):
         text = self.caption_edit.toPlainText().strip()
-        blocks = text.split('\n\n')
-        updated = []
-        for blk in blocks:
-            lines = blk.split('\n')
-            if len(lines) < 1 or not lines[0].strip().isdigit():
-                continue
-            try:
-                idx = int(lines[0].strip())
-                content = '\n'.join(lines[1:]).strip()
-                for sub in self.subtitles:
-                    if sub["index"] == idx:
-                        sub["text"] = content
-                        sub["raw_text"] = content  # no romanization
-                        updated.append(sub)
-                        break
-            except:
-                pass
-        self.subtitles = updated
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        if len(lines) != len(self.subtitles):
+            QMessageBox.warning(self, "Mismatch", "Number of lines changed. Edits not applied.")
+            return
+        for i, new_text in enumerate(lines):
+            self.subtitles[i]["text"] = new_text
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
