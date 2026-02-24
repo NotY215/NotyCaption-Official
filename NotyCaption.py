@@ -203,7 +203,6 @@ class NotyCaptionWindow(QMainWindow):
 
         self.caption_edit = QTextEdit()
         self.caption_edit.setReadOnly(True)
-        # Removed selectionChanged signal → no jump on select
         self.caption_edit.setFont(QFont("Consolas", 13))
         self.caption_edit.setStyleSheet("background:#1e2225; color:#e0f0ff; border:1px solid #3f4a52;")
         self.left_layout.addWidget(self.caption_edit, 1)
@@ -285,6 +284,13 @@ class NotyCaptionWindow(QMainWindow):
         browse_btn.setStyleSheet("background:#3a3a3c; color:white; border-radius:10px;")
         browse_btn.clicked.connect(self.browse_output)
         self.right_layout.addWidget(browse_btn, r, 0, 1, 2)
+        r += 1
+
+        self.enhance_btn = QPushButton("Enhance Audio Only")
+        self.enhance_btn.setMinimumHeight(80)
+        self.enhance_btn.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffcc00,stop:1 #cc9900); color:white; border-radius:12px; font-size:16px;")
+        self.enhance_btn.clicked.connect(self.enhance_audio_only)
+        self.right_layout.addWidget(self.enhance_btn, r, 0, 1, 2)
         r += 1
 
         # Bottom
@@ -503,7 +509,7 @@ class NotyCaptionWindow(QMainWindow):
             if sub["start"].total_seconds() <= sec < sub["end"].total_seconds():
                 cursor = QTextCursor(doc)
                 cursor.movePosition(QTextCursor.Start)
-                cursor.movePosition(QTextCursor.NextBlock, n=i)  # move to correct line
+                cursor.movePosition(QTextCursor.NextBlock, n=i)
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 fmt = cursor.charFormat()
@@ -556,6 +562,32 @@ class NotyCaptionWindow(QMainWindow):
         if d:
             self.output_folder = d
             self.out_folder_edit.setText(d)
+
+    def enhance_audio_only(self):
+        if not self.audio_file or not os.path.exists(self.audio_file):
+            QMessageBox.warning(self, "Error", "No audio loaded.")
+            return
+
+        temp_dir = self.settings.get("temp_dir", QDir.tempPath())
+        enhanced_audio = os.path.join(temp_dir, "enhanced_vocals.wav")
+        separator = Separator('spleeter:2stems')
+        separator.separate_to_file(self.audio_file, temp_dir)
+        vocals_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', '') , 'vocals.wav')
+        if os.path.exists(vocals_path):
+            base = os.path.splitext(os.path.basename(self.input_file))[0]
+            out_path = os.path.join(self.output_folder, f"{base}_enhanced.wav")
+            shutil.move(vocals_path, out_path)
+            QMessageBox.information(self, "Success", f"Enhanced audio (vocals only) saved:\n{out_path}")
+        else:
+            QMessageBox.warning(self, "Failed", "Vocal separation failed - no vocals.wav found.")
+
+        # Cleanup
+        acc_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', '') , 'accompaniment.wav')
+        if os.path.exists(acc_path):
+            os.remove(acc_path)
+        spleeter_out = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''))
+        if os.path.exists(spleeter_out):
+            shutil.rmtree(spleeter_out, ignore_errors=True)
 
     def generate(self):
         if not self.audio_file or not os.path.exists(self.audio_file):
@@ -637,7 +669,6 @@ class NotyCaptionWindow(QMainWindow):
 
             self.prog_main.setValue(92)
 
-            # Show clean lines only — no index, no romanization
             preview = "\n".join(self.display_lines)
             self.caption_edit.setText(preview.strip())
 
@@ -668,7 +699,7 @@ class NotyCaptionWindow(QMainWindow):
                 ass.save(out_path)
 
             self.prog_main.setValue(100)
-            QMessageBox.information(self, "Success", f"Saved:\n{out_path}")
+            QMessageBox.information(self, "Success", f"Captions saved:\n{out_path}")
 
             self.generated = True
             self.edit_btn.setEnabled(True)
