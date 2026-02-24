@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy, QStyleFactory, QDesktopWidget, QGroupBox, QRadioButton,
     QCheckBox, QFrame
 )
+
 from PyQt5.QtGui import QIcon, QColor, QTextCursor, QFont, QPalette
 from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal, QRect
 from PyQt5.QtGui import QCloseEvent
