@@ -27,6 +27,13 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import pysrt
 import pysubs2
 from spleeter.separator import Separator
+import importlib.resources
+
+# Force Whisper to find assets in bundled mode
+if getattr(sys, 'frozen', False):
+    whisper_assets_path = os.path.join(sys._MEIPASS, 'whisper', 'assets')
+    if os.path.exists(whisper_assets_path):
+        os.environ["WHISPER_ASSETS"] = whisper_assets_path
 
 # ──────────────────────────────────────────────
 # SETTINGS & ENCRYPTION
@@ -74,7 +81,7 @@ def load_settings():
         return defaults
 
 # ──────────────────────────────────────────────
-# SETTINGS DIALOG
+# SETTINGS DIALOG (unchanged)
 # ──────────────────────────────────────────────
 class SettingsDialog(QDialog):
     settingsChanged = pyqtSignal(dict)
@@ -171,7 +178,7 @@ class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("NotyCaption by NotY215")
-        icon_path = os.path.join(CURRENT_DIR, 'App.ico')
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -294,7 +301,7 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(self.enhance_btn, r, 0, 1, 2)
         r += 1
 
-        # Bottom
+        # Bottom controls
         bottom = QHBoxLayout()
         self.main_layout.addLayout(bottom)
 
@@ -318,7 +325,7 @@ class NotyCaptionWindow(QMainWindow):
         self.gen_btn.clicked.connect(self.generate)
         bottom.addWidget(self.gen_btn)
 
-        # Progress
+        # Progress bars
         prog_v = QVBoxLayout()
         bottom.addLayout(prog_v)
 
@@ -344,7 +351,7 @@ class NotyCaptionWindow(QMainWindow):
         footer.setStyleSheet("color:#6c757d; font-size:11px; margin:12px 0;")
         self.main_layout.addWidget(footer)
 
-        # State
+        # State variables
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
@@ -558,7 +565,7 @@ class NotyCaptionWindow(QMainWindow):
                     success = True
                 clip.close()
             except Exception as e:
-                pass  # fallback below
+                pass
 
         if not success:
             try:
@@ -568,10 +575,9 @@ class NotyCaptionWindow(QMainWindow):
                 audio_clip.close()
                 success = True
             except Exception as e:
-                self.audio_file = path  # ultimate fallback
+                self.audio_file = path
                 QMessageBox.warning(self, "Conversion Warning",
-                                    "Could not convert audio to WAV format.\n"
-                                    "Using original file directly (may cause issues).")
+                                    "Could not convert to WAV.\nUsing original file.")
 
         self.last_temp_wav = new_temp if success else None
 
@@ -592,6 +598,13 @@ class NotyCaptionWindow(QMainWindow):
         temp_dir = self.settings.get("temp_dir", QDir.tempPath())
         enhanced_audio = os.path.join(temp_dir, "enhanced_vocals.wav")
 
+        spleeter_models_dir = os.path.join(os.path.dirname(__file__), "pretrained_models", "2stems")
+        if not os.path.exists(spleeter_models_dir):
+            QMessageBox.warning(self, "Spleeter Models Missing",
+                                "Spleeter pretrained models not found.\n"
+                                "Cannot enhance audio. Install them manually.")
+            return
+
         try:
             separator = Separator('spleeter:2stems')
             separator.separate_to_file(self.audio_file, temp_dir)
@@ -607,7 +620,7 @@ class NotyCaptionWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Enhance Failed",
                                 f"Audio enhancement failed:\n{str(e)}\n"
-                                "Make sure spleeter is installed correctly.")
+                                "Using original audio for captioning.")
 
         # Cleanup
         try:
@@ -631,19 +644,26 @@ class NotyCaptionWindow(QMainWindow):
         enhanced_audio = os.path.join(temp_dir, "enhanced_vocals.wav")
         use_enhanced = False
 
-        try:
-            separator = Separator('spleeter:2stems')
-            separator.separate_to_file(self.audio_file, temp_dir)
-            vocals_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''), 'vocals.wav')
-            if os.path.exists(vocals_path):
-                shutil.move(vocals_path, enhanced_audio)
-                use_enhanced = True
-            else:
+        spleeter_models_dir = os.path.join(os.path.dirname(__file__), "pretrained_models", "2stems")
+        if os.path.exists(spleeter_models_dir):
+            try:
+                separator = Separator('spleeter:2stems')
+                separator.separate_to_file(self.audio_file, temp_dir)
+                vocals_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''), 'vocals.wav')
+                if os.path.exists(vocals_path):
+                    shutil.move(vocals_path, enhanced_audio)
+                    use_enhanced = True
+                else:
+                    enhanced_audio = self.audio_file
+            except Exception as e:
                 enhanced_audio = self.audio_file
-        except Exception as e:
+                QMessageBox.information(self, "Spleeter Info",
+                                        "Could not separate vocals (missing config or error).\n"
+                                        "Using original audio for transcription.")
+        else:
             enhanced_audio = self.audio_file
             QMessageBox.information(self, "Spleeter Info",
-                                    "Could not separate vocals (no embedded 2stems config or error).\n"
+                                    "Spleeter pretrained models not found.\n"
                                     "Using original audio for transcription.")
 
         lang = self.lang_combo.currentText()
@@ -748,7 +768,6 @@ class NotyCaptionWindow(QMainWindow):
             QMessageBox.critical(self, "Generation Failed", f"Failed to generate captions:\n{str(e)}")
 
         finally:
-            # Cleanup
             try:
                 if use_enhanced and os.path.exists(enhanced_audio):
                     os.remove(enhanced_audio)
