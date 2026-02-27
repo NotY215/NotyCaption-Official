@@ -81,14 +81,16 @@ def upload_file(service, filepath, filename, parent_id=None):
 def generate_notebook_content(filename, lang_code, task, wpl, fmt, output_name):
     cells = []
 
-    # Cell 1: Install packages with %%capture to reduce output
+    # Cell 1: Install packages
     cells.append({
         "cell_type": "code",
+        "metadata": {},
         "source": [
             "%%capture\n",
-            "!pip install --quiet openai-whisper==20231117\n",
-            "!pip install --quiet pysrt pysubs2"
-        ]
+            "!pip install openai-whisper pysrt pysubs2"
+        ],
+        "outputs": [],
+        "execution_count": None
     })
 
     # Cell 2: Mount Drive
@@ -96,8 +98,7 @@ def generate_notebook_content(filename, lang_code, task, wpl, fmt, output_name):
         "cell_type": "code",
         "source": [
             "from google.colab import drive\n",
-            "drive.mount('/content/drive', force_remount=True)\n",
-            "print('Drive mounted')"
+            "drive.mount('/content/drive')"
         ]
     })
 
@@ -109,35 +110,38 @@ def generate_notebook_content(filename, lang_code, task, wpl, fmt, output_name):
             "import pysrt\n",
             "import pysubs2\n",
             "from datetime import timedelta\n",
-            "print('Imports complete')"
+            "import os\n",
+            "import shutil"
         ]
     })
 
-    # Cell 4: Load model with try-except
+    # Cell 4: Model handling - check in Drive, download if not exist
     cells.append({
         "cell_type": "code",
         "source": [
-            "try:\n",
-            "    model = whisper.load_model('large-v3')\n",
-            "    print('Model loaded successfully')\n",
-            "except Exception as e:\n",
-            "    print(f'Error loading model: {str(e)}')\n",
-            "    raise"
+            "model_name = 'large-v3'\n",
+            "model_dir = '/content/drive/My Drive/SrtModels'\n",
+            "os.makedirs(model_dir, exist_ok=True)\n",
+            "model_path = os.path.join(model_dir, f'{model_name}.pt')\n",
+            "local_model_path = f'/content/{model_name}.pt'\n",
+            "if not os.path.exists(model_path):\n",
+            "    print('Downloading model to local and saving to Drive...')\n",
+            "    model = whisper.load_model(model_name)\n",
+            "    shutil.copyfile(f'/root/.cache/whisper/{model_name}.pt', model_path)\n",
+            "    print('Model saved to Drive')\n",
+            "else:\n",
+            "    print('Copying model from Drive to local...')\n",
+            "    shutil.copyfile(model_path, local_model_path)\n",
+            "model = whisper.load_model(local_model_path)"
         ]
     })
 
-    # Cell 5: Transcription with try-except
+    # Cell 5: Transcribe
     cells.append({
         "cell_type": "code",
         "source": [
-            "try:\n",
-            f"    audio_path = '/content/drive/My Drive/uploads/{filename}'\n",
-            "    print(f'Starting transcription for {audio_path}')\n",
-            f"    result = model.transcribe(audio_path, language='{lang_code}', task='{task}', verbose=True, word_timestamps=True)\n",
-            "    print('Transcription complete')\n",
-            "except Exception as e:\n",
-            "    print(f'Transcription error: {str(e)}')\n",
-            "    raise"
+            f"audio_path = '/content/drive/My Drive/uploads/{filename}'\n",
+            f"result = model.transcribe(audio_path, language='{lang_code}', task='{task}', verbose=True, word_timestamps=True)"
         ]
     })
 
@@ -174,43 +178,38 @@ def generate_notebook_content(filename, lang_code, task, wpl, fmt, output_name):
             "            'end': timedelta(seconds=en),\n",
             "            'text': line\n",
             "        })\n",
-            "        idx += 1\n",
-            "print(f'Processed {len(subtitles)} lines')"
+            "        idx += 1"
         ]
     })
 
-    # Cell 7: Save file with try-except
+    # Cell 7: Save to Drive
     cells.append({
         "cell_type": "code",
         "source": [
-            "try:\n",
-            f"    output_path = '/content/drive/My Drive/{output_name}'\n",
-            f"    fmt = '{fmt}'\n",
-            "    if fmt == '.srt':\n",
-            "        srt = pysrt.SubRipFile()\n",
-            "        for s in subtitles:\n",
-            "            item = pysrt.SubRipItem(\n",
-            "                index=s['index'],\n",
-            "                start=pysrt.SubRipTime.from_ordinal(s['start'].total_seconds()*1000),\n",
-            "                end=pysrt.SubRipTime.from_ordinal(s['end'].total_seconds()*1000),\n",
-            "                text=s['text']\n",
-            "            )\n",
-            "            srt.append(item)\n",
-            "        srt.save(output_path, encoding='utf-8')\n",
-            "    else:\n",
-            "        ass = pysubs2.SSAFile()\n",
-            "        for s in subtitles:\n",
-            "            ev = pysubs2.SSAEvent(\n",
-            "                start=int(s['start'].total_seconds()*1000),\n",
-            "                end=int(s['end'].total_seconds()*1000),\n",
-            "                text=s['text']\n",
-            "            )\n",
-            "            ass.events.append(ev)\n",
-            "        ass.save(output_path)\n",
-            "    print(f'Saved to {output_name} in My Drive. Process complete!')\n",
-            "except Exception as e:\n",
-            "    print(f'Save error: {str(e)}')\n",
-            "    raise"
+            f"output_path = '/content/drive/My Drive/{output_name}'\n",
+            f"fmt = '{fmt}'\n",
+            "if fmt == '.srt':\n",
+            "    srt = pysrt.SubRipFile()\n",
+            "    for s in subtitles:\n",
+            "        item = pysrt.SubRipItem(\n",
+            "            index=s['index'],\n",
+            "            start=pysrt.SubRipTime.from_ordinal(s['start'].total_seconds()*1000),\n",
+            "            end=pysrt.SubRipTime.from_ordinal(s['end'].total_seconds()*1000),\n",
+            "            text=s['text']\n",
+            "        )\n",
+            "        srt.append(item)\n",
+            "    srt.save(output_path, encoding='utf-8')\n",
+            "else:\n",
+            "    ass = pysubs2.SSAFile()\n",
+            "    for s in subtitles:\n",
+            "        ev = pysubs2.SSAEvent(\n",
+            "            start=int(s['start'].total_seconds()*1000),\n",
+            "            end=int(s['end'].total_seconds()*1000),\n",
+            "            text=s['text']\n",
+            "        )\n",
+            "        ass.events.append(ev)\n",
+            "    ass.save(output_path)\n",
+            "print('Caption generation complete. File saved to My Drive.')"
         ]
     })
 
@@ -227,7 +226,7 @@ def generate_notebook_content(filename, lang_code, task, wpl, fmt, output_name):
     return notebook
 
 def poll_for_output(self):
-    if not hasattr(self, 'poll_output_name') or not self.poll_output_name:
+    if not self.poll_output_name:
         return
 
     query = f"name='{self.poll_output_name}' and trashed=false"
@@ -241,7 +240,7 @@ def poll_for_output(self):
             done = False
             while not done:
                 status, done = downloader.next_chunk()
-        # Cleanup
+        # Cleanup temp files (but not model)
         try:
             self.service.files().delete(fileId=self.poll_audio_id).execute()
             self.service.files().delete(fileId=self.poll_notebook_id).execute()
@@ -249,29 +248,28 @@ def poll_for_output(self):
         except:
             pass
         self.poll_timer.stop()
-
         # Load subtitles
         fmt = os.path.splitext(self.poll_output_name)[1]
         if fmt == ".srt":
             srt = pysrt.open(self.poll_local_out)
+            self.display_lines = [item.text for item in srt]
             self.subtitles = [{
                 "index": item.index,
                 "start": timedelta(seconds=item.start.ordinal / 1000),
                 "end": timedelta(seconds=item.end.ordinal / 1000),
                 "text": item.text
             } for item in srt]
-            self.display_lines = [item.text for item in srt]
         else:
             ass = pysubs2.load(self.poll_local_out)
+            self.display_lines = [ev.text for ev in ass.events]
             self.subtitles = [{
                 "index": i+1,
                 "start": timedelta(milliseconds=ev.start),
                 "end": timedelta(milliseconds=ev.end),
                 "text": ev.text
             } for i, ev in enumerate(ass.events)]
-            self.display_lines = [ev.text for ev in ass.events]
 
         self.caption_edit.setText("\n".join(self.display_lines))
         self.generated = True
         self.edit_btn.setEnabled(True)
-        QMessageBox.information(self, "Success", f"Captions downloaded to {self.poll_local_out}")
+        QMessageBox.information(self, "Success", f"Captions generated and saved to {self.poll_local_out}")

@@ -31,7 +31,7 @@ import importlib.resources
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-import online  # Import the online mode handler
+from online import handle_online
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -317,7 +317,7 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(browse_btn, r, 0, 1, 2)
         r += 1
 
-        self.enhance_btn = QPushButton("Enhance Audio → Vocals Only")
+        self.enhance_btn = QPushButton("Enhance Audio Only")
         self.enhance_btn.setMinimumHeight(80)
         self.enhance_btn.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffcc00,stop:1 #cc9900); color:white; border-radius:12px; font-size:16px;")
         self.enhance_btn.clicked.connect(self.enhance_audio_only)
@@ -451,7 +451,7 @@ class NotyCaptionWindow(QMainWindow):
 
     def open_settings(self):
         dlg = SettingsDialog(self.settings, self)
-        dlg.settingsChanged.connect(self.update_settings)
+        dlg.settingsChanged.emit(self.update_settings)
         dlg.exec_()
 
     def update_settings(self, new_settings):
@@ -481,7 +481,6 @@ class NotyCaptionWindow(QMainWindow):
             self.service = build("drive", "v3", credentials=creds)
             self.login_button.setVisible(False)
             self.mode_combo.setVisible(True)
-
         else:
             QMessageBox.warning(self, "Error", "client.json not found.")
 
