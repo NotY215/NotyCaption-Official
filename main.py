@@ -7,9 +7,10 @@ import sys
 import os
 import json
 import shutil
+import time
+import requests
 from datetime import timedelta
 import whisper
-import psutil
 import torch
 from cryptography.fernet import Fernet
 from PyQt5.QtWidgets import (
@@ -32,16 +33,114 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
-from io import FileIO
 import webbrowser
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
-# Force Whisper assets path if frozen (PyInstaller)
-if getattr(sys, 'frozen', False):
-    whisper_assets_path = os.path.join(sys._MEIPASS, 'whisper', 'assets')
-    if os.path.exists(whisper_assets_path):
-        os.environ["WHISPER_ASSETS"] = whisper_assets_path
+# ──────────────────────────────────────────────
+# MODEL AUTO-DOWNLOAD + SPLASH
+# ──────────────────────────────────────────────
+class ModelDownloadDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Downloading Whisper large-v3 model")
+        self.setFixedSize(520, 200)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        lbl = QLabel("First run — downloading large-v3 model (~2.9 GB)\n"
+                     "This may take 5–30 minutes depending on your internet speed.\n"
+                     "Please keep the window open.")
+        lbl.setAlignment(Qt.AlignCenter)
+        lbl.setWordWrap(True)
+        layout.addWidget(lbl)
+
+        self.progress = QProgressBar()
+        self.progress.setMinimum(0)
+        self.progress.setMaximum(100)
+        self.progress.setValue(0)
+        self.progress.setTextVisible(True)
+        layout.addWidget(self.progress)
+
+        self.status_lbl = QLabel("Preparing download...")
+        self.status_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_lbl)
+
+        self.setStyleSheet("""
+            QLabel { color: #e0e0e0; font-size: 14px; }
+            QProgressBar {
+                background: #2a2e34;
+                border: 1px solid #444;
+                border-radius: 6px;
+                text-align: center;
+                color: white;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0a84ff, stop:1 #007aff);
+                border-radius: 6px;
+            }
+        """)
+
+    def update_progress(self, percent, message):
+        self.progress.setValue(int(percent))
+        self.status_lbl.setText(message)
+        QApplication.processEvents()
+
+
+def download_large_v3(parent=None):
+    model_name = "large-v3"
+    model_file = f"{model_name}.pt"
+    
+    # When frozen (exe) → next to exe; else → script directory
+    base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+    target_path = os.path.join(base_dir, model_file)
+
+    if os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000_000:
+        return target_path  # already good
+
+    dlg = ModelDownloadDialog(parent)
+    dlg.show()
+    QApplication.processEvents()
+
+    url = f"https://openaipublic.azureedge.net/whisper/models/{model_file}"
+    try:
+        dlg.update_progress(0, "Connecting to server...")
+        response = requests.get(url, stream=True, timeout=45)
+        response.raise_for_status()
+
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        chunk_size = 1024 * 1024  # 1 MB
+
+        part_path = target_path + ".part"
+        with open(part_path, "wb") as f:
+            for data in response.iter_content(chunk_size=chunk_size):
+                if data:
+                    f.write(data)
+                    downloaded += len(data)
+                    percent = (downloaded / total_size) * 100 if total_size > 0 else 0
+                    mb_done = downloaded // (1024*1024)
+                    mb_total = total_size // (1024*1024)
+                    dlg.update_progress(percent, f"Downloading... {percent:.1f}%  ({mb_done:,} / {mb_total:,} MB)")
+                    QApplication.processEvents()
+
+        os.replace(part_path, target_path)
+        dlg.update_progress(100, "Download finished — verifying file...")
+        time.sleep(1.5)
+        dlg.accept()
+        return target_path
+
+    except Exception as e:
+        if os.path.exists(part_path):
+            os.remove(part_path)
+        dlg.reject()
+        QMessageBox.critical(None, "Download Failed",
+                             f"Could not download large-v3 model:\n{str(e)}\n\n"
+                             "The app will fall back to a smaller model or cached version.")
+        return None
+
 
 # ──────────────────────────────────────────────
 # SETTINGS & ENCRYPTION
@@ -88,6 +187,7 @@ def load_settings():
         save_settings(defaults)
         return defaults
 
+
 # ──────────────────────────────────────────────
 # SETTINGS DIALOG
 # ──────────────────────────────────────────────
@@ -97,7 +197,7 @@ class SettingsDialog(QDialog):
     def __init__(self, current_settings, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
-        self.setFixedSize(540, 500)
+        self.setFixedSize(540, 520)
         lay = QVBoxLayout()
         self.setLayout(lay)
 
@@ -105,7 +205,7 @@ class SettingsDialog(QDialog):
         th_lay = QVBoxLayout()
         self.rb_win = QRadioButton("System Default")
         self.rb_light = QRadioButton("Light")
-        self.rb_dark = QRadioButton("Dark (Topaz)")
+        self.rb_dark = QRadioButton("Dark (Modern)")
         th_lay.addWidget(self.rb_win)
         th_lay.addWidget(self.rb_light)
         th_lay.addWidget(self.rb_dark)
@@ -128,7 +228,7 @@ class SettingsDialog(QDialog):
         sc_gb.setLayout(sc_lay)
         lay.addWidget(sc_gb)
 
-        tmp_gb = QGroupBox("Temp Files Folder")
+        tmp_gb = QGroupBox("Temporary Files Folder")
         tmp_lay = QHBoxLayout()
         self.tmp_edit = QLineEdit(current_settings.get("temp_dir", QDir.tempPath()))
         tmp_btn = QPushButton("Browse")
@@ -168,16 +268,17 @@ class SettingsDialog(QDialog):
         if d: self.mod_edit.setText(d)
 
     def apply_close(self):
-        new = {
+        new_settings = {
             "ui_scale": self.scale_combo.currentText(),
             "theme": "Windows Default" if self.rb_win.isChecked() else
                      "Light" if self.rb_light.isChecked() else "Dark",
             "temp_dir": self.tmp_edit.text(),
             "models_dir": self.mod_edit.text(),
         }
-        save_settings(new)
-        self.settingsChanged.emit(new)
+        save_settings(new_settings)
+        self.settingsChanged.emit(new_settings)
         self.accept()
+
 
 # ──────────────────────────────────────────────
 # MAIN WINDOW
@@ -186,7 +287,7 @@ class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("NotyCaption by NotY215")
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'App.ico')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -194,7 +295,7 @@ class NotyCaptionWindow(QMainWindow):
         self.apply_ui_scale()
         self.apply_theme()
 
-        self.resize(840, 760)
+        self.resize(920, 780)
         self.center()
 
         self.central_widget = QWidget()
@@ -207,13 +308,13 @@ class NotyCaptionWindow(QMainWindow):
 
         # Left - Editor
         self.left_panel = QWidget()
-        self.left_panel.setMaximumWidth(580)
+        self.left_panel.setMaximumWidth(620)
         self.left_layout = QVBoxLayout()
         self.left_panel.setLayout(self.left_layout)
         self.top_layout.addWidget(self.left_panel)
 
         title = QLabel("Caption Editor")
-        title.setFont(QFont("Segoe UI", 17, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(title)
 
@@ -225,14 +326,14 @@ class NotyCaptionWindow(QMainWindow):
 
         btn_row = QHBoxLayout()
         self.edit_btn = QPushButton("Edit Captions")
-        self.edit_btn.setMinimumHeight(62)
+        self.edit_btn.setMinimumHeight(64)
         self.edit_btn.setStyleSheet("background:#0a84ff; color:white; border-radius:10px; font-weight:bold;")
         self.edit_btn.clicked.connect(self.toggle_edit)
         self.edit_btn.setEnabled(False)
         btn_row.addWidget(self.edit_btn)
 
         settings_btn = QPushButton("Settings")
-        settings_btn.setMinimumHeight(62)
+        settings_btn.setMinimumHeight(64)
         settings_btn.setStyleSheet("background:#5e5ce6; color:white; border-radius:10px; font-weight:bold;")
         settings_btn.clicked.connect(self.open_settings)
         btn_row.addWidget(settings_btn)
@@ -251,15 +352,15 @@ class NotyCaptionWindow(QMainWindow):
 
         r = 0
 
-        self.login_button = QPushButton("Login with Google")
+        self.login_button = QPushButton("Login with Google (for Online mode)")
         self.login_button.setMinimumHeight(54)
-        self.login_button.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #4285f4,stop:1 #357ae8); color:white; border-radius:12px; font-size:16px;")
+        self.login_button.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #4285f4,stop:1 #357ae8); color:white; border-radius:12px;")
         self.login_button.clicked.connect(self.google_login)
         self.right_layout.addWidget(self.login_button, r, 0, 1, 2)
         r += 1
 
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Normal (Local)", "Online (Colab + Drive)"])
+        self.mode_combo.addItems(["Normal (Local – large-v3)", "Online (Colab + Drive)"])
         self.mode_combo.setMinimumHeight(54)
         self.mode_combo.currentTextChanged.connect(self.set_mode)
         self.mode_combo.setVisible(False)
@@ -270,7 +371,7 @@ class NotyCaptionWindow(QMainWindow):
         l.setFont(QFont("Segoe UI", 12))
         self.right_layout.addWidget(l, r, 0)
         self.lang_combo = QComboBox()
-        self.lang_combo.addItems(["english", "japlish"])
+        self.lang_combo.addItems(["english", "japanese → english (translate)"])
         self.lang_combo.setMinimumHeight(54)
         self.right_layout.addWidget(self.lang_combo, r, 1)
         r += 1
@@ -279,20 +380,20 @@ class NotyCaptionWindow(QMainWindow):
         l.setFont(QFont("Segoe UI", 12))
         self.right_layout.addWidget(l, r, 0)
         self.words_spin = QSpinBox()
-        self.words_spin.setRange(1, 14)
+        self.words_spin.setRange(1, 16)
         self.words_spin.setValue(5)
         self.words_spin.setMinimumHeight(54)
         self.right_layout.addWidget(self.words_spin, r, 1)
         r += 1
 
         self.import_btn = QPushButton("Import Video / Audio")
-        self.import_btn.setMinimumHeight(80)
+        self.import_btn.setMinimumHeight(84)
         self.import_btn.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #007aff,stop:1 #0051c7); color:white; border-radius:12px; font-size:16px;")
         self.import_btn.clicked.connect(self.import_file)
         self.right_layout.addWidget(self.import_btn, r, 0, 1, 2)
         r += 1
 
-        l = QLabel("Format:")
+        l = QLabel("Output Format:")
         l.setFont(QFont("Segoe UI", 12))
         self.right_layout.addWidget(l, r, 0)
         self.format_combo = QComboBox()
@@ -311,14 +412,14 @@ class NotyCaptionWindow(QMainWindow):
         r += 1
 
         browse_btn = QPushButton("Browse")
-        browse_btn.setMinimumHeight(60)
+        browse_btn.setMinimumHeight(64)
         browse_btn.setStyleSheet("background:#3a3a3c; color:white; border-radius:10px;")
         browse_btn.clicked.connect(self.browse_output)
         self.right_layout.addWidget(browse_btn, r, 0, 1, 2)
         r += 1
 
-        self.enhance_btn = QPushButton("Enhance Audio → Vocals Only")
-        self.enhance_btn.setMinimumHeight(80)
+        self.enhance_btn = QPushButton("Enhance Audio → Vocals Only (Spleeter)")
+        self.enhance_btn.setMinimumHeight(84)
         self.enhance_btn.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffcc00,stop:1 #cc9900); color:white; border-radius:12px; font-size:16px;")
         self.enhance_btn.clicked.connect(self.enhance_audio_only)
         self.right_layout.addWidget(self.enhance_btn, r, 0, 1, 2)
@@ -361,7 +462,7 @@ class NotyCaptionWindow(QMainWindow):
         prog_v.addWidget(self.prog_main)
 
         self.prog_frame = QProgressBar()
-        self.prog_frame.setFormat("Frames: %v")
+        self.prog_frame.setFormat("Progress: %v%")
         self.prog_frame.setStyleSheet("""
             QProgressBar { background:#22252a; border:1px solid #3a3f44; border-radius:8px; text-align:center; color:white; }
             QProgressBar::chunk { background:#ff9500; border-radius:8px; }
@@ -369,12 +470,12 @@ class NotyCaptionWindow(QMainWindow):
         self.prog_frame.setMinimumHeight(28)
         prog_v.addWidget(self.prog_frame)
 
-        footer = QLabel("All rights reserved by NotY215")
+        footer = QLabel("NotyCaption • All rights reserved by NotY215")
         footer.setAlignment(Qt.AlignCenter)
         footer.setStyleSheet("color:#6c757d; font-size:11px; margin:12px 0;")
         self.main_layout.addWidget(footer)
 
-        # State variables
+        # State
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
@@ -401,7 +502,7 @@ class NotyCaptionWindow(QMainWindow):
         self.poll_output_name = None
         self.poll_local_out = None
 
-        # Load saved token if exists
+        # Google token
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
             if creds and creds.expired and creds.refresh_token:
@@ -425,17 +526,17 @@ class NotyCaptionWindow(QMainWindow):
         font = QApplication.font()
         font.setPointSizeF(font.pointSizeF() * scale)
         QApplication.setFont(font)
-        self.resize(int(840 * scale), int(760 * scale))
+        self.resize(int(920 * scale), int(780 * scale))
 
     def apply_theme(self):
         theme = self.settings.get("theme", "Dark")
         if theme == "Light":
             pal = QPalette()
-            pal.setColor(QPalette.Window, QColor(250,250,250))
+            pal.setColor(QPalette.Window, QColor(245,245,245))
             pal.setColor(QPalette.WindowText, QColor(30,30,30))
             pal.setColor(QPalette.Base, Qt.white)
             pal.setColor(QPalette.Text, QColor(30,30,30))
-            pal.setColor(QPalette.Button, QColor(240,240,240))
+            pal.setColor(QPalette.Button, QColor(230,230,230))
             pal.setColor(QPalette.ButtonText, QColor(30,30,30))
             pal.setColor(QPalette.Highlight, QColor(0,122,255))
             self.setPalette(pal)
@@ -476,29 +577,10 @@ class NotyCaptionWindow(QMainWindow):
                 pass
         self.poll_timer.stop()
 
-        # Delete temp files from Drive
         if self.service:
             from online import empty_uploads, delete_temp_notebooks
             empty_uploads(self.service)
             delete_temp_notebooks(self.service)
-            if self.poll_audio_id:
-                try:
-                    self.service.files().delete(fileId=self.poll_audio_id).execute()
-                except:
-                    pass
-            if self.poll_notebook_id:
-                try:
-                    self.service.files().delete(fileId=self.poll_notebook_id).execute()
-                except:
-                    pass
-            if self.poll_output_name:
-                query = f"name='{self.poll_output_name}' and trashed=false"
-                results = self.service.files().list(q=query, fields="files(id)").execute()
-                for f in results.get("files", []):
-                    try:
-                        self.service.files().delete(fileId=f["id"]).execute()
-                    except:
-                        pass
 
         super().closeEvent(event)
 
@@ -513,30 +595,25 @@ class NotyCaptionWindow(QMainWindow):
             self.mode_combo.setVisible(True)
             QMessageBox.information(self, "Success", "Google Drive connected.")
         else:
-            QMessageBox.warning(self, "Missing File", "client.json not found in application folder.")
+            QMessageBox.warning(self, "Missing client.json", "client.json not found in application folder.")
 
     def set_mode(self, text):
         self.mode = "online" if "Online" in text else "normal"
 
     def load_whisper_model(self):
-        model_name = "large-v3"
-        model_filename = f"{model_name}.pt"
-        user_dir = self.settings.get("models_dir", CURRENT_DIR)
-        user_model_file = os.path.join(user_dir, model_filename)
+        model_file = "large-v3.pt"
+        exe_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else CURRENT_DIR
+        local_path = os.path.join(exe_dir, model_file)
 
-        if os.path.exists(user_model_file):
-            return whisper.load_model(user_model_file)
+        if os.path.exists(local_path):
+            return whisper.load_model(local_path)
 
-        default_cache_dir = os.path.expanduser("~/.cache/whisper")
-        default_model_file = os.path.join(default_cache_dir, model_filename)
-        if os.path.exists(default_model_file):
-            os.makedirs(user_dir, exist_ok=True)
-            shutil.copy2(default_model_file, user_model_file)
-            return whisper.load_model(user_model_file)
+        # Fallback to default cache
+        return whisper.load_model("large-v3")
 
-        os.makedirs(user_dir, exist_ok=True)
-        return whisper.load_model(model_name, download_root=user_dir)
-
+    # ──────────────────────────────────────────────
+    # Media Player Methods
+    # ──────────────────────────────────────────────
     def media_status(self, status):
         if status == QMediaPlayer.LoadedMedia:
             self.play_btn.setEnabled(True)
@@ -581,19 +658,15 @@ class NotyCaptionWindow(QMainWindow):
     def update_highlight(self, ms):
         if not self.subtitles or not self.generated:
             return
-
         sec = ms / 1000.0
-
         doc = self.caption_edit.document()
         cursor = QTextCursor(doc)
         cursor.beginEditBlock()
-
         clear_fmt = cursor.charFormat()
         clear_fmt.setBackground(QColor(30,30,34))
         cursor.select(QTextCursor.Document)
         cursor.setCharFormat(clear_fmt)
         cursor.clearSelection()
-
         for i, sub in enumerate(self.subtitles):
             if sub["start"].total_seconds() <= sec < sub["end"].total_seconds():
                 cursor = QTextCursor(doc)
@@ -602,22 +675,21 @@ class NotyCaptionWindow(QMainWindow):
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 fmt = cursor.charFormat()
-                fmt.setBackground(QColor(255, 215, 0, 160))
+                fmt.setBackground(QColor(255, 215, 0, 180))
                 cursor.setCharFormat(fmt)
                 self.caption_edit.setTextCursor(cursor)
                 self.caption_edit.ensureCursorVisible()
                 break
-
         cursor.endEditBlock()
 
+    # ──────────────────────────────────────────────
+    # Import / Enhance / Generate
+    # ──────────────────────────────────────────────
     def import_file(self):
         filter_str = (
-            "All Supported Media (*.mp4 *.mkv *.avi *.mov *.webm *.flv *.wmv "
-            "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma *.amr *.opus);;"
-            "Video Files (*.mp4 *.mkv *.avi *.mov *.webm *.flv *.wmv);;"
-            "Audio Files (*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma *.amr *.opus)"
+            "Media Files (*.mp4 *.mkv *.avi *.mov *.webm *.flv *.wmv "
+            "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma *.amr *.opus)"
         )
-
         path, _ = QFileDialog.getOpenFileName(self, "Select Video or Audio", "", filter_str)
         if not path:
             return
@@ -637,15 +709,15 @@ class NotyCaptionWindow(QMainWindow):
                 pass
 
         success = False
-        if path.lower().endswith(('.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv')):
+        if path.lower().endswith(('.mp4','.mkv','.avi','.mov','.webm','.flv','.wmv')):
             try:
                 clip = VideoFileClip(path)
-                if clip.audio is not None:
+                if clip.audio:
                     clip.audio.write_audiofile(new_temp, codec='pcm_s16le', logger=None)
                     self.audio_file = new_temp
                     success = True
                 clip.close()
-            except Exception as e:
+            except:
                 pass
 
         if not success:
@@ -655,13 +727,11 @@ class NotyCaptionWindow(QMainWindow):
                 self.audio_file = new_temp
                 audio_clip.close()
                 success = True
-            except Exception as e:
+            except:
                 self.audio_file = path
-                QMessageBox.warning(self, "Conversion Warning",
-                                    "Could not convert to WAV.\nUsing original file.")
+                QMessageBox.warning(self, "Conversion Warning", "Could not convert to WAV. Using original file.")
 
         self.last_temp_wav = new_temp if success else None
-
         QMessageBox.information(self, "Success", "Media imported successfully.")
         self.loaded_media = None
 
@@ -677,48 +747,41 @@ class NotyCaptionWindow(QMainWindow):
             return
 
         temp_dir = self.settings.get("temp_dir", QDir.tempPath())
-        output_dir = temp_dir
-
         spleeter_models_dir = os.path.join(os.path.dirname(__file__), "pretrained_models", "2stems")
+
         if not os.path.exists(spleeter_models_dir):
-            QMessageBox.warning(self, "Spleeter Models Missing",
-                                "Spleeter pretrained models not found.\nCannot enhance audio. Install them manually.")
+            QMessageBox.warning(self, "Spleeter Models Missing", "Spleeter pretrained models not found.")
             return
 
         try:
             self.prog_main.setValue(10)
             separator = Separator('spleeter:2stems')
-            separator.separate_to_file(self.audio_file, output_dir, synchronous=True)
+            separator.separate_to_file(self.audio_file, temp_dir, synchronous=True)
             self.prog_main.setValue(60)
 
             base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
-            vocals_path = os.path.join(output_dir, base_name, 'vocals.wav')
+            vocals_path = os.path.join(temp_dir, base_name, 'vocals.wav')
 
             if not os.path.exists(vocals_path):
-                raise FileNotFoundError("vocals.wav not found after separation")
+                raise FileNotFoundError("vocals.wav not found")
 
             base = os.path.splitext(os.path.basename(self.input_file or "audio"))[0]
             final_name = f"{base}_vocals_only.wav"
             final_path = os.path.join(self.output_folder, final_name)
 
             shutil.move(vocals_path, final_path)
-
             self.prog_main.setValue(100)
-
-            QMessageBox.information(self, "Audio Enhanced",
-                                    f"Vocals-only file created (higher vocals, background removed):\n\n{final_path}")
+            QMessageBox.information(self, "Audio Enhanced", f"Vocals-only file created:\n{final_path}")
 
         except Exception as e:
             self.prog_main.setValue(0)
-            QMessageBox.warning(self, "Enhance Failed",
-                                f"Audio enhancement failed:\n{str(e)}\n\n"
-                                "Using original audio for captioning if you generate subtitles.")
+            QMessageBox.warning(self, "Enhance Failed", f"Audio enhancement failed:\n{str(e)}")
 
         finally:
             try:
-                spleeter_out_folder = os.path.join(output_dir, base_name)
-                if os.path.exists(spleeter_out_folder):
-                    shutil.rmtree(spleeter_out_folder, ignore_errors=True)
+                spleeter_out = os.path.join(temp_dir, base_name)
+                if os.path.exists(spleeter_out):
+                    shutil.rmtree(spleeter_out, ignore_errors=True)
             except:
                 pass
 
@@ -731,63 +794,55 @@ class NotyCaptionWindow(QMainWindow):
         enhanced_audio = os.path.join(temp_dir, "enhanced_vocals.wav")
         use_enhanced = False
 
-        spleeter_models_dir = os.path.join(os.path.dirname(__file__), "pretrained_models", "2stems")
-        if os.path.exists(spleeter_models_dir):
-            try:
-                separator = Separator('spleeter:2stems')
-                separator.separate_to_file(self.audio_file, temp_dir)
-                base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
-                vocals_path = os.path.join(temp_dir, base_name, 'vocals.wav')
-                if os.path.exists(vocals_path):
-                    shutil.move(vocals_path, enhanced_audio)
-                    use_enhanced = True
-                else:
-                    enhanced_audio = self.audio_file
-            except Exception as e:
-                enhanced_audio = self.audio_file
-                QMessageBox.information(self, "Spleeter Info",
-                                        "Could not separate vocals.\nUsing original audio for transcription.")
-        else:
+        try:
+            separator = Separator('spleeter:2stems')
+            separator.separate_to_file(self.audio_file, temp_dir)
+            base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
+            vocals_path = os.path.join(temp_dir, base_name, 'vocals.wav')
+            if os.path.exists(vocals_path):
+                shutil.move(vocals_path, enhanced_audio)
+                use_enhanced = True
+        except:
             enhanced_audio = self.audio_file
-            QMessageBox.information(self, "Spleeter Info",
-                                    "Spleeter models not found.\nUsing original audio.")
 
         lang = self.lang_combo.currentText()
-        lang_code = "ja" if lang == "japlish" else "en"
-        task = "translate" if lang == "japlish" else "transcribe"
+        lang_code = "ja" if "japanese" in lang.lower() else "en"
+        task = "translate" if "translate" in lang.lower() else "transcribe"
 
         wpl = self.words_spin.value()
-
-        self.prog_main.setValue(0)
-        self.prog_frame.setValue(0)
-        self.prog_frame.setMaximum(100)
-
         fmt = self.format_combo.currentText()
         base = os.path.splitext(os.path.basename(self.input_file or "audio"))[0]
         out_path = os.path.join(self.output_folder, f"{base}_captions{fmt}")
 
-        # Check for existing local file in both modes (since out_path is local)
         if os.path.exists(out_path):
-            reply = QMessageBox.question(self, "File Exists", f"{out_path} already exists locally.\nOverwrite?", QMessageBox.Yes | QMessageBox.No)
+            reply = QMessageBox.question(self, "Overwrite?", f"{out_path} already exists.\nOverwrite?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 return
 
+        self.prog_main.setValue(0)
+        self.prog_frame.setValue(0)
+
         if self.mode == "online":
-            from online import handle_online
-            handle_online(self, enhanced_audio if use_enhanced else self.audio_file,
-              lang_code, task, wpl, fmt, base, out_path)
+            try:
+                from online import handle_online
+                handle_online(self, enhanced_audio if use_enhanced else self.audio_file,
+                              lang_code, task, wpl, fmt, base, out_path)
+            except Exception as e:
+                QMessageBox.critical(self, "Online Mode Failed", str(e))
         else:
             # Local mode
             try:
+                self.prog_main.setValue(10)
                 model = self.load_whisper_model()
-                self.prog_main.setValue(15)
+                self.prog_main.setValue(20)
 
-                result = model.transcribe(enhanced_audio if use_enhanced else self.audio_file,
-                                          language=lang_code, task=task,
-                                          verbose=True, word_timestamps=True)
+                result = model.transcribe(
+                    enhanced_audio if use_enhanced else self.audio_file,
+                    language=lang_code,
+                    task=task,
+                    word_timestamps=True
+                )
                 self.prog_main.setValue(70)
-                self.prog_frame.setValue(100)
-                self.prog_frame.setFormat("Frames done")
 
                 self.subtitles = []
                 self.display_lines = []
@@ -855,20 +910,18 @@ class NotyCaptionWindow(QMainWindow):
                     ass.save(out_path)
 
                 self.prog_main.setValue(100)
-                QMessageBox.information(self, "Success", f"Captions generated and saved:\n{out_path}")
+                QMessageBox.information(self, "Success", f"Captions saved:\n{out_path}")
 
                 self.generated = True
                 self.edit_btn.setEnabled(True)
 
             except Exception as e:
-                self.prog_frame.setFormat("Error")
-                QMessageBox.critical(self, "Generation Failed", f"Failed to generate captions:\n{str(e)}")
+                QMessageBox.critical(self, "Generation Failed", f"Error:\n{str(e)}")
 
-        # Cleanup temporary enhanced audio
+        # Cleanup
         try:
             if use_enhanced and os.path.exists(enhanced_audio):
                 os.remove(enhanced_audio)
-            base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
             spleeter_out = os.path.join(temp_dir, base_name)
             if os.path.exists(spleeter_out):
                 shutil.rmtree(spleeter_out, ignore_errors=True)
@@ -888,18 +941,27 @@ class NotyCaptionWindow(QMainWindow):
         text = self.caption_edit.toPlainText().strip()
         lines = [l.strip() for l in text.split('\n') if l.strip()]
         if len(lines) != len(self.subtitles):
-            QMessageBox.warning(self, "Edit Mismatch",
-                                "The number of lines has changed.\nEdits were not applied.")
+            QMessageBox.warning(self, "Edit Mismatch", "Line count changed. Edits not applied.")
             return
         for i, new_text in enumerate(lines):
             self.subtitles[i]["text"] = new_text
-        QMessageBox.information(self, "Edits Saved", "Changes applied successfully.")
+        QMessageBox.information(self, "Edits Saved", "Changes applied.")
 
+
+# ──────────────────────────────────────────────
+# ENTRY POINT
+# ──────────────────────────────────────────────
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
+
+    # Early icon
+    icon_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'App.ico')
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
+
+    # Download large-v3 if missing
+    download_large_v3()
+
     app.setStyle('Fusion')
     win = NotyCaptionWindow()
     win.show()
