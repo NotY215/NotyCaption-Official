@@ -91,20 +91,23 @@ class ModelDownloadDialog(QDialog):
 
 def download_large_v3(parent=None):
     model_name = "large-v3"
-    model_file = f"{model_name}.pt"
+    model_file = "large-v3.bin"           # ← FIXED: correct filename
     
-    # When frozen (exe) → next to exe; else → script directory
+    # Location: same folder as exe (frozen) or script
     base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
     target_path = os.path.join(base_dir, model_file)
 
+    # Already exists and looks reasonable size → skip
     if os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000_000:
-        return target_path  # already good
+        return target_path
 
     dlg = ModelDownloadDialog(parent)
     dlg.show()
     QApplication.processEvents()
 
     url = f"https://openaipublic.azureedge.net/whisper/models/{model_file}"
+    part_path = None  # ← Define early to avoid UnboundLocalError
+
     try:
         dlg.update_progress(0, "Connecting to server...")
         response = requests.get(url, stream=True, timeout=45)
@@ -133,12 +136,17 @@ def download_large_v3(parent=None):
         return target_path
 
     except Exception as e:
-        if os.path.exists(part_path):
-            os.remove(part_path)
+        if part_path is not None and os.path.exists(part_path):
+            try:
+                os.remove(part_path)
+            except:
+                pass
+
         dlg.reject()
         QMessageBox.critical(None, "Download Failed",
                              f"Could not download large-v3 model:\n{str(e)}\n\n"
-                             "The app will fall back to a smaller model or cached version.")
+                             "You can manually place 'large-v3.bin' in the same folder as the .exe\n"
+                             "or the app will fall back to a smaller/cached model.")
         return None
 
 
