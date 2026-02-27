@@ -33,7 +33,7 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
             for f in files:
                 self.service.files().delete(fileId=f["id"]).execute()
 
-        # Delete existing notebook if any
+        # Delete existing notebook if any (to avoid duplicates)
         query = "name='NotyCaption_Generator.ipynb' and trashed=false"
         results = self.service.files().list(q=query, fields="files(id)").execute()
         for f in results.get("files", []):
@@ -58,7 +58,8 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
         with open(temp_ipynb, "w", encoding="utf-8") as f:
             json.dump(notebook_content, f, indent=2)
 
-        notebook_id = upload_file(self.service, temp_ipynb)
+        # FIXED: added filename parameter
+        notebook_id = upload_file(self.service, temp_ipynb, temp_ipynb)  # ← here was the bug
         os.remove(temp_ipynb)
 
         colab_url = f"https://colab.research.google.com/drive/{notebook_id}"
@@ -135,7 +136,7 @@ def generate_notebook_content(audio_filename, words_per_line, fmt, output_name, 
         },
         "cells": [
 
-            # Install dependencies properly
+            # Install dependencies
             code_cell([
                 "%%capture\n",
                 "!apt update -qq\n",
@@ -160,7 +161,7 @@ def generate_notebook_content(audio_filename, words_per_line, fmt, output_name, 
                 "import os\n"
             ]),
 
-            # Load model
+            # Load model (you can change to 'large-v3' if you want better quality)
             code_cell([
                 "model_name = 'medium'\n",
                 "print('Loading model...')\n",
@@ -250,9 +251,18 @@ def poll_for_output(self):
             _, done = downloader.next_chunk()
 
     # Cleanup
-    self.service.files().delete(fileId=self.poll_audio_id).execute()
-    self.service.files().delete(fileId=self.poll_notebook_id).execute()
-    self.service.files().delete(fileId=file_id).execute()
+    try:
+        self.service.files().delete(fileId=self.poll_audio_id).execute()
+    except:
+        pass
+    try:
+        self.service.files().delete(fileId=self.poll_notebook_id).execute()
+    except:
+        pass
+    try:
+        self.service.files().delete(fileId=file_id).execute()
+    except:
+        pass
 
     self.poll_timer.stop()
 
@@ -263,7 +273,7 @@ def poll_for_output(self):
     )
 
 # ==============================
-# CLEANUP HELPERS
+# CLEANUP HELPERS (used on app close)
 # ==============================
 def empty_uploads(service):
     uploads_id = get_or_create_folder(service, "uploads")
