@@ -27,15 +27,17 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import pysrt
 import pysubs2
 from spleeter.separator import Separator
-import importlib.resources
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from online import handle_online
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from io import FileIO
+import webbrowser
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
-# Force Whisper to find assets in bundled mode
+# Force Whisper assets path if frozen (PyInstaller)
 if getattr(sys, 'frozen', False):
     whisper_assets_path = os.path.join(sys._MEIPASS, 'whisper', 'assets')
     if os.path.exists(whisper_assets_path):
@@ -87,7 +89,7 @@ def load_settings():
         return defaults
 
 # ──────────────────────────────────────────────
-# SETTINGS DIALOG (unchanged)
+# SETTINGS DIALOG
 # ──────────────────────────────────────────────
 class SettingsDialog(QDialog):
     settingsChanged = pyqtSignal(dict)
@@ -249,7 +251,6 @@ class NotyCaptionWindow(QMainWindow):
 
         r = 0
 
-        # Login button
         self.login_button = QPushButton("Login with Google")
         self.login_button.setMinimumHeight(54)
         self.login_button.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #4285f4,stop:1 #357ae8); color:white; border-radius:12px; font-size:16px;")
@@ -257,9 +258,8 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(self.login_button, r, 0, 1, 2)
         r += 1
 
-        # Mode combo
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Normal", "Online"])
+        self.mode_combo.addItems(["Normal (Local)", "Online (Colab + Drive)"])
         self.mode_combo.setMinimumHeight(54)
         self.mode_combo.currentTextChanged.connect(self.set_mode)
         self.mode_combo.setVisible(False)
@@ -317,7 +317,7 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(browse_btn, r, 0, 1, 2)
         r += 1
 
-        self.enhance_btn = QPushButton("Enhance Audio Only")
+        self.enhance_btn = QPushButton("Enhance Audio → Vocals Only")
         self.enhance_btn.setMinimumHeight(80)
         self.enhance_btn.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffcc00,stop:1 #cc9900); color:white; border-radius:12px; font-size:16px;")
         self.enhance_btn.clicked.connect(self.enhance_audio_only)
@@ -396,8 +396,12 @@ class NotyCaptionWindow(QMainWindow):
         self.service = None
         self.mode = "normal"
         self.poll_timer = QTimer(self)
+        self.poll_audio_id = None
+        self.poll_notebook_id = None
+        self.poll_output_name = None
+        self.poll_local_out = None
 
-        # Load token if exists
+        # Load saved token if exists
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
             if creds and creds.expired and creds.refresh_token:
@@ -451,7 +455,7 @@ class NotyCaptionWindow(QMainWindow):
 
     def open_settings(self):
         dlg = SettingsDialog(self.settings, self)
-        dlg.settingsChanged.emit(self.update_settings)
+        dlg.settingsChanged.connect(self.update_settings)
         dlg.exec_()
 
     def update_settings(self, new_settings):
@@ -470,6 +474,7 @@ class NotyCaptionWindow(QMainWindow):
                 os.remove(self.last_temp_wav)
             except:
                 pass
+        self.poll_timer.stop()
         super().closeEvent(event)
 
     def google_login(self):
@@ -481,8 +486,9 @@ class NotyCaptionWindow(QMainWindow):
             self.service = build("drive", "v3", credentials=creds)
             self.login_button.setVisible(False)
             self.mode_combo.setVisible(True)
+            QMessageBox.information(self, "Success", "Google Drive connected.")
         else:
-            QMessageBox.warning(self, "Error", "client.json not found.")
+            QMessageBox.warning(self, "Missing File", "client.json not found in application folder.")
 
     def set_mode(self, text):
         self.mode = "online" if "Online" in text else "normal"
@@ -567,7 +573,7 @@ class NotyCaptionWindow(QMainWindow):
             if sub["start"].total_seconds() <= sec < sub["end"].total_seconds():
                 cursor = QTextCursor(doc)
                 cursor.movePosition(QTextCursor.Start)
-                cursor.movePosition(QTextCursor.NextBlock, n=i)
+                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, i)
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 fmt = cursor.charFormat()
@@ -655,32 +661,41 @@ class NotyCaptionWindow(QMainWindow):
             return
 
         try:
+            self.prog_main.setValue(10)
             separator = Separator('spleeter:2stems')
-            separator.separate_to_file(self.audio_file, temp_dir)
-            vocals_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''), 'vocals.wav')
+            separator.separate_to_file(self.audio_file, output_dir, synchronous=True)
+            self.prog_main.setValue(60)
 
-            if os.path.exists(vocals_path):
-                base = os.path.splitext(os.path.basename(self.input_file or "audio"))[0]
-                out_path = os.path.join(self.output_folder, f"{base}_enhanced_vocals.wav")
-                shutil.move(vocals_path, out_path)
-                QMessageBox.information(self, "Success", f"Enhanced vocals saved to {out_path}")
-            else:
-                raise FileNotFoundError("vocals.wav not found")
+            base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
+            vocals_path = os.path.join(output_dir, base_name, 'vocals.wav')
+
+            if not os.path.exists(vocals_path):
+                raise FileNotFoundError("vocals.wav not found after separation")
+
+            base = os.path.splitext(os.path.basename(self.input_file or "audio"))[0]
+            final_name = f"{base}_vocals_only.wav"
+            final_path = os.path.join(self.output_folder, final_name)
+
+            shutil.move(vocals_path, final_path)
+
+            self.prog_main.setValue(100)
+
+            QMessageBox.information(self, "Audio Enhanced",
+                                    f"Vocals-only file created (higher vocals, background removed):\n\n{final_path}")
+
         except Exception as e:
+            self.prog_main.setValue(0)
             QMessageBox.warning(self, "Enhance Failed",
-                                f"Audio enhancement failed:\n{str(e)}\n"
-                                "Using original audio for captioning.")
+                                f"Audio enhancement failed:\n{str(e)}\n\n"
+                                "Using original audio for captioning if you generate subtitles.")
 
-        # Cleanup
-        try:
-            acc_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''), 'accompaniment.wav')
-            if os.path.exists(acc_path):
-                os.remove(acc_path)
-            spleeter_out = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''))
-            if os.path.exists(spleeter_out):
-                shutil.rmtree(spleeter_out, ignore_errors=True)
-        except:
-            pass
+        finally:
+            try:
+                spleeter_out_folder = os.path.join(output_dir, base_name)
+                if os.path.exists(spleeter_out_folder):
+                    shutil.rmtree(spleeter_out_folder, ignore_errors=True)
+            except:
+                pass
 
     def generate(self):
         if not self.audio_file or not os.path.exists(self.audio_file):
@@ -696,7 +711,8 @@ class NotyCaptionWindow(QMainWindow):
             try:
                 separator = Separator('spleeter:2stems')
                 separator.separate_to_file(self.audio_file, temp_dir)
-                vocals_path = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''), 'vocals.wav')
+                base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
+                vocals_path = os.path.join(temp_dir, base_name, 'vocals.wav')
                 if os.path.exists(vocals_path):
                     shutil.move(vocals_path, enhanced_audio)
                     use_enhanced = True
@@ -705,13 +721,11 @@ class NotyCaptionWindow(QMainWindow):
             except Exception as e:
                 enhanced_audio = self.audio_file
                 QMessageBox.information(self, "Spleeter Info",
-                                        "Could not separate vocals (missing config or error).\n"
-                                        "Using original audio for transcription.")
+                                        "Could not separate vocals.\nUsing original audio for transcription.")
         else:
             enhanced_audio = self.audio_file
             QMessageBox.information(self, "Spleeter Info",
-                                    "Spleeter pretrained models not found.\n"
-                                    "Using original audio for transcription.")
+                                    "Spleeter models not found.\nUsing original audio.")
 
         lang = self.lang_combo.currentText()
         lang_code = "ja" if lang == "japlish" else "en"
@@ -728,14 +742,18 @@ class NotyCaptionWindow(QMainWindow):
         out_path = os.path.join(self.output_folder, f"{base}_captions{fmt}")
 
         if self.mode == "online":
-            online.handle_online(self, enhanced_audio if use_enhanced else self.audio_file, lang_code, task, wpl, fmt, base, out_path)
+            from online import handle_online
+            handle_online(self, enhanced_audio if use_enhanced else self.audio_file,
+                          lang_code, task, wpl, fmt, base, out_path)
         else:
             # Local mode
             try:
                 model = self.load_whisper_model()
                 self.prog_main.setValue(15)
 
-                result = model.transcribe(enhanced_audio if use_enhanced else self.audio_file, language=lang_code, task=task, verbose=True, word_timestamps=True)
+                result = model.transcribe(enhanced_audio if use_enhanced else self.audio_file,
+                                          language=lang_code, task=task,
+                                          verbose=True, word_timestamps=True)
                 self.prog_main.setValue(70)
                 self.prog_frame.setValue(100)
                 self.prog_frame.setFormat("Frames done")
@@ -743,57 +761,70 @@ class NotyCaptionWindow(QMainWindow):
                 self.subtitles = []
                 self.display_lines = []
                 idx = 1
-                for seg in result["segments"]:
-                    text = seg["text"].strip()
-                    words = text.split()
-                    start = seg["start"]
-                    end = seg["end"]
-                    duration = end - start
 
-                    for i in range(0, len(words), wpl):
-                        line_words = words[i:i + wpl]
-                        line_text = " ".join(line_words)
-                        line_start = start + (i / len(words)) * duration
-                        line_end = start + ((i + len(line_words)) / len(words)) * duration
+                for seg in result.get("segments", []):
+                    txt = seg.get("text", "").strip()
+                    if not txt: continue
+
+                    s = seg.get("start", 0)
+                    e = seg.get("end", s + 1)
+
+                    words = seg.get("words", [])
+                    if words:
+                        w_txt = [w["word"].strip() for w in words]
+                        w_s = [w.get("start", s) for w in words]
+                        w_e = [w.get("end", e) for w in words]
+                    else:
+                        w_txt = txt.split()
+                        dur = e - s
+                        w_s = [s + i * dur / max(1, len(w_txt)) for i in range(len(w_txt))]
+                        w_e = w_s[1:] + [e]
+
+                    for i in range(0, len(w_txt), wpl):
+                        chunk = w_txt[i:i + wpl]
+                        line = " ".join(chunk).strip()
+                        if not line: continue
+                        st = w_s[i]
+                        en = w_e[min(i + wpl - 1, len(w_e) - 1)]
 
                         self.subtitles.append({
                             "index": idx,
-                            "start": timedelta(seconds=line_start),
-                            "end": timedelta(seconds=line_end),
-                            "text": line_text
+                            "start": timedelta(seconds=st),
+                            "end": timedelta(seconds=en),
+                            "text": line
                         })
-                        self.display_lines.append(line_text)
+                        self.display_lines.append(line)
                         idx += 1
 
                 self.prog_main.setValue(92)
 
-                preview_text = "\n".join(self.display_lines)
-                self.caption_edit.setText(preview_text)
+                preview = "\n".join(self.display_lines)
+                self.caption_edit.setText(preview.strip())
 
                 if fmt == ".srt":
-                    srt_subs = pysrt.SubRipFile()
-                    for sub in self.subtitles:
+                    srt = pysrt.SubRipFile()
+                    for s in self.subtitles:
                         item = pysrt.SubRipItem(
-                            index=sub["index"],
-                            start=sub["start"],
-                            end=sub["end"],
-                            text=sub["text"]
+                            index=s["index"],
+                            start=pysrt.SubRipTime.from_ordinal(s["start"].total_seconds()*1000),
+                            end=pysrt.SubRipTime.from_ordinal(s["end"].total_seconds()*1000),
+                            text=s["text"]
                         )
-                        srt_subs.append(item)
-                    srt_subs.save(out_path, encoding="utf-8")
-                elif fmt == ".ass":
-                    ass_subs = pysubs2.SSAFile()
-                    for sub in self.subtitles:
-                        event = pysubs2.SSAEvent(
-                            start=pysubs2.make_time(s=sub["start"].total_seconds()),
-                            end=pysubs2.make_time(s=sub["end"].total_seconds()),
-                            text=sub["text"]
+                        srt.append(item)
+                    srt.save(out_path, encoding='utf-8')
+                else:
+                    ass = pysubs2.SSAFile()
+                    for s in self.subtitles:
+                        ev = pysubs2.SSAEvent(
+                            start=int(s["start"].total_seconds()*1000),
+                            end=int(s["end"].total_seconds()*1000),
+                            text=s["text"]
                         )
-                        ass_subs.events.append(event)
-                    ass_subs.save(out_path)
+                        ass.events.append(ev)
+                    ass.save(out_path)
 
                 self.prog_main.setValue(100)
-                QMessageBox.information(self, "Success", f"Captions generated and saved to {out_path}.")
+                QMessageBox.information(self, "Success", f"Captions generated and saved:\n{out_path}")
 
                 self.generated = True
                 self.edit_btn.setEnabled(True)
@@ -802,11 +833,12 @@ class NotyCaptionWindow(QMainWindow):
                 self.prog_frame.setFormat("Error")
                 QMessageBox.critical(self, "Generation Failed", f"Failed to generate captions:\n{str(e)}")
 
-        # Cleanup
+        # Cleanup temporary enhanced audio
         try:
             if use_enhanced and os.path.exists(enhanced_audio):
                 os.remove(enhanced_audio)
-            spleeter_out = os.path.join(temp_dir, os.path.basename(self.audio_file).replace('.wav', ''))
+            base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
+            spleeter_out = os.path.join(temp_dir, base_name)
             if os.path.exists(spleeter_out):
                 shutil.rmtree(spleeter_out, ignore_errors=True)
         except:
@@ -825,15 +857,19 @@ class NotyCaptionWindow(QMainWindow):
         text = self.caption_edit.toPlainText().strip()
         lines = [l.strip() for l in text.split('\n') if l.strip()]
         if len(lines) != len(self.subtitles):
-            QMessageBox.warning(self, "Error", "Invalid number of lines. Edits not saved.")
+            QMessageBox.warning(self, "Edit Mismatch",
+                                "The number of lines has changed.\nEdits were not applied.")
             return
         for i, new_text in enumerate(lines):
             self.subtitles[i]["text"] = new_text
-        QMessageBox.information(self, "Success", "Edits saved.")
+        QMessageBox.information(self, "Edits Saved", "Changes applied successfully.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon('App.ico'))
-    window = NotyCaptionWindow()
-    window.show()
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+    app.setStyle('Fusion')
+    win = NotyCaptionWindow()
+    win.show()
     sys.exit(app.exec_())
