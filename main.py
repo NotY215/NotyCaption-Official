@@ -475,6 +475,31 @@ class NotyCaptionWindow(QMainWindow):
             except:
                 pass
         self.poll_timer.stop()
+
+        # Delete temp files from Drive
+        if self.service:
+            from online import empty_uploads, delete_temp_notebooks
+            empty_uploads(self.service)
+            delete_temp_notebooks(self.service)
+            if self.poll_audio_id:
+                try:
+                    self.service.files().delete(fileId=self.poll_audio_id).execute()
+                except:
+                    pass
+            if self.poll_notebook_id:
+                try:
+                    self.service.files().delete(fileId=self.poll_notebook_id).execute()
+                except:
+                    pass
+            if self.poll_output_name:
+                query = f"name='{self.poll_output_name}' and trashed=false"
+                results = self.service.files().list(q=query, fields="files(id)").execute()
+                for f in results.get("files", []):
+                    try:
+                        self.service.files().delete(fileId=f["id"]).execute()
+                    except:
+                        pass
+
         super().closeEvent(event)
 
     def google_login(self):
@@ -740,6 +765,12 @@ class NotyCaptionWindow(QMainWindow):
         fmt = self.format_combo.currentText()
         base = os.path.splitext(os.path.basename(self.input_file or "audio"))[0]
         out_path = os.path.join(self.output_folder, f"{base}_captions{fmt}")
+
+        # Check for existing local file in both modes (since out_path is local)
+        if os.path.exists(out_path):
+            reply = QMessageBox.question(self, "File Exists", f"{out_path} already exists locally.\nOverwrite?", QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.No:
+                return
 
         if self.mode == "online":
             from online import handle_online
