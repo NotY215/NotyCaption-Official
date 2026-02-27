@@ -7,21 +7,17 @@ import sys
 import os
 import json
 import shutil
-import time
-import requests
 from datetime import timedelta
 import whisper
-import torch
 from cryptography.fernet import Fernet
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QSpinBox, QPushButton, QTextEdit, QFileDialog,
-    QMessageBox, QLineEdit, QScrollArea, QSlider, QProgressBar, QDialog, QFormLayout,
+    QMessageBox, QLineEdit, QScrollArea, QSlider, QProgressBar, QDialog,
     QSizePolicy, QStyleFactory, QDesktopWidget, QGroupBox, QRadioButton,
-    QCheckBox, QFrame
 )
 from PyQt5.QtGui import QIcon, QColor, QTextCursor, QFont, QPalette
-from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal, QRect
+from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal
 from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from moviepy.editor import VideoFileClip, AudioFileClip
@@ -36,119 +32,6 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import webbrowser
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
-
-# ──────────────────────────────────────────────
-# MODEL AUTO-DOWNLOAD + SPLASH
-# ──────────────────────────────────────────────
-class ModelDownloadDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Downloading Whisper large-v3 model")
-        self.setFixedSize(520, 200)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        lbl = QLabel("First run — downloading large-v3 model (~2.9 GB)\n"
-                     "This may take 5–30 minutes depending on your internet speed.\n"
-                     "Please keep the window open.")
-        lbl.setAlignment(Qt.AlignCenter)
-        lbl.setWordWrap(True)
-        layout.addWidget(lbl)
-
-        self.progress = QProgressBar()
-        self.progress.setMinimum(0)
-        self.progress.setMaximum(100)
-        self.progress.setValue(0)
-        self.progress.setTextVisible(True)
-        layout.addWidget(self.progress)
-
-        self.status_lbl = QLabel("Preparing download...")
-        self.status_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.status_lbl)
-
-        self.setStyleSheet("""
-            QLabel { color: #e0e0e0; font-size: 14px; }
-            QProgressBar {
-                background: #2a2e34;
-                border: 1px solid #444;
-                border-radius: 6px;
-                text-align: center;
-                color: white;
-            }
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0a84ff, stop:1 #007aff);
-                border-radius: 6px;
-            }
-        """)
-
-    def update_progress(self, percent, message):
-        self.progress.setValue(int(percent))
-        self.status_lbl.setText(message)
-        QApplication.processEvents()
-
-
-def download_large_v3(parent=None):
-    model_name = "large-v3"
-    model_file = "large-v3.bin"           # ← FIXED: correct filename
-    
-    # Location: same folder as exe (frozen) or script
-    base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
-    target_path = os.path.join(base_dir, model_file)
-
-    # Already exists and looks reasonable size → skip
-    if os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000_000:
-        return target_path
-
-    dlg = ModelDownloadDialog(parent)
-    dlg.show()
-    QApplication.processEvents()
-
-    url = f"https://openaipublic.azureedge.net/whisper/models/{model_file}"
-    part_path = None  # ← Define early to avoid UnboundLocalError
-
-    try:
-        dlg.update_progress(0, "Connecting to server...")
-        response = requests.get(url, stream=True, timeout=45)
-        response.raise_for_status()
-
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        chunk_size = 1024 * 1024  # 1 MB
-
-        part_path = target_path + ".part"
-        with open(part_path, "wb") as f:
-            for data in response.iter_content(chunk_size=chunk_size):
-                if data:
-                    f.write(data)
-                    downloaded += len(data)
-                    percent = (downloaded / total_size) * 100 if total_size > 0 else 0
-                    mb_done = downloaded // (1024*1024)
-                    mb_total = total_size // (1024*1024)
-                    dlg.update_progress(percent, f"Downloading... {percent:.1f}%  ({mb_done:,} / {mb_total:,} MB)")
-                    QApplication.processEvents()
-
-        os.replace(part_path, target_path)
-        dlg.update_progress(100, "Download finished — verifying file...")
-        time.sleep(1.5)
-        dlg.accept()
-        return target_path
-
-    except Exception as e:
-        if part_path is not None and os.path.exists(part_path):
-            try:
-                os.remove(part_path)
-            except:
-                pass
-
-        dlg.reject()
-        QMessageBox.critical(None, "Download Failed",
-                             f"Could not download large-v3 model:\n{str(e)}\n\n"
-                             "You can manually place 'large-v3.bin' in the same folder as the .exe\n"
-                             "or the app will fall back to a smaller/cached model.")
-        return None
-
 
 # ──────────────────────────────────────────────
 # SETTINGS & ENCRYPTION
@@ -205,7 +88,7 @@ class SettingsDialog(QDialog):
     def __init__(self, current_settings, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
-        self.setFixedSize(540, 520)
+        self.setFixedSize(540, 500)
         lay = QVBoxLayout()
         self.setLayout(lay)
 
@@ -246,7 +129,7 @@ class SettingsDialog(QDialog):
         tmp_gb.setLayout(tmp_lay)
         lay.addWidget(tmp_gb)
 
-        mod_gb = QGroupBox("Whisper Models Folder")
+        mod_gb = QGroupBox("Whisper Models Folder (cache)")
         mod_lay = QHBoxLayout()
         self.mod_edit = QLineEdit(current_settings.get("models_dir", CURRENT_DIR))
         mod_btn = QPushButton("Browse")
@@ -276,15 +159,15 @@ class SettingsDialog(QDialog):
         if d: self.mod_edit.setText(d)
 
     def apply_close(self):
-        new_settings = {
+        new = {
             "ui_scale": self.scale_combo.currentText(),
             "theme": "Windows Default" if self.rb_win.isChecked() else
                      "Light" if self.rb_light.isChecked() else "Dark",
             "temp_dir": self.tmp_edit.text(),
             "models_dir": self.mod_edit.text(),
         }
-        save_settings(new_settings)
-        self.settingsChanged.emit(new_settings)
+        save_settings(new)
+        self.settingsChanged.emit(new)
         self.accept()
 
 
@@ -295,7 +178,7 @@ class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("NotyCaption by NotY215")
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'App.ico')
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -360,7 +243,7 @@ class NotyCaptionWindow(QMainWindow):
 
         r = 0
 
-        self.login_button = QPushButton("Login with Google (for Online mode)")
+        self.login_button = QPushButton("Login with Google (Online mode)")
         self.login_button.setMinimumHeight(54)
         self.login_button.setStyleSheet("background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #4285f4,stop:1 #357ae8); color:white; border-radius:12px;")
         self.login_button.clicked.connect(self.google_login)
@@ -368,7 +251,7 @@ class NotyCaptionWindow(QMainWindow):
         r += 1
 
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Normal (Local – large-v3)", "Online (Colab + Drive)"])
+        self.mode_combo.addItems(["Normal (Local)", "Online (Colab + Drive)"])
         self.mode_combo.setMinimumHeight(54)
         self.mode_combo.currentTextChanged.connect(self.set_mode)
         self.mode_combo.setVisible(False)
@@ -483,7 +366,7 @@ class NotyCaptionWindow(QMainWindow):
         footer.setStyleSheet("color:#6c757d; font-size:11px; margin:12px 0;")
         self.main_layout.addWidget(footer)
 
-        # State
+        # State variables
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
@@ -510,7 +393,6 @@ class NotyCaptionWindow(QMainWindow):
         self.poll_output_name = None
         self.poll_local_out = None
 
-        # Google token
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
             if creds and creds.expired and creds.refresh_token:
@@ -586,9 +468,12 @@ class NotyCaptionWindow(QMainWindow):
         self.poll_timer.stop()
 
         if self.service:
-            from online import empty_uploads, delete_temp_notebooks
-            empty_uploads(self.service)
-            delete_temp_notebooks(self.service)
+            try:
+                from online import empty_uploads, delete_temp_notebooks
+                empty_uploads(self.service)
+                delete_temp_notebooks(self.service)
+            except:
+                pass
 
         super().closeEvent(event)
 
@@ -609,19 +494,10 @@ class NotyCaptionWindow(QMainWindow):
         self.mode = "online" if "Online" in text else "normal"
 
     def load_whisper_model(self):
-        model_file = "large-v3.pt"
-        exe_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else CURRENT_DIR
-        local_path = os.path.join(exe_dir, model_file)
-
-        if os.path.exists(local_path):
-            return whisper.load_model(local_path)
-
-        # Fallback to default cache
+        # Uses Whisper's default cache (~/.cache/whisper)
+        # First run will download large-v3 automatically
         return whisper.load_model("large-v3")
 
-    # ──────────────────────────────────────────────
-    # Media Player Methods
-    # ──────────────────────────────────────────────
     def media_status(self, status):
         if status == QMediaPlayer.LoadedMedia:
             self.play_btn.setEnabled(True)
@@ -690,9 +566,6 @@ class NotyCaptionWindow(QMainWindow):
                 break
         cursor.endEditBlock()
 
-    # ──────────────────────────────────────────────
-    # Import / Enhance / Generate
-    # ──────────────────────────────────────────────
     def import_file(self):
         filter_str = (
             "Media Files (*.mp4 *.mkv *.avi *.mov *.webm *.flv *.wmv "
@@ -838,7 +711,6 @@ class NotyCaptionWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Online Mode Failed", str(e))
         else:
-            # Local mode
             try:
                 self.prog_main.setValue(10)
                 model = self.load_whisper_model()
@@ -956,20 +828,11 @@ class NotyCaptionWindow(QMainWindow):
         QMessageBox.information(self, "Edits Saved", "Changes applied.")
 
 
-# ──────────────────────────────────────────────
-# ENTRY POINT
-# ──────────────────────────────────────────────
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    # Early icon
-    icon_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'App.ico')
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'App.ico')
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
-
-    # Download large-v3 if missing
-    download_large_v3()
-
     app.setStyle('Fusion')
     win = NotyCaptionWindow()
     win.show()
