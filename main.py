@@ -744,7 +744,7 @@ class NotyCaptionWindow(QMainWindow):
         if self.mode == "online":
             from online import handle_online
             handle_online(self, enhanced_audio if use_enhanced else self.audio_file,
-                          lang_code, task, wpl, fmt, base, out_path)
+              lang_code, task, wpl, fmt, base, out_path)
         else:
             # Local mode
             try:
