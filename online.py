@@ -9,7 +9,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 import webbrowser
 import pysrt
-import sys
+
 
 def resource_path(relative_path):
     try:
@@ -68,15 +68,20 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
         notebook_id = upload_file(self.service, temp_ipynb, temp_ipynb)
         os.remove(temp_ipynb)
 
-        colab_url = f"https://colab.research.google.com/drive/{notebook_id}"
-        webbrowser.open(colab_url)
+        # Only open browser if not already opened this session
+        if not self.colab_already_opened:
+            colab_url = f"https://colab.research.google.com/drive/{notebook_id}"
+            webbrowser.open(colab_url)
+            self.colab_already_opened = True
 
         QMessageBox.information(
             self,
-            "Colab Opened",
-            "Notebook opened in browser.\n\n"
-            "Wait 60 seconds → then Runtime → Run All.\n"
-            "After completion, app auto-downloads result."
+            "Colab Session",
+            "Notebook ready.\n\n"
+            "If tab did not open, click the link manually:\n"
+            f"https://colab.research.google.com/drive/{notebook_id}\n\n"
+            "Wait 60s → Runtime → Run All.\n"
+            "App will auto-download when finished."
         )
 
         self.poll_audio_id = audio_id
@@ -262,7 +267,7 @@ def poll_for_output(self):
     try:
         self.load_downloaded_subtitles(self.poll_local_out)
     except AttributeError:
-        pass  # If not main window, skip
+        pass
 
     try:
         self.service.files().delete(fileId=self.poll_audio_id).execute()

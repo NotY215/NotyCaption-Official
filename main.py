@@ -45,7 +45,7 @@ def resource_path(relative_path):
 
 class SingleInstance:
     def __init__(self):
-        self.memory = QSharedMemory("NotyCaption_SingleInstance")
+        self.memory = QSharedMemory("NotyCaption_SingleInstance_UniqueKey")
         if self.memory.attach():
             self.memory.detach()
             sys.exit(0)
@@ -406,6 +406,7 @@ class NotyCaptionWindow(QMainWindow):
         self.poll_output_name = None
         self.poll_local_out = None
         self.is_generating = False
+        self.colab_already_opened = False  # ← NEW: prevent multiple browser tabs
 
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
@@ -509,6 +510,7 @@ class NotyCaptionWindow(QMainWindow):
 
     def set_mode(self, text):
         self.mode = "online" if "Online" in text else "normal"
+        self.colab_already_opened = False  # Reset when mode changes
 
     def load_whisper_model(self):
         return whisper.load_model("large-v3")
@@ -685,8 +687,10 @@ class NotyCaptionWindow(QMainWindow):
         if self.is_generating:
             QMessageBox.warning(self, "Busy", "Generation is already in progress. Please wait.")
             return
+
         self.is_generating = True
         self.gen_btn.setEnabled(False)
+        self.colab_already_opened = False  # Reset for this session
 
         if not self.audio_file or not os.path.exists(self.audio_file):
             QMessageBox.warning(self, "Error", "No audio loaded.")
@@ -730,6 +734,7 @@ class NotyCaptionWindow(QMainWindow):
 
         if self.mode == "online":
             try:
+                # Clean old polling
                 self.poll_timer.stop()
                 try:
                     self.poll_timer.timeout.disconnect()
@@ -874,6 +879,7 @@ class NotyCaptionWindow(QMainWindow):
             self.caption_edit.setText("\n".join(self.display_lines))
             self.generated = True
             self.edit_btn.setEnabled(True)
+            QMessageBox.information(self, "Preview Loaded", "Online subtitles loaded into editor.")
         except Exception as e:
             QMessageBox.warning(self, "Preview Load Failed", f"Could not load subtitles:\n{str(e)}")
 
@@ -898,7 +904,7 @@ class NotyCaptionWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    SingleInstance()  # Ensure only one instance
+    SingleInstance()
     app = QApplication(sys.argv)
 
     icon_path = resource_path('App.ico')
