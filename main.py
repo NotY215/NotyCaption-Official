@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
     QMessageBox, QLineEdit, QScrollArea, QSlider, QProgressBar, QDialog,
     QGroupBox, QRadioButton,
 )
+from PyQt5.QtWidgets import QDesktopWidget, QStyleFactory
 from PyQt5.QtGui import QIcon, QColor, QTextCursor, QFont, QPalette
 from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal
 from PyQt5.QtGui import QCloseEvent
@@ -33,6 +34,8 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import webbrowser
 import win32event
 import winerror
+import win32api
+
 
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
