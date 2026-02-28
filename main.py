@@ -7,6 +7,7 @@ import sys
 import os
 import json
 import shutil
+import subprocess
 from datetime import timedelta
 import whisper
 from cryptography.fernet import Fernet
@@ -34,6 +35,7 @@ import win32event
 import win32api
 import win32con
 import win32gui
+import winerror
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -54,7 +56,7 @@ class SingleInstance:
         self.lasterror = win32api.GetLastError()
 
     def already_running(self):
-        return (self.lasterror == win32con.ERROR_ALREADY_EXISTS)
+        return (self.lasterror == winerror.ERROR_ALREADY_EXISTS)
 
     def activate_window(self):
         def enum_window_callback(hwnd, title):
@@ -262,6 +264,12 @@ class NotyCaptionWindow(QMainWindow):
         settings_btn.setStyleSheet("background:#5e5ce6; color:white; border-radius:10px; font-weight:bold;")
         settings_btn.clicked.connect(self.open_settings)
         btn_row.addWidget(settings_btn)
+
+        self.download_btn = QPushButton("Download Model")
+        self.download_btn.setMinimumHeight(64)
+        self.download_btn.setStyleSheet("background:#ff9500; color:white; border-radius:10px; font-weight:bold;")
+        self.download_btn.clicked.connect(self.download_model)
+        btn_row.addWidget(self.download_btn)
 
         self.left_layout.addLayout(btn_row)
 
@@ -535,7 +543,7 @@ class NotyCaptionWindow(QMainWindow):
         self.mode_combo.blockSignals(False)
 
     def load_whisper_model(self):
-        return whisper.load_model("large-v3")
+        return whisper.load_model("large-v3", download_root=self.settings["models_dir"])
 
     def media_status(self, status):
         if status == QMediaPlayer.LoadedMedia:
@@ -704,6 +712,56 @@ class NotyCaptionWindow(QMainWindow):
                     shutil.rmtree(spleeter_out, ignore_errors=True)
             except:
                 pass
+
+    def download_model(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Download Model Options")
+        lay = QVBoxLayout()
+        rb_already = QRadioButton("Already exist (select model file)")
+        rb_custom = QRadioButton("Custom location (select folder to download)")
+        rb_default = QRadioButton("Default (app root folder)")
+        rb_default.setChecked(True)
+        lay.addWidget(rb_already)
+        lay.addWidget(rb_custom)
+        lay.addWidget(rb_default)
+        btns = QHBoxLayout()
+        ok = QPushButton("OK")
+        ok.clicked.connect(dlg.accept)
+        cancel = QPushButton("Cancel")
+        cancel.clicked.connect(dlg.reject)
+        btns.addWidget(ok)
+        btns.addWidget(cancel)
+        lay.addLayout(btns)
+        dlg.setLayout(lay)
+        if dlg.exec_() != QDialog.Accepted:
+            return
+        if rb_already.isChecked():
+            file, _ = QFileDialog.getOpenFileName(self, "Select Model File", "", "Model Files (*.pt)")
+            if not file:
+                return
+            if os.path.basename(file) != "large-v3.pt":
+                QMessageBox.warning(self, "Invalid File", "Please select 'large-v3.pt'")
+                return
+            new_dir = os.path.dirname(file)
+            self.settings["models_dir"] = new_dir
+            save_settings(self.settings)
+            QMessageBox.information(self, "Success", "Model linked successfully.")
+        else:
+            if rb_custom.isChecked():
+                path = QFileDialog.getExistingDirectory(self, "Select Download Folder")
+                if not path:
+                    return
+            else:
+                path = self.settings["models_dir"]
+            self.settings["models_dir"] = path
+            save_settings(self.settings)
+            cmd = ['cmd.exe', '/c', 'python', '-c', f"import whisper; whisper.load_model('large-v3', download_root=r'{path}')", '&&', 'echo Download complete. Press any key to close.', '&', 'pause']
+            p = subprocess.Popen(cmd)
+            p.wait()
+            if p.returncode == 0:
+                QMessageBox.information(self, "Congratulations", "You have successfully downloaded the model.")
+            else:
+                QMessageBox.warning(self, "Error", "Download failed.")
 
     def generate(self):
         if self.is_generating:
