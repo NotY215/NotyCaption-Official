@@ -3,17 +3,15 @@
 
 import os
 import json
-import sys
 from datetime import timedelta
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 import webbrowser
 import pysrt
-
+import sys
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         base_path = sys._MEIPASS
     except Exception:
@@ -22,9 +20,6 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# ==============================
-# MAIN ONLINE HANDLER
-# ==============================
 def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path):
 
     if not self.service:
@@ -32,7 +27,6 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
         return False
 
     try:
-        # Check for existing output and prompt to overwrite
         self.poll_output_name = f"{base}_captions{fmt}"
         query = f"name='{self.poll_output_name}' and trashed=false"
         results = self.service.files().list(q=query, fields="files(id,name)").execute()
@@ -44,24 +38,20 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
             for f in files:
                 self.service.files().delete(fileId=f["id"]).execute()
 
-        # Delete old notebooks to avoid clutter
         query = "name='NotyCaption_Generator.ipynb' and trashed=false"
         results = self.service.files().list(q=query, fields="files(id)").execute()
         for f in results.get("files", []):
             self.service.files().delete(fileId=f["id"]).execute()
 
-        # Upload audio
         uploads_id = get_or_create_folder(self.service, "uploads")
         audio_filename = os.path.basename(audio_to_use)
         audio_id = upload_file(self.service, audio_to_use, audio_filename, uploads_id)
 
-        # Verify upload
         query = f"name='{audio_filename}' and '{uploads_id}' in parents and trashed=false"
         results = self.service.files().list(q=query).execute()
         if not results.get("files", []):
-            raise Exception("Audio upload failed - file not found in Drive after upload. Try again.")
+            raise Exception("Audio upload failed - file not found in Drive.")
 
-        # Generate notebook with file check
         notebook_content = generate_notebook_content(
             audio_filename,
             wpl,
@@ -86,11 +76,13 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
             "Colab Opened",
             "Notebook opened in browser.\n\n"
             "Wait 60 seconds → then Runtime → Run All.\n"
-            "After completion, app auto-downloads result.\n\n"
-            "If error in Colab, check if Drive is mounted and file is visible."
+            "After completion, app auto-downloads result."
         )
 
-        # Polling setup with disconnect
+        self.poll_audio_id = audio_id
+        self.poll_notebook_id = notebook_id
+        self.poll_local_out = out_path
+
         self.poll_timer.stop()
         try:
             self.poll_timer.timeout.disconnect()
@@ -106,9 +98,6 @@ def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path)
     return True
 
 
-# ==============================
-# DRIVE HELPERS
-# ==============================
 def get_or_create_folder(service, name):
     query = f"name='{name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
     results = service.files().list(q=query, fields="files(id, name)").execute()
@@ -131,9 +120,6 @@ def upload_file(service, filepath, filename, parent_id=None):
     return file.get("id")
 
 
-# ==============================
-# NOTEBOOK GENERATOR
-# ==============================
 def generate_notebook_content(audio_filename, words_per_line, fmt, output_name, lang_code='en', task='transcribe'):
 
     def code_cell(lines):
@@ -248,16 +234,12 @@ def generate_notebook_content(audio_filename, words_per_line, fmt, output_name, 
     return notebook
 
 
-# ==============================
-# POLLING FOR OUTPUT
-# ==============================
 def poll_for_output(self):
 
     query = f"name='{self.poll_output_name}' and trashed=false"
     try:
         results = self.service.files().list(q=query, fields="files(id,name)").execute()
     except Exception as e:
-        print(f"Polling error: {str(e)}")  # Log but don't show dialog
         return
 
     files = results.get("files", [])
@@ -275,23 +257,32 @@ def poll_for_output(self):
             while not done:
                 _, done = downloader.next_chunk()
     except Exception as e:
-        print(f"Download error: {str(e)}")
         return
 
-    # Cleanup
-    try: self.service.files().delete(fileId=self.poll_audio_id).execute()
-    except: pass
-    try: self.service.files().delete(fileId=self.poll_notebook_id).execute()
-    except: pass
-    try: self.service.files().delete(fileId=file_id).execute()
-    except: pass
+    try:
+        self.load_downloaded_subtitles(self.poll_local_out)
+    except AttributeError:
+        pass  # If not main window, skip
+
+    try:
+        self.service.files().delete(fileId=self.poll_audio_id).execute()
+    except:
+        pass
+    try:
+        self.service.files().delete(fileId=self.poll_notebook_id).execute()
+    except:
+        pass
+    try:
+        self.service.files().delete(fileId=file_id).execute()
+    except:
+        pass
 
     self.poll_timer.stop()
 
     QMessageBox.information(
         self,
         "Success",
-        f"Subtitles downloaded:\n{self.poll_local_out}"
+        f"Subtitles downloaded and loaded:\n{self.poll_local_out}"
     )
 
 

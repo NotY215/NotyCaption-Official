@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy, QStyleFactory, QDesktopWidget, QGroupBox, QRadioButton,
 )
 from PyQt5.QtGui import QIcon, QColor, QTextCursor, QFont, QPalette
-from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal
+from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal, QSharedMemory
 from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from moviepy.editor import VideoFileClip, AudioFileClip
@@ -35,13 +35,25 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+
+class SingleInstance:
+    def __init__(self):
+        self.memory = QSharedMemory("NotyCaption_SingleInstance")
+        if self.memory.attach():
+            self.memory.detach()
+            sys.exit(0)
+        else:
+            self.memory.create(1)
+
+    def __del__(self):
+        self.memory.detach()
 
 
 # ──────────────────────────────────────────────
@@ -90,9 +102,6 @@ def load_settings():
         return defaults
 
 
-# ──────────────────────────────────────────────
-# SETTINGS DIALOG
-# ──────────────────────────────────────────────
 class SettingsDialog(QDialog):
     settingsChanged = pyqtSignal(dict)
 
@@ -182,9 +191,6 @@ class SettingsDialog(QDialog):
         self.accept()
 
 
-# ──────────────────────────────────────────────
-# MAIN WINDOW
-# ──────────────────────────────────────────────
 class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -209,7 +215,6 @@ class NotyCaptionWindow(QMainWindow):
         self.top_layout = QHBoxLayout()
         self.main_layout.addLayout(self.top_layout)
 
-        # Left - Editor
         self.left_panel = QWidget()
         self.left_panel.setMaximumWidth(620)
         self.left_layout = QVBoxLayout()
@@ -243,7 +248,6 @@ class NotyCaptionWindow(QMainWindow):
 
         self.left_layout.addLayout(btn_row)
 
-        # Right - Controls
         self.right_scroll = QScrollArea()
         self.right_scroll.setWidgetResizable(True)
         self.top_layout.addWidget(self.right_scroll)
@@ -328,7 +332,6 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(self.enhance_btn, r, 0, 1, 2)
         r += 1
 
-        # Bottom controls
         bottom = QHBoxLayout()
         self.main_layout.addLayout(bottom)
 
@@ -352,7 +355,6 @@ class NotyCaptionWindow(QMainWindow):
         self.gen_btn.clicked.connect(self.generate)
         bottom.addWidget(self.gen_btn)
 
-        # Progress bars
         prog_v = QVBoxLayout()
         bottom.addLayout(prog_v)
 
@@ -378,7 +380,6 @@ class NotyCaptionWindow(QMainWindow):
         footer.setStyleSheet("color:#6c757d; font-size:11px; margin:12px 0;")
         self.main_layout.addWidget(footer)
 
-        # State variables
         self.input_file = None
         self.audio_file = None
         self.output_folder = None
@@ -404,7 +405,7 @@ class NotyCaptionWindow(QMainWindow):
         self.poll_notebook_id = None
         self.poll_output_name = None
         self.poll_local_out = None
-        self.is_generating = False  # New flag to prevent multiple generates
+        self.is_generating = False
 
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
@@ -685,10 +686,12 @@ class NotyCaptionWindow(QMainWindow):
             QMessageBox.warning(self, "Busy", "Generation is already in progress. Please wait.")
             return
         self.is_generating = True
+        self.gen_btn.setEnabled(False)
 
         if not self.audio_file or not os.path.exists(self.audio_file):
             QMessageBox.warning(self, "Error", "No audio loaded.")
             self.is_generating = False
+            self.gen_btn.setEnabled(True)
             return
 
         temp_dir = self.settings.get("temp_dir", QDir.tempPath())
@@ -719,6 +722,7 @@ class NotyCaptionWindow(QMainWindow):
             reply = QMessageBox.question(self, "Overwrite?", f"{out_path} already exists.\nOverwrite?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 self.is_generating = False
+                self.gen_btn.setEnabled(True)
                 return
 
         self.prog_main.setValue(0)
@@ -737,11 +741,11 @@ class NotyCaptionWindow(QMainWindow):
                                         lang_code, task, wpl, fmt, base, out_path)
                 if not success:
                     self.is_generating = False
-                    return
+                    self.gen_btn.setEnabled(True)
             except Exception as e:
                 QMessageBox.critical(self, "Online Mode Failed", str(e))
                 self.is_generating = False
-                return
+                self.gen_btn.setEnabled(True)
         else:
             try:
                 self.prog_main.setValue(10)
@@ -832,8 +836,8 @@ class NotyCaptionWindow(QMainWindow):
 
             finally:
                 self.is_generating = False
+                self.gen_btn.setEnabled(True)
 
-        # Cleanup
         try:
             if use_enhanced and os.path.exists(enhanced_audio):
                 os.remove(enhanced_audio)
@@ -842,6 +846,36 @@ class NotyCaptionWindow(QMainWindow):
                 shutil.rmtree(spleeter_out, ignore_errors=True)
         except:
             pass
+
+    def load_downloaded_subtitles(self, file_path):
+        try:
+            self.subtitles = []
+            self.display_lines = []
+            if file_path.endswith('.srt'):
+                subs = pysrt.open(file_path)
+                for sub in subs:
+                    self.subtitles.append({
+                        "index": sub.index,
+                        "start": sub.start,
+                        "end": sub.end,
+                        "text": sub.text
+                    })
+                    self.display_lines.append(sub.text)
+            elif file_path.endswith('.ass'):
+                ass = pysubs2.load(file_path)
+                for i, event in enumerate(ass.events):
+                    self.subtitles.append({
+                        "index": i+1,
+                        "start": timedelta(milliseconds=event.start),
+                        "end": timedelta(milliseconds=event.end),
+                        "text": event.text
+                    })
+                    self.display_lines.append(event.text)
+            self.caption_edit.setText("\n".join(self.display_lines))
+            self.generated = True
+            self.edit_btn.setEnabled(True)
+        except Exception as e:
+            QMessageBox.warning(self, "Preview Load Failed", f"Could not load subtitles:\n{str(e)}")
 
     def toggle_edit(self):
         if not self.generated:
@@ -864,6 +898,7 @@ class NotyCaptionWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    SingleInstance()  # Ensure only one instance
     app = QApplication(sys.argv)
 
     icon_path = resource_path('App.ico')
