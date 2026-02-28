@@ -8,8 +8,8 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 import webbrowser
-import sys
 import pysrt
+import sys
 
 
 def resource_path(relative_path):
