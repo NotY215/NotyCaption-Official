@@ -1,5 +1,6 @@
 import sys
 import os
+import tqdm
 import json
 import shutil
 import subprocess
@@ -1024,11 +1025,6 @@ class CancellableWhisperDownloader:
     def download_model(self, model_name, download_root, progress_callback=None):
         """
         Download Whisper model with cancellation support
-        
-        Args:
-            model_name: Name of the model (e.g., "large-v1")
-            download_root: Directory to download to
-            progress_callback: Function to call with progress percentage
         """
         with self._lock:
             self._canceled = False
@@ -1043,38 +1039,41 @@ class CancellableWhisperDownloader:
             import torch.hub
             import whisper
             
+            # ─── CRITICAL FIX: Disable tqdm in frozen PyInstaller exe ───
+            if getattr(sys, 'frozen', False):
+                # Prevent tqdm from trying to write to None/closed stderr
+                tqdm.tqdm.disable = True
+                # Also redirect any stray prints
+                original_stderr = sys.stderr
+                sys.stderr = open(os.devnull, 'w')
+            
             # Save original function
             original_download = torch.hub.download_url_to_file
             
-            # Create patched function with access to self
+            # Patched version
             def patched_func(url, dst, *args, **kwargs):
                 return self.patched_download_url_to_file(original_download, url, dst, *args, **kwargs)
             
-            # Apply the patch
             torch.hub.download_url_to_file = patched_func
             
-            # Check cancellation before loading
             if self.is_canceled():
                 raise Exception("DOWNLOAD_CANCELED_BY_USER")
             
             logger.info(f"Starting download of {model_name} model to {download_root}")
             
-            # Clean up any existing corrupt files
             model_path = os.path.join(download_root, f"{model_name}.pt")
             cleanup_corrupt_models(download_root)
             
-            # Load model - this will use our patched download function
+            # This is where Whisper downloads and shows tqdm progress
             model = whisper.load_model(
                 model_name, 
                 download_root=download_root,
                 in_memory=False
             )
             
-            # Check cancellation after loading
             if self.is_canceled():
                 raise Exception("DOWNLOAD_CANCELED_BY_USER")
             
-            # Validate the downloaded model
             if not validate_model_file(model_path):
                 logger.warning("Downloaded model validation failed")
                 if os.path.exists(model_path):
@@ -1086,7 +1085,6 @@ class CancellableWhisperDownloader:
                 
             logger.info("Model downloaded and validated successfully")
             
-            # Report 100% progress
             if progress_callback:
                 progress_callback(100)
                 
@@ -1095,15 +1093,13 @@ class CancellableWhisperDownloader:
         except Exception as e:
             error_str = str(e)
             if "DOWNLOAD_CANCELED_BY_USER" in error_str:
-                logger.info("Download was canceled by user")
-                # Clean up any partial files
+                logger.info("Download canceled by user")
                 model_path = os.path.join(download_root, f"{model_name}.pt")
                 temp_path = model_path + '.tmp'
                 for path in [model_path, temp_path]:
                     if os.path.exists(path):
                         try:
                             os.remove(path)
-                            logger.info(f"Cleaned up file after cancel: {path}")
                         except:
                             pass
                 raise Exception("Download canceled by user")
@@ -1111,9 +1107,15 @@ class CancellableWhisperDownloader:
                 logger.error(f"Download error: {e}")
                 raise
         finally:
-            # Restore original function
+            # Restore original
             import torch.hub
             torch.hub.download_url_to_file = original_download
+            
+            # Restore stderr if we redirected it
+            if getattr(sys, 'frozen', False) and 'original_stderr' in locals():
+                sys.stderr.close()
+                sys.stderr = original_stderr
+            
             self._response = None
             self._temp_path = None
 
