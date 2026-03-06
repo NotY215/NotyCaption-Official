@@ -95,7 +95,7 @@ We do **not** guarantee:
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW, **NotY215** SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING FROM OR RELATED TO YOUR USE OF THE APP.
 
-Our total liability shall not exceed **₹100 INR** (one hundred Indian rupees).
+Our total liability shall not exceed **₹1 INR** (one hundred Indian rupees).
 
 ---
 
