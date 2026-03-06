@@ -216,37 +216,36 @@ def load_settings():
 
 def load_client_secrets():
     """
-    Load Google client secrets — prefers encrypted file in EXE mode
+    Load Google client secrets - prioritizes encrypted bundled file in EXE mode
     """
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        # Running as bundled EXE → look in _MEIPASS (temp extraction folder)
+        # Running as EXE - look inside bundled temp folder
         base = sys._MEIPASS
         encrypted_path = os.path.join(base, "client.notycapz")
-        logger.info(f"EXE mode: looking for bundled client.notycapz at {encrypted_path}")
-        
+        logger.info(f"EXE mode: checking bundled client.notycapz → {encrypted_path}")
+
         if os.path.exists(encrypted_path):
-            logger.info("Found bundled encrypted client.notycapz")
             try:
                 with open(encrypted_path, "r", encoding='utf-8') as f:
                     encrypted_b64 = f.read().strip()
                 decrypted = decrypt_data(encrypted_b64)
                 if decrypted and "installed" in decrypted:
-                    logger.info("Bundled client secrets decrypted successfully")
+                    logger.info("Successfully decrypted bundled client.notycapz")
                     return decrypted
                 else:
-                    logger.warning("Decryption of bundled file failed")
+                    logger.warning("Decrypted data invalid or missing 'installed'")
             except Exception as e:
-                logger.error(f"Failed to read/decrypt bundled client.notycapz: {e}")
+                logger.error(f"Failed to decrypt bundled client.notycapz: {str(e)}")
         else:
-            logger.warning("client.notycapz not found in bundle")
-    
-    # Fallback: plain client.json (dev mode or if bundled file missing)
-    if os.path.exists(CLIENT_JSON):
-        logger.info("Loading plain client.json (dev/fallback mode)")
-        with open(CLIENT_JSON, "r", encoding='utf-8') as f:
-            return json.load(f)
-    
-    logger.warning("No client secrets found at all - Online mode unavailable")
+            logger.warning("client.notycapz NOT found in EXE bundle")
+    else:
+        # Dev mode - look for plain client.json
+        if os.path.exists(CLIENT_JSON):
+            logger.info("Dev mode: loading plain client.json")
+            with open(CLIENT_JSON, "r", encoding='utf-8') as f:
+                return json.load(f)
+
+    logger.warning("No valid client secrets found → Online mode unavailable")
     return None
 
 # ========================================
