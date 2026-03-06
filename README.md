@@ -1,89 +1,134 @@
-# NotyCaption - Summary
+# NotyCaption Pro – AI-Powered Smart Caption Generator
 
-**NotyCaption** is a simple, dark-themed desktop application for automatically generating synchronized subtitle/caption files from video or audio files.
+<p align="center">
+  <br><br>
+  <strong>Generate perfectly synced, beautiful subtitles automatically with Whisper AI</strong><br>
+  Local + Online (Colab) modes • SRT/ASS support • Vocal enhancement • GPU acceleration
+</p>
 
-## Core Features
+<p align="center">
+  <a href="https://github.com/NotY215/NotyCaption/releases/latest">
+    <img src="https://img.shields.io/github/v/release/NotY215/NotyCaption?color=00c853&label=Latest%20Release&logo=windows&logoColor=white&style=for-the-badge" alt="Latest Release">
+  </a>
+  <a href="https://github.com/NotY215/NotyCaption/releases">
+    <img src="https://img.shields.io/github/downloads/NotY215/NotyCaption/total?color=4285f4&style=for-the-badge&logo=google-drive&logoColor=white" alt="Downloads">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
+  <img src="https://img.shields.io/badge/License-GNU%20GPLv3-red?style=for-the-badge" alt="License">
+</p>
 
-- **Supported Input Formats**  
-  Video: .mp4, .avi, .mkv, .mov  
-  Audio: .mp3, .wav
+<p align="center">
+  <a href="https://github.com/NotY215/NotyCaption/releases/">
+    <img src="https://img.shields.io/badge/DOWNLOAD%20INSTALLER-2.9%E2%80%93GB%20Model%20Ready-00c853?style=for-the-badge&logo=windows&logoColor=white&labelColor=111111" alt="Download Windows Installer">
+  </a>
+</p>
 
-- **AI-Powered Transcription**  
-  Uses OpenAI's Whisper model with five size options:  
-  tiny · base · small · medium · large  
-  (larger models are more accurate but slower)
+---
 
-- **Language Support**  
-  - English  
-  - Hindi (including Hinglish)
+## ✨ Features
 
-- **Caption Customization**  
-  - Words per line: 1–14  
-    → Values below 5 are only allowed when using the **large** model  
-  - Output formats: .srt (default) or .ass (advanced subtitles)
+- **AI Subtitle Generation** powered by OpenAI Whisper (local + online Colab mode)
+- **Large-v1 model support** – highest accuracy (~2.9 GB download)
+- **Words-per-line control** (1–20 words) with model validation
+- **SRT** (standard) and **ASS** (advanced styling) export
+- **Vocal-only enhancement** using Spleeter (remove background music/noise)
+- **Media playback** with real-time subtitle highlighting
+- **Editable captions** directly in the app
+- **Google Drive / Colab integration** for GPU-accelerated processing
+- **Dark & Light themes**, UI scaling, secure encrypted settings
+- **Single-instance lock** – prevents multiple app launches
+- **Model integrity check** + automatic corrupt file cleanup
+- **Cancellation-safe model download** with progress bar
 
-- **User Interface Layout**  
-  - **Left side** — Caption editor & timeline view  
-    Shows numbered captions (timestamps hidden in preview)  
-    Yellow highlight shows active line during audio playback  
-    Clicking/selecting a line jumps playback to that timestamp
 
-  - **Right side** — Controls panel  
-    AI model selection  
-    Language choice  
-    Words-per-line setting  
-    Import file button  
-    Output format selector  
-    Output folder browser
+---
 
-  - **Bottom bar**  
-    Play/Pause button (also triggered by Spacebar)  
-    Timeline seek slider  
-    Generate & Export button  
-    Two progress bars:  
-      - Main progress (blue)  
-      - Frames processed (orange)
 
-## How the App Works – Step by Step
+## 🚀 Quick Start – Windows Installer (Recommended)
 
-1. **Import a file**  
-   Click "Import Video / Audio"  
-   → If it's a video, audio is automatically extracted to a temporary .wav file
+1. Go to → [Latest Release Page](https://github.com/NotY215/NotyCaption/releases/latest)
+2. Download **NotyCaption.exe** (~80–120 MB)
+3. Run the installer (no installation needed – portable app)
+4. First launch → download **large-v1** model (~2.9 GB) when prompted
+5. Import video/audio → Generate captions → Export SRT/ASS
 
-2. **Configure settings**  
-   Choose AI model, language, words per line, and output format  
-   Select output folder (defaults to source file location)
+**Direct download link (latest stable):**
+https://github.com/NotY215/NotyCaption/releases/latest/download
 
-3. **Generate captions**  
-   Click "Generate & Export"  
-   → Whisper transcribes the audio  
-   → Captions are split into lines according to the words-per-line setting  
-   → Timestamps are calculated per line  
-   → Preview appears in the left panel (index + text only)  
-   → Progress is shown in two bars (overall + frames processed)
+---
 
-4. **Preview & playback**  
-   Use Play/Pause or Spacebar to hear audio  
-   Active caption line highlights in yellow  
-   Select any caption text → playback jumps to that time
+## 🛠️ Manual Installation (Developer / Advanced Users)
 
-5. **Edit captions (optional)**  
-   After generation, click "Edit Captions"  
-   Modify text directly (timestamps remain unchanged)  
-   Click again to save changes
+### Requirements
 
-6. **Export**  
-   File is automatically saved as:  
-   `[original_filename]_captions.srt` or `.ass`  
-   in the chosen output folder  
-   Temporary audio file is deleted after completion
+- Python 3.9+
+- Windows 10/11 (64-bit)
 
-## Quick Tips
+### Dependencies
 
-- For very short lines (1–4 words) → use **large** model  
-- For fastest results → use **tiny** or **base** models  
-- .ass format supports more styling options in compatible players  
-- Spacebar works anywhere in the app to play/pause
+```bash
+pip install --upgrade pip
+pip install pyqt5 moviepy whisper-openai pysrt pysubs2 spleeter tqdm cryptography google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
 
-**Developed by NotY215**  
-All rights reserved
+```
+### You may also need ffmpeg in PATH:
+
+* Download from: https://www.gyan.dev/ffmpeg/builds/
+* Extract and add bin folder to system PATH
+
+---
+
+### Run from source
+* git clone https://github.com/NotY215/NotyCaption.git
+* cd NotyCaption
+* python NotyCaption.py
+
+# 📥 Download & Releases
+* All pre-built binaries and model files are available here:
+* → https://github.com/NotY215/NotyCaption/releases
+* Recommended version: Latest Stable
+* File: NotyCaption.exe
+
+## 🔒 Security Notes
+
+* All settings are encrypted using Fernet (AES-128 in CBC mode + HMAC)
+* Google client secrets are encrypted in EXE builds (client.notycapz)
+* No telemetry or external tracking
+* Model files are validated for size & integrity before use
+
+
+## 🛠️ Building from Source (for Developers)
+
+* Install PyInstaller:Bashpip install pyinstaller cryptography
+* Place your client.json (Google API credentials) in the project root
+* Run the build script:Bashpython build.py
+* Output will appear in a release_YYYYMMDD_HHMMSS folder
+
+
+# ⚡ Performance Tips
+
+* Use large-v1 model for best accuracy (requires ~3 GB RAM + disk)
+* Enable GPU in online Colab mode for 5–10× faster transcription
+* Use vocal enhancement for videos with background music
+* Set 1 word per line + large model for karaoke-style subtitles
+
+
+# 📜 License
+* GNU General Public License v3.0
+* See LICENSE file for full details.
+* Copyright © 2026 NotY215
+
+## 🙏 Acknowledgments
+
+* OpenAI Whisper
+* Spleeter
+* PyQt5
+* MoviePy
+* pysrt & pysubs2 – subtitle handling
+* Google Colab & Google Drive API
+
+# Made with ❤️ in India
+* Star ⭐ the repo if you find it useful!
+* ## [Download Latest Installer ](https://github.com/NotY215/NotyCaption/releases/latest)
+
+
