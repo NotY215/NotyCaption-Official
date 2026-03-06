@@ -22,7 +22,7 @@ from cryptography.fernet import Fernet
 # ────────────────────────────────────────────────
 
 APP_NAME          = "NotyCaption"
-MAIN_SCRIPT       = "NotyCaption.py"
+MAIN_SCRIPT       = "main.py"
 ICON_FILE         = "App.ico"
 
 # Files that must exist next to this script
