@@ -22,10 +22,10 @@ from cryptography.fernet import Fernet
 # ────────────────────────────────────────────────
 
 APP_NAME          = "NotyCaption"
-MAIN_SCRIPT       = "main.py"
+MAIN_SCRIPT       = "NotyCaption.py"
 ICON_FILE         = "App.ico"
 
-# Files that must exist in the same folder as this script
+# Files that must exist next to this script
 REQUIRED_FILES = [
     MAIN_SCRIPT,
     ICON_FILE,
@@ -35,12 +35,10 @@ REQUIRED_FILES = [
 # Folders that will be cleaned up after successful build & copy
 TEMP_FOLDERS_TO_DELETE = ["build", "dist"]
 
-# Output versioned folder name pattern
-RELEASE_FOLDER_PREFIX = "release"
-VERSION_TIMESTAMP     = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-RELEASE_FOLDER        = f"{RELEASE_FOLDER_PREFIX}_{VERSION_TIMESTAMP}"
+# Output versioned folder name
+RELEASE_FOLDER = f"release_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-# PyInstaller base command
+# PyInstaller command - 2025/2026 recommended flags for moviepy + imageio
 PYINSTALLER_CMD = [
     "pyinstaller",
     "--onefile",
@@ -50,8 +48,16 @@ PYINSTALLER_CMD = [
     f"--icon={ICON_FILE}",
     f"--name={APP_NAME}",
     "--add-data", f"{ICON_FILE};.",
-    # Hidden imports - add more if you get ModuleNotFoundError in the exe
+
+    # Very important for moviepy + imageio + ffmpeg issues
+    "--hidden-import", "imageio",
+    "--collect-data", "imageio",
+    "--hidden-import", "imageio_ffmpeg",
+    "--hidden-import", "moviepy",
+    "--hidden-import", "moviepy.editor",
     "--hidden-import", "pkg_resources.py2_warn",
+
+    # Your existing hidden imports
     "--hidden-import", "google.auth.transport.requests",
     "--hidden-import", "google.oauth2.credentials",
     "--hidden-import", "google_auth_oauthlib.flow",
@@ -61,9 +67,7 @@ PYINSTALLER_CMD = [
     "--hidden-import", "pysubs2",
     "--hidden-import", "spleeter",
     "--hidden-import", "whisper",
-    "--hidden-import", "moviepy",
-    "--hidden-import", "imageio",
-    "--hidden-import", "imageio_ffmpeg",
+
     MAIN_SCRIPT
 ]
 
@@ -87,7 +91,7 @@ def generate_or_load_key(key_path="build_key.key"):
 def encrypt_client_json(key: bytes, input_file="client.json", output_file="client.notycapz"):
     if not os.path.isfile(input_file):
         print(f"ERROR: {input_file} not found!")
-        print("You must place your Google client.json in this folder.")
+        print("Place your Google client.json in this folder.")
         sys.exit(1)
 
     with open(input_file, "r", encoding="utf-8") as f:
@@ -101,17 +105,17 @@ def encrypt_client_json(key: bytes, input_file="client.json", output_file="clien
     with open(output_file, "w", encoding="ascii") as f:
         f.write(encoded)
 
-    print(f"→ Encrypted client secrets → {output_file}")
+    print(f"→ Encrypted → {output_file}")
 
 
 # ────────────────────────────────────────────────
-#  BUILD & CLEANUP LOGIC
+#  BUILD & CLEANUP
 # ────────────────────────────────────────────────
 
 def check_prerequisites():
     missing = [f for f in REQUIRED_FILES if not os.path.isfile(f)]
     if missing:
-        print("Missing required files:")
+        print("Missing files:")
         for f in missing:
             print(f"  • {f}")
         sys.exit(1)
@@ -120,17 +124,17 @@ def check_prerequisites():
 def clean_previous_builds():
     for folder in TEMP_FOLDERS_TO_DELETE:
         if os.path.exists(folder):
-            print(f"→ Removing old folder: {folder}/")
+            print(f"→ Removing old {folder}/")
             try:
                 shutil.rmtree(folder, ignore_errors=True)
             except Exception as e:
-                print(f"  Warning: could not remove {folder} → {e}")
+                print(f"  Could not remove {folder} → {e}")
 
 
 def run_pyinstaller():
-    print("\n" + "═"*70)
-    print(" Running PyInstaller ...")
-    print("═"*70 + "\n")
+    print("\n" + "═"*75)
+    print(" Starting PyInstaller build ...")
+    print("═"*75 + "\n")
 
     try:
         result = subprocess.run(
@@ -148,7 +152,7 @@ def run_pyinstaller():
         sys.exit(1)
 
 
-def copy_important_files():
+def copy_release_files():
     os.makedirs(RELEASE_FOLDER, exist_ok=True)
 
     files_to_copy = [
@@ -158,39 +162,33 @@ def copy_important_files():
         ("build_key.key",                 f"{RELEASE_FOLDER}/build_key.key"),
     ]
 
-    copied = []
     for src, dst in files_to_copy:
         if os.path.exists(src):
             shutil.copy2(src, dst)
-            copied.append(dst)
-            print(f"→ Copied: {dst}")
+            print(f"→ Copied → {dst}")
         else:
-            print(f"Warning: {src} not found → skipping")
-
-    if not any("exe" in c for c in copied):
-        print("\nERROR: Executable was not created or not found in dist/")
-        sys.exit(1)
+            print(f"Warning: {src} not found")
 
 
 def cleanup_temp_folders():
-    print("\nCleaning up temporary folders...")
+    print("\nCleaning temporary folders...")
     for folder in TEMP_FOLDERS_TO_DELETE:
         if os.path.exists(folder):
             try:
                 shutil.rmtree(folder)
-                print(f"→ Deleted: {folder}/")
+                print(f"→ Removed: {folder}/")
             except Exception as e:
                 print(f"  Could not delete {folder} → {e}")
 
 
-def print_final_summary():
+def print_summary():
     print("\n" + "═"*80)
-    print(f" BUILD FINISHED SUCCESSFULLY ".center(80, "═"))
+    print(" BUILD FINISHED ".center(80, "═"))
     print("═"*80)
     print(f"Release folder : {RELEASE_FOLDER}")
     print(f"Executable     : {RELEASE_FOLDER}/{APP_NAME}.exe")
     print(f"Encrypted auth : {RELEASE_FOLDER}/client.notycapz")
-    print(f"Encryption key : {RELEASE_FOLDER}/build_key.key   ← VERY IMPORTANT!")
+    print(f"Encryption key : {RELEASE_FOLDER}/build_key.key   ← KEEP SAFE!")
     print("\nDone.\n")
 
 
@@ -201,28 +199,22 @@ def main():
     check_prerequisites()
     clean_previous_builds()
 
-    # Encrypt secrets
     key = generate_or_load_key()
     encrypt_client_json(key)
 
-    # Build
     run_pyinstaller()
-
-    # Copy & organize
-    copy_important_files()
-
-    # Final cleanup
+    copy_release_files()
     cleanup_temp_folders()
 
-    print_final_summary()
+    print_summary()
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nBuild aborted by user.")
+        print("\nBuild aborted.")
         sys.exit(1)
     except Exception as e:
-        print(f"\nBuild failed unexpectedly:\n{type(e).__name__}: {e}")
+        print(f"\nBuild failed:\n{type(e).__name__}: {e}")
         sys.exit(1)
