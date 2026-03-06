@@ -1,7 +1,10 @@
 # build.py
 """
-Build script for NotyCaption Pro - FINAL FIXED VERSION (March 2026)
-Handles encryption + PyInstaller one-file build + cleanup
+Build script for NotyCaption
+- First: encrypt client.json → client.notycapz
+- Then: build single-file EXE named NotyCaption.exe
+- Includes client.notycapz inside the bundle
+- Main script should be renamed to main.py before running this
 """
 
 import os
@@ -14,126 +17,68 @@ import datetime
 from cryptography.fernet import Fernet
 
 # ────────────────────────────────────────────────
-# CONFIGURATION
+# CONFIG
 # ────────────────────────────────────────────────
 
-APP_NAME      = "NotyCaption"
-MAIN_SCRIPT   = "main.py"
-ICON_FILE     = "App.ico"
+EXE_NAME        = "NotyCaption"             # final .exe name
+MAIN_SCRIPT     = "main.py"                 # your renamed app code
+ICON_FILE       = "App.ico"
+CLIENT_JSON_SRC = "client.json"
+ENCRYPTED_FILE  = "client.notycapz"
 
 REQUIRED_FILES = [
     MAIN_SCRIPT,
     ICON_FILE,
-    "client.json",              # Google API credentials
+    CLIENT_JSON_SRC,
 ]
 
 RELEASE_FOLDER = f"release_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-TEMP_FOLDERS_TO_DELETE = ["build", "dist", "__pycache__"]
-
-# PyInstaller command - optimized for Whisper + moviepy + imageio + google-api issues
-PYINSTALLER_CMD = [
-    "pyinstaller",
-    "--onefile",
-    "--windowed",
-    "--clean",
-    "--noupx",
-    "--log-level=DEBUG",               # Helps debug missing modules
-    f"--icon={ICON_FILE}",
-    f"--name={APP_NAME}",
-
-    # Resources
-    "--add-data", f"{ICON_FILE};.",
-
-    # ─── CRITICAL: Collect ALL submodules and data for problematic libs ───
-    "--collect-all", "imageio",
-    "--collect-all", "imageio_ffmpeg",
-    "--collect-all", "moviepy",
-    "--collect-all", "whisper",
-    "--collect-all", "tqdm",
-    "--collect-all", "googleapiclient",
-    "--collect-all", "google_auth_oauthlib",
-    "--collect-all", "google.auth",
-
-    # Hidden imports (prevents runtime AttributeError / ModuleNotFound)
-    "--hidden-import", "imageio",
-    "--hidden-import", "imageio_ffmpeg",
-    "--hidden-import", "imageio.plugins.ffmpeg",
-    "--hidden-import", "moviepy.editor",
-    "--hidden-import", "moviepy.video.io.ffmpeg_tools",
-    "--hidden-import", "tqdm",
-    "--hidden-import", "tqdm.std",
-    "--hidden-import", "whisper",
-    "--hidden-import", "torch",
-    "--hidden-import", "pkg_resources.py2_warn",
-    "--hidden-import", "importlib.metadata",
-    "--hidden-import", "importlib_metadata",
-    "--hidden-import", "googleapiclient.discovery",
-    "--hidden-import", "googleapiclient.http",
-    "--hidden-import", "google.auth.transport.requests",
-    "--hidden-import", "google.oauth2.credentials",
-    "--hidden-import", "google_auth_oauthlib.flow",
-
-    # Exclude unused heavy modules to reduce size
-    "--exclude-module", "tkinter",
-    "--exclude-module", "matplotlib",
-    "--exclude-module", "PIL",
-    "--exclude-module", "pygame",
-
-    MAIN_SCRIPT
-]
+TEMP_FOLDERS = ["build", "dist", "__pycache__"]
 
 # ────────────────────────────────────────────────
 # ENCRYPTION
 # ────────────────────────────────────────────────
 
-def generate_or_load_key(key_path="secret-build-key.key"):
+def generate_or_load_key(key_path="build-secret.key"):
     if os.path.exists(key_path):
         with open(key_path, "rb") as f:
             return f.read()
     key = Fernet.generate_key()
     with open(key_path, "wb") as f:
         f.write(key)
-    print(f"[KEY] Created new encryption key → {key_path}")
-    print("     !! KEEP THIS FILE SAFE !!")
+    print(f"[KEY] Created new key → {key_path}   KEEP THIS SAFE!")
     return key
 
 
-def encrypt_client_json(key: bytes, input_file="client.json", output_file="client.notycapz"):
-    if not os.path.isfile(input_file):
-        print(f"[ERROR] {input_file} not found!")
-        print("Place your Google client.json in this folder.")
+def encrypt_client_file():
+    if not os.path.isfile(CLIENT_JSON_SRC):
+        print(f"[ERROR] {CLIENT_JSON_SRC} not found!")
+        print("You must place Google client.json in this folder.")
         sys.exit(1)
 
-    with open(input_file, "r", encoding="utf-8") as f:
+    key = generate_or_load_key()
+    fernet = Fernet(key)
+
+    with open(CLIENT_JSON_SRC, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    fernet = Fernet(key)
-    json_str = json.dumps(data, ensure_ascii=False, indent=2)
-    encrypted = fernet.encrypt(json_str.encode("utf-8"))
+    json_bytes = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+    encrypted = fernet.encrypt(json_bytes)
     encoded = base64.b85encode(encrypted).decode("ascii")
 
-    with open(output_file, "w", encoding="ascii") as f:
+    with open(ENCRYPTED_FILE, "w", encoding="ascii") as f:
         f.write(encoded)
 
-    print(f"[OK] Encrypted client secrets → {output_file}")
+    print(f"[OK] Encrypted {CLIENT_JSON_SRC} → {ENCRYPTED_FILE}")
 
 
 # ────────────────────────────────────────────────
-# BUILD LOGIC
+# PYINSTALLER BUILD
 # ────────────────────────────────────────────────
 
-def check_requirements():
-    missing = [f for f in REQUIRED_FILES if not os.path.isfile(f)]
-    if missing:
-        print("Missing required files:")
-        for m in missing:
-            print(f"  • {m}")
-        sys.exit(1)
-
-
-def clean_old_builds():
-    for folder in TEMP_FOLDERS_TO_DELETE:
+def clean_previous():
+    for folder in TEMP_FOLDERS:
         if os.path.exists(folder):
             print(f"[CLEAN] Removing {folder}/")
             try:
@@ -144,94 +89,128 @@ def clean_old_builds():
 
 def run_pyinstaller():
     print("\n" + "═"*90)
-    print(" STARTING PYINSTALLER BUILD (DEBUG MODE) ".center(90))
+    print(f" BUILDING {EXE_NAME}.exe ... ".center(90))
     print("═"*90 + "\n")
 
-    print("Command being executed:")
-    print(" ".join(PYINSTALLER_CMD))
+    cmd = [
+        "pyinstaller",
+        "--onefile",
+        "--windowed",
+        "--clean",
+        "--noupx",
+        "--log-level=DEBUG",
+        f"--icon={ICON_FILE}",
+        f"--name={EXE_NAME}",
+
+        # Embed icon and encrypted secrets
+        "--add-data", f"{ICON_FILE};.",
+        "--add-data", f"{ENCRYPTED_FILE};.",
+
+        # Important collections & hidden imports
+        "--collect-all", "imageio",
+        "--collect-all", "imageio_ffmpeg",
+        "--collect-all", "moviepy",
+        "--collect-all", "whisper",
+        "--collect-all", "tqdm",
+        "--collect-all", "googleapiclient",
+
+        "--hidden-import", "imageio",
+        "--hidden-import", "imageio_ffmpeg",
+        "--hidden-import", "moviepy.editor",
+        "--hidden-import", "tqdm",
+        "--hidden-import", "whisper",
+        "--hidden-import", "googleapiclient.discovery",
+        "--hidden-import", "googleapiclient.http",
+        "--hidden-import", "google.auth.transport.requests",
+        "--hidden-import", "google.oauth2.credentials",
+        "--hidden-import", "google_auth_oauthlib.flow",
+
+        MAIN_SCRIPT
+    ]
+
+    print("Command:")
+    print(" ".join(cmd))
     print()
 
     try:
-        subprocess.run(PYINSTALLER_CMD, check=True)
-        print("\nPyInstaller finished successfully.")
+        subprocess.run(cmd, check=True)
+        print("\nPyInstaller finished.")
     except subprocess.CalledProcessError as e:
         print("\nPyInstaller FAILED!")
-        print(e.stdout.decode("utf-8", errors="replace"))
+        print(e.stdout.decode(errors="replace"))
         if e.stderr:
-            print(e.stderr.decode("utf-8", errors="replace"))
+            print(e.stderr.decode(errors="replace"))
         sys.exit(1)
 
 
-def copy_release_files():
+def copy_release():
     os.makedirs(RELEASE_FOLDER, exist_ok=True)
 
-    files_to_copy = [
-        (f"dist/{APP_NAME}.exe",          f"{RELEASE_FOLDER}/{APP_NAME}.exe"),
-        ("client.notycapz",               f"{RELEASE_FOLDER}/client.notycapz"),
+    files = [
+        (f"dist/{EXE_NAME}.exe",          f"{RELEASE_FOLDER}/{EXE_NAME}.exe"),
+        (ENCRYPTED_FILE,                  f"{RELEASE_FOLDER}/{ENCRYPTED_FILE}"),
         (ICON_FILE,                       f"{RELEASE_FOLDER}/{ICON_FILE}"),
-        ("secret-build-key.key",          f"{RELEASE_FOLDER}/secret-build-key.key"),
+        ("build-secret.key",              f"{RELEASE_FOLDER}/build-secret.key"),
     ]
 
-    copied_ok = False
-    for src, dst in files_to_copy:
+    for src, dst in files:
         if os.path.exists(src):
             shutil.copy2(src, dst)
-            print(f"[COPY] → {dst}")
-            if ".exe" in dst:
-                copied_ok = True
+            print(f"[COPY] {dst}")
         else:
-            print(f"[WARN] Source not found: {src}")
-
-    if not copied_ok:
-        print("\n[ERROR] Executable was not created or not found in dist/")
-        sys.exit(1)
+            print(f"[WARN] {src} not found")
 
 
-def final_cleanup():
+def cleanup_temp():
     print("\nCleaning temporary folders...")
-    for folder in TEMP_FOLDERS_TO_DELETE:
+    for folder in TEMP_FOLDERS:
         if os.path.exists(folder):
             try:
                 shutil.rmtree(folder)
-                print(f"[RM] {folder}/ removed")
-            except Exception as e:
-                print(f"[FAIL] Could not delete {folder} → {e}")
+                print(f"[RM] {folder}/")
+            except:
+                print(f"[FAIL] Could not delete {folder}")
 
 
-def print_summary():
+def print_result():
     print("\n" + "═"*100)
-    print(" BUILD COMPLETED SUCCESSFULLY ".center(100, "═"))
+    print(" BUILD FINISHED ".center(100, "═"))
     print("═"*100)
     print(f"Release folder : {RELEASE_FOLDER}")
-    print(f"Executable     : {RELEASE_FOLDER}/{APP_NAME}.exe")
-    print(f"Encrypted auth : {RELEASE_FOLDER}/client.notycapz")
-    print(f"Encryption key : {RELEASE_FOLDER}/secret-build-key.key   ← KEEP SAFE!")
-    print("\nRun the EXE and test model download again.\n")
+    print(f"EXE            : {RELEASE_FOLDER}/{EXE_NAME}.exe")
+    print(f"Encrypted file : {RELEASE_FOLDER}/{ENCRYPTED_FILE}  (also inside EXE)")
+    print(f"Key file       : {RELEASE_FOLDER}/build-secret.key   ← KEEP SAFE!")
+    print("\nRun the EXE → it should now detect and use the encrypted client file.\n")
 
 
 def main():
-    print("NotyCaption Pro - FINAL Build Tool\n")
+    print("NotyCaption Build Tool - Fixed version\n")
     print(f"Started: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}\n")
 
-    check_requirements()
-    clean_old_builds()
+    # Step 1: Encrypt
+    encrypt_client_file()
 
-    key = generate_or_load_key()
-    encrypt_client_json(key)
+    # Step 2: Clean
+    clean_previous()
 
+    # Step 3: Build
     run_pyinstaller()
-    copy_release_files()
-    final_cleanup()
 
-    print_summary()
+    # Step 4: Copy to release folder
+    copy_release()
+
+    # Step 5: Clean temp
+    cleanup_temp()
+
+    print_result()
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nBuild aborted by user.")
+        print("\nBuild aborted.")
         sys.exit(1)
     except Exception as e:
-        print(f"\nBuild crashed:\n{type(e).__name__}: {e}")
+        print(f"\nBuild failed: {type(e).__name__}: {e}")
         sys.exit(1)

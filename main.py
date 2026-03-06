@@ -216,26 +216,37 @@ def load_settings():
 
 def load_client_secrets():
     """
-    Load Google client secrets from JSON or encrypted file.
-    Prioritizes encrypted for security in bundled EXE.
+    Load Google client secrets — prefers encrypted file in EXE mode
     """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running as bundled EXE → look in _MEIPASS (temp extraction folder)
+        base = sys._MEIPASS
+        encrypted_path = os.path.join(base, "client.notycapz")
+        logger.info(f"EXE mode: looking for bundled client.notycapz at {encrypted_path}")
+        
+        if os.path.exists(encrypted_path):
+            logger.info("Found bundled encrypted client.notycapz")
+            try:
+                with open(encrypted_path, "r", encoding='utf-8') as f:
+                    encrypted_b64 = f.read().strip()
+                decrypted = decrypt_data(encrypted_b64)
+                if decrypted and "installed" in decrypted:
+                    logger.info("Bundled client secrets decrypted successfully")
+                    return decrypted
+                else:
+                    logger.warning("Decryption of bundled file failed")
+            except Exception as e:
+                logger.error(f"Failed to read/decrypt bundled client.notycapz: {e}")
+        else:
+            logger.warning("client.notycapz not found in bundle")
+    
+    # Fallback: plain client.json (dev mode or if bundled file missing)
     if os.path.exists(CLIENT_JSON):
-        logger.info("Loading plain client.json (dev mode)")
+        logger.info("Loading plain client.json (dev/fallback mode)")
         with open(CLIENT_JSON, "r", encoding='utf-8') as f:
             return json.load(f)
-    elif os.path.exists(CLIENT_ENCRYPTED):
-        logger.info("Loading encrypted client.notycapz (EXE mode)")
-        try:
-            with open(CLIENT_ENCRYPTED, "r", encoding='utf-8') as f:
-                encrypted_b64 = f.read().strip()
-            decrypted = decrypt_data(encrypted_b64)
-            if decrypted and "installed" in decrypted:
-                logger.info("Client secrets decrypted successfully")
-                return decrypted
-        except Exception as dec_err:
-            logger.error(f"Failed to decrypt client: {dec_err}")
-    else:
-        logger.warning("No client secrets found - Online mode unavailable")
+    
+    logger.warning("No client secrets found at all - Online mode unavailable")
     return None
 
 # ========================================
