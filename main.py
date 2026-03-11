@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QGroupBox, QRadioButton, QStyleFactory, QTabWidget, QButtonGroup,
     QFrame, QGraphicsOpacityEffect, QStackedWidget, QStatusBar
 )
-from PyQt5.QtGui import QIcon, QColor, QTextCharFormat, QTextCursor, QFont, QPalette, QCloseEvent, QPixmap, QBrush, QLinearGradient, QDesktopServices
+from PyQt5.QtGui import QIcon, QColor, QTextCharFormat, QTextCursor, QFont, QPalette, QCloseEvent, QPixmap, QBrush, QLinearGradient
 from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal, QThread, pyqtSlot, QPropertyAnimation, QEasingCurve, QProcess
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from moviepy.editor import VideoFileClip, AudioFileClip
@@ -386,30 +386,44 @@ class OnlineHandler:
         self.service = None
         self.poll_timer = QTimer(parent_window)
         self.cleanup_timer = QTimer(parent_window)
+        self.retry_timer = QTimer(parent_window)
         self.poll_audio_id = None
         self.poll_notebook_id = None
         self.poll_output_name = None
         self.poll_local_out = None
         self.poll_attempts = 0
         self.max_poll_attempts = 180
+        self.retry_attempts = 0
+        self.max_retry_attempts = 5
         self._canceled = False
         self._lock = threading.Lock()
         self._current_colab_url = None
         self._cancel_lock = threading.Lock()
         self._cancel_requested = False
+        self._stop_event = threading.Event()
+        self._polling_active = False
+        self._online_status = "idle"  # idle, uploading, waiting, processing, downloading, completed, failed
         logger.info("OnlineHandler initialized")
         
         # Setup cleanup timer
         self.cleanup_timer.timeout.connect(self.cleanup_old_drive_files)
         self.cleanup_timer.start(3600000)  # Run every hour
+        
+        # Setup retry timer
+        self.retry_timer.timeout.connect(self.retry_polling)
+        self.retry_timer.setSingleShot(True)
 
     def cancel_operation(self):
         """Cancel ongoing online operation and clean up Drive files"""
         with self._cancel_lock:
             self._cancel_requested = True
             self._canceled = True
+            self._stop_event.set()
             
         logger.info("Canceling online operation")
+        
+        # Update status
+        self.update_status("canceled")
         
         # Reset progress bars
         self.parent.reset_progress_bars()
@@ -417,11 +431,53 @@ class OnlineHandler:
         # Stop polling timer
         if self.poll_timer.isActive():
             self.poll_timer.stop()
+            self._polling_active = False
+            
+        # Stop retry timer
+        if self.retry_timer.isActive():
+            self.retry_timer.stop()
             
         # Clean up Drive files
         self.cleanup_current_operation()
             
         self.parent.statusBar().showMessage("Online operation canceled", 5000)
+
+    def force_cancel_operation(self):
+        """Force cancel operation without waiting for graceful shutdown"""
+        with self._cancel_lock:
+            self._cancel_requested = True
+            self._canceled = True
+            self._stop_event.set()
+            
+        logger.info("Force canceling online operation")
+        
+        # Update status
+        self.update_status("force_canceled")
+        
+        # Reset progress bars
+        self.parent.reset_progress_bars()
+        
+        # Stop polling timer immediately
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
+            self._polling_active = False
+            
+        # Stop retry timer
+        if self.retry_timer.isActive():
+            self.retry_timer.stop()
+            
+        # Clean up Drive files
+        self.cleanup_current_operation()
+        
+        # Clear notebook URL
+        self.parent.update_notebook_url_display(None)
+            
+        self.parent.statusBar().showMessage("Online operation force canceled", 5000)
+
+    def update_status(self, status):
+        """Update online mode status"""
+        self._online_status = status
+        self.parent.update_online_status_display(status)
 
     def cleanup_current_operation(self):
         """Clean up Drive files for current operation"""
@@ -474,10 +530,28 @@ class OnlineHandler:
         """Get the current Colab notebook URL"""
         return self._current_colab_url
 
+    def retry_polling(self):
+        """Retry polling after network failure"""
+        if self._canceled or self._cancel_requested or self._stop_event.is_set():
+            return
+            
+        self.retry_attempts += 1
+        if self.retry_attempts <= self.max_retry_attempts:
+            logger.info(f"Retrying polling (attempt {self.retry_attempts}/{self.max_retry_attempts})")
+            self.parent.statusBar().showMessage(f"Network issue - retrying... ({self.retry_attempts}/{self.max_retry_attempts})", 5000)
+            self.poll_for_output()
+        else:
+            logger.warning("Max retry attempts reached")
+            self.update_status("failed")
+            self.parent.statusBar().showMessage("Network failed - check connection", 5000)
+            self.parent.show_force_cancel_option(True)
+
     def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path):
         with self._lock:
             self._canceled = False
             self._cancel_requested = False
+            self._stop_event.clear()
+            self.retry_attempts = 0
             
         if not self.service:
             QMessageBox.warning(self.parent, "Error", "Please login with Google first.")
@@ -485,8 +559,10 @@ class OnlineHandler:
             return False
 
         logger.info("Starting online mode workflow")
+        self.update_status("uploading")
+        
         try:
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 return False
                 
             self.poll_output_name = f"{base}_captions{fmt}"
@@ -504,7 +580,7 @@ class OnlineHandler:
                     self.service.files().delete(fileId=f["id"]).execute()
                     logger.info(f"Deleted existing file: {f['id']}")
 
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 return False
                 
             # Clean up any old notebook
@@ -514,7 +590,7 @@ class OnlineHandler:
                 self.service.files().delete(fileId=f["id"]).execute()
                 logger.info(f"Deleted old notebook: {f['id']}")
 
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 return False
                 
             # Upload audio
@@ -524,7 +600,7 @@ class OnlineHandler:
             logger.info(f"Uploaded audio: {audio_id}")
             self.poll_audio_id = audio_id
 
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 self.cleanup_current_operation()
                 return False
                 
@@ -539,7 +615,7 @@ class OnlineHandler:
                 audio_filename, wpl, fmt, self.poll_output_name, lang_code, task
             )
 
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 self.cleanup_current_operation()
                 return False
                 
@@ -553,7 +629,7 @@ class OnlineHandler:
             logger.info(f"Uploaded notebook: {notebook_id}")
             self.poll_notebook_id = notebook_id
 
-            if self._cancel_requested:
+            if self._stop_event.is_set():
                 self.cleanup_current_operation()
                 return False
                 
@@ -566,6 +642,9 @@ class OnlineHandler:
             
             # Update parent with notebook URL for persistent display
             self.parent.update_notebook_url_display(colab_url)
+            
+            # Update status
+            self.update_status("waiting")
             
             # Create clickable link message
             link_message = (f"<b>Notebook opened in browser</b><br><br>"
@@ -595,12 +674,14 @@ class OnlineHandler:
                 pass
             self.poll_timer.timeout.connect(lambda: self.poll_for_output())
             self.poll_timer.start(8000)
+            self._polling_active = True
 
             logger.info("Online workflow initiated successfully")
             return True
 
         except Exception as online_err:
             logger.error(f"Online mode failed: {traceback.format_exc()}")
+            self.update_status("failed")
             self.cleanup_current_operation()
             QMessageBox.critical(self.parent, "Online Mode Failed", str(online_err))
             return False
@@ -773,8 +854,9 @@ class OnlineHandler:
             logger.warning("Polling without output name set")
             return
 
-        if self._canceled or self._cancel_requested:
+        if self._canceled or self._cancel_requested or self._stop_event.is_set():
             self.poll_timer.stop()
+            self._polling_active = False
             return
 
         self.poll_attempts += 1
@@ -782,10 +864,12 @@ class OnlineHandler:
 
         if self.poll_attempts > self.max_poll_attempts:
             self.poll_timer.stop()
+            self._polling_active = False
             self.parent.is_generating = False
             self.parent.freeze_ui(False)
             self.parent.reset_progress_bars()
             self.cleanup_current_operation()
+            self.update_status("timeout")
             
             # Show timeout message with reopen link
             link_message = (f"<b>Colab Timeout / Crash Detected</b><br><br>"
@@ -814,13 +898,14 @@ class OnlineHandler:
             if files:
                 file_id = files[0]["id"]
                 logger.info(f"Output file found: {file_id}")
+                self.update_status("downloading")
                 try:
                     with open(self.poll_local_out, "wb") as f:
                         request = self.service.files().get_media(fileId=file_id)
                         downloader = MediaIoBaseDownload(f, request)
                         done = False
                         while not done:
-                            if self._canceled or self._cancel_requested:
+                            if self._canceled or self._cancel_requested or self._stop_event.is_set():
                                 logger.info("Download canceled during chunk download")
                                 return
                             status, done = downloader.next_chunk()
@@ -836,10 +921,12 @@ class OnlineHandler:
                         logger.info(f"Deleted output file: {file_id}")
                         
                     self.poll_timer.stop()
+                    self._polling_active = False
                     self.parent.is_generating = False
                     self.parent.freeze_ui(False)
                     self.parent.reset_progress_bars()
-                    self.parent.update_notebook_url_display(None)  # Clear URL display
+                    self.parent.update_notebook_url_display(None)
+                    self.update_status("completed")
                         
                     QMessageBox.information(
                         self.parent,
@@ -850,9 +937,11 @@ class OnlineHandler:
                     logger.info("Online polling complete - success")
                 except Exception as dl_err:
                     logger.error(f"Download failed: {dl_err}")
+                    self.update_status("failed")
                     QMessageBox.critical(self.parent, "Download Error", str(dl_err))
             else:
                 logger.debug(f"Poll attempt {self.poll_attempts}/{self.max_poll_attempts} — waiting...")
+                self.update_status("waiting")
                 if self.poll_attempts % 15 == 0:
                     mins = (self.poll_attempts * 8) // 60
                     self.parent.statusBar().showMessage(
@@ -860,6 +949,10 @@ class OnlineHandler:
                     )
         except Exception as poll_err:
             logger.warning(f"Poll network/drive error: {poll_err}")
+            self.update_status("network_error")
+            # Schedule retry
+            if not self.retry_timer.isActive() and not self._stop_event.is_set():
+                self.retry_timer.start(5000)  # Retry after 5 seconds
 
     def cleanup_drive(self):
         """Final cleanup on app close - only delete temporary files, not user data"""
@@ -893,6 +986,7 @@ class AudioEnhancerThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(str, bool)
     error = pyqtSignal(str)
+    status_changed = pyqtSignal(str)
 
     def __init__(self, audio_file, temp_dir, parent=None):
         super().__init__(parent)
@@ -901,35 +995,48 @@ class AudioEnhancerThread(QThread):
         self._lock = threading.Lock()
         self._is_canceled = False
         self._cancel_requested = False
+        self._stop_event = threading.Event()
         self._output_dir = None
+        self._status = "initializing"
         logger.info(f"AudioEnhancerThread initialized for {audio_file}")
 
     def cancel(self):
         with self._lock:
             self._cancel_requested = True
             self._is_canceled = True
+            self._stop_event.set()
         logger.info("Audio enhancement cancellation requested")
+        self.update_status("canceled")
 
     def request_graceful_cancel(self):
         """Request graceful cancellation without immediate termination"""
         with self._lock:
             self._cancel_requested = True
+            self._stop_event.set()
         logger.info("Audio enhancement graceful cancellation requested")
+        self.update_status("canceling")
 
     def is_canceled(self):
         with self._lock:
-            return self._is_canceled or self._cancel_requested
+            return self._is_canceled or self._cancel_requested or self._stop_event.is_set()
+
+    def update_status(self, status):
+        self._status = status
+        self.status_changed.emit(status)
 
     @pyqtSlot()
     def run(self):
         try:
             self.progress.emit(10)
+            self.update_status("starting")
             logger.info("Initializing Spleeter separator")
             
             if self.is_canceled():
                 logger.info("Enhancement canceled before start")
+                self.update_status("canceled")
                 return
                 
+            self.update_status("processing")
             separator = Separator('spleeter:2stems')
             base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
             self._output_dir = os.path.join(self.temp_dir, base_name)
@@ -937,6 +1044,7 @@ class AudioEnhancerThread(QThread):
             logger.info(f"Starting separation to {self._output_dir}")
             if self.is_canceled():
                 logger.info("Enhancement canceled during initialization")
+                self.update_status("canceled")
                 return
                 
             separator.separate_to_file(
@@ -949,6 +1057,7 @@ class AudioEnhancerThread(QThread):
             
             if self.is_canceled():
                 logger.info("Enhancement canceled - cleaning up partial output")
+                self.update_status("canceled")
                 if self._output_dir and os.path.exists(self._output_dir):
                     try:
                         shutil.rmtree(self._output_dir)
@@ -964,11 +1073,13 @@ class AudioEnhancerThread(QThread):
                     raise FileNotFoundError(f"Vocals file not generated at {vocals_path}")
 
             self.progress.emit(95)
+            self.update_status("completed")
             logger.info("Spleeter separation completed")
             self.finished.emit(vocals_path, True)
         except Exception as enhance_err:
             error_msg = f"Spleeter error: {str(enhance_err)}"
             logger.error(f"Spleeter thread error: {traceback.format_exc()}")
+            self.update_status("failed")
             self.error.emit(error_msg)
         finally:
             self.progress.emit(100)
@@ -1035,26 +1146,35 @@ class CancellableWhisperDownloader:
         self._lock = threading.Lock()
         self._response = None
         self._temp_path = None
+        self._stop_event = threading.Event()
+        self._status = "idle"
         
     def cancel(self):
         with self._lock:
             self._cancel_requested = True
             self._canceled = True
+            self._stop_event.set()
             if self._response:
                 try:
                     self._response.close()
                 except:
                     pass
         logger.info("Download cancellation requested")
+        self.update_status("canceled")
 
     def request_graceful_cancel(self):
         with self._lock:
             self._cancel_requested = True
+            self._stop_event.set()
         logger.info("Download graceful cancellation requested")
+        self.update_status("canceling")
 
     def is_canceled(self):
         with self._lock:
-            return self._canceled or self._cancel_requested
+            return self._canceled or self._cancel_requested or self._stop_event.is_set()
+        
+    def update_status(self, status):
+        self._status = status
         
     def patched_download_url_to_file(self, original_func, url, dst, *args, **kwargs):
         if self.is_canceled():
@@ -1134,12 +1254,14 @@ class CancellableWhisperDownloader:
         with self._lock:
             self._canceled = False
             self._cancel_requested = False
+            self._stop_event.clear()
         self._progress_callback = progress_callback
         self._downloaded = 0
         self._total_size = 0
         self._download_completed = False
         self._response = None
         self._temp_path = None
+        self.update_status("starting")
         
         original_download = None
         
@@ -1162,6 +1284,7 @@ class CancellableWhisperDownloader:
                 raise Exception("DOWNLOAD_CANCELED_BY_USER")
             
             logger.info(f"Starting download of {model_name} model to {download_root}")
+            self.update_status("downloading")
             
             model_path = os.path.join(download_root, f"{model_name}.pt")
             cleanup_corrupt_models(download_root)
@@ -1177,11 +1300,13 @@ class CancellableWhisperDownloader:
             
             if not validate_model_file(model_path):
                 logger.warning("Downloaded model validation failed")
+                self.update_status("failed")
                 if os.path.exists(model_path):
                     os.remove(model_path)
                 raise Exception("Model validation failed")
                 
             logger.info("Model downloaded and validated successfully")
+            self.update_status("completed")
             
             if progress_callback:
                 progress_callback(100)
@@ -1192,6 +1317,7 @@ class CancellableWhisperDownloader:
             error_str = str(e)
             if "DOWNLOAD_CANCELED_BY_USER" in error_str:
                 logger.info("Download was canceled by user")
+                self.update_status("canceled")
                 model_path = os.path.join(download_root, f"{model_name}.pt")
                 temp_path = model_path + '.tmp'
                 for path in [model_path, temp_path]:
@@ -1200,6 +1326,7 @@ class CancellableWhisperDownloader:
                 raise Exception("Download canceled by user")
             else:
                 logger.error(f"Download error: {e}")
+                self.update_status("failed")
                 raise
         finally:
             import torch.hub
@@ -1215,6 +1342,7 @@ class ModelDownloadThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(bool, str)
     canceled = pyqtSignal()
+    status_changed = pyqtSignal(str)
 
     def __init__(self, model_dir, parent=None):
         super().__init__(parent)
@@ -1224,8 +1352,10 @@ class ModelDownloadThread(QThread):
         self._download_started = False
         self._download_completed = False
         self._lock = threading.Lock()
+        self._stop_event = threading.Event()
         self._downloader = CancellableWhisperDownloader()
         self.progress_info = {"downloaded": 0, "total": 0}
+        self._status = "idle"
         logger.info(f"ModelDownloadThread initialized for {model_dir}")
 
     def cancel(self):
@@ -1233,19 +1363,40 @@ class ModelDownloadThread(QThread):
             if not self._is_canceled and self._download_started and not self._download_completed:
                 self._cancel_requested = True
                 self._is_canceled = True
+                self._stop_event.set()
                 self._downloader.cancel()
                 logger.info("Model download cancellation requested")
+                self.update_status("canceled")
 
     def request_graceful_cancel(self):
         with self._lock:
             if not self._is_canceled and self._download_started and not self._download_completed:
                 self._cancel_requested = True
+                self._stop_event.set()
                 self._downloader.request_graceful_cancel()
                 logger.info("Model download graceful cancellation requested")
+                self.update_status("canceling")
+
+    def force_cancel(self):
+        """Force cancel without waiting for graceful shutdown"""
+        with self._lock:
+            self._is_canceled = True
+            self._cancel_requested = True
+            self._stop_event.set()
+            self._downloader.cancel()
+        logger.info("Model download force canceled")
+        self.update_status("force_canceled")
+        if self.isRunning():
+            self.terminate()
+            self.wait(1000)
 
     def is_downloading(self):
         with self._lock:
             return self._download_started and not self._download_completed and not self._is_canceled
+
+    def update_status(self, status):
+        self._status = status
+        self.status_changed.emit(status)
 
     @pyqtSlot()
     def run(self):
@@ -1254,6 +1405,7 @@ class ModelDownloadThread(QThread):
             
             self.progress.emit(5)
             logger.info("Starting model download process")
+            self.update_status("starting")
             
             model_path_v1 = os.path.join(self.model_dir, "large-v1.pt")
             model_path = os.path.join(self.model_dir, "large.pt")
@@ -1261,11 +1413,13 @@ class ModelDownloadThread(QThread):
             if validate_model_file(model_path_v1):
                 logger.info("Valid large-v1 model already exists, skipping download")
                 self.progress.emit(100)
+                self.update_status("completed")
                 self.finished.emit(True, "Model already exists and is valid!")
                 return
             elif validate_model_file(model_path):
                 logger.info("Valid large model already exists, skipping download")
                 self.progress.emit(100)
+                self.update_status("completed")
                 self.finished.emit(True, "Model already exists and is valid!")
                 return
             
@@ -1279,6 +1433,7 @@ class ModelDownloadThread(QThread):
                     self.progress_info["total"] = self._downloader._total_size
                 self.progress.emit(p)
             
+            self.update_status("downloading")
             model = self._downloader.download_model(
                 "large-v1",
                 self.model_dir,
@@ -1286,8 +1441,9 @@ class ModelDownloadThread(QThread):
             )
             
             with self._lock:
-                if self._cancel_requested or self._is_canceled:
+                if self._cancel_requested or self._is_canceled or self._stop_event.is_set():
                     logger.info("Download was canceled after completion check")
+                    self.update_status("canceled")
                     self.canceled.emit()
                     return
                 self._download_completed = True
@@ -1295,6 +1451,7 @@ class ModelDownloadThread(QThread):
             if validate_model_file(model_path_v1):
                 logger.info("Model downloaded and validated successfully")
                 self.progress.emit(100)
+                self.update_status("completed")
                 self.finished.emit(True, "Model large-v1 downloaded and validated successfully!")
             else:
                 raise Exception("Downloaded model validation failed")
@@ -1305,10 +1462,12 @@ class ModelDownloadThread(QThread):
                 logger.info("Download was canceled by user")
                 with self._lock:
                     self._download_completed = True
+                self.update_status("canceled")
                 self.canceled.emit()
             elif not self._is_canceled and not self._cancel_requested:
                 error_msg = f"Download error: {str(dl_err)}"
                 logger.error(f"Model thread error: {traceback.format_exc()}")
+                self.update_status("failed")
                 self.finished.emit(False, error_msg)
         finally:
             with self._lock:
@@ -1365,6 +1524,9 @@ class NotyCaptionWindow(QMainWindow):
         self._cancel_lock = threading.Lock()
         self._operation_in_progress = False
         self._current_notebook_url = None
+        self._force_cancel_timer = QTimer(self)
+        self._force_cancel_timer.setSingleShot(True)
+        self._force_cancel_timer.timeout.connect(self.show_force_cancel_option)
 
         self.load_existing_credentials()
 
@@ -1452,9 +1614,39 @@ class NotyCaptionWindow(QMainWindow):
         self.overlay_cancel_btn.clicked.connect(lambda: self.cancel_current_operation(with_confirmation=True))
         self.overlay_cancel_btn.setEnabled(False)
 
+        self.overlay_force_cancel_btn = QPushButton("⚠️ Force Cancel (Emergency)")
+        self.overlay_force_cancel_btn.setStyleSheet("""
+            QPushButton {
+                background: #9a0000;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px 25px;
+                margin-top: 10px;
+                min-width: 200px;
+            }
+            QPushButton:hover {
+                background: #7a0000;
+            }
+            QPushButton:pressed {
+                background: #5a0000;
+            }
+            QPushButton:disabled {
+                background: #666666;
+                color: #999999;
+            }
+        """)
+        self.overlay_force_cancel_btn.clicked.connect(self.force_cancel_operation)
+        self.overlay_force_cancel_btn.setEnabled(False)
+        self.overlay_force_cancel_btn.hide()
+
         self.overlay_layout.addWidget(self.progress_container)
         self.overlay_layout.addWidget(self.overlay_cancel_btn, alignment=Qt.AlignCenter)
+        self.overlay_layout.addWidget(self.overlay_force_cancel_btn, alignment=Qt.AlignCenter)
         self.overlay_cancel_btn.setParent(self.overlay)
+        self.overlay_force_cancel_btn.setParent(self.overlay)
 
         self.download_overlay = QFrame(self.central_widget)
         self.download_overlay.setStyleSheet("""
@@ -1534,8 +1726,37 @@ class NotyCaptionWindow(QMainWindow):
             }
         """)
         self.download_cancel_btn.clicked.connect(lambda: self.cancel_current_operation(with_confirmation=True))
+        
+        self.download_force_cancel_btn = QPushButton("⚠️ Force Cancel (Emergency)")
+        self.download_force_cancel_btn.setStyleSheet("""
+            QPushButton {
+                background: #9a0000;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px 25px;
+                margin-top: 10px;
+                min-width: 200px;
+            }
+            QPushButton:hover {
+                background: #7a0000;
+            }
+            QPushButton:pressed {
+                background: #5a0000;
+            }
+            QPushButton:disabled {
+                background: #666666;
+                color: #999999;
+            }
+        """)
+        self.download_force_cancel_btn.clicked.connect(self.force_cancel_operation)
+        self.download_force_cancel_btn.hide()
+        
         download_overlay_layout.addWidget(download_container)
         download_overlay_layout.addWidget(self.download_cancel_btn, alignment=Qt.AlignCenter)
+        download_overlay_layout.addWidget(self.download_force_cancel_btn, alignment=Qt.AlignCenter)
 
         logger.info("Main window fully initialized")
 
@@ -1544,10 +1765,12 @@ class NotyCaptionWindow(QMainWindow):
             self.overlay.setGeometry(0, 0, self.central_widget.width(), self.central_widget.height())
             self.overlay.raise_()
             self.overlay_cancel_btn.raise_()
+            self.overlay_force_cancel_btn.raise_()
         if hasattr(self, 'download_overlay') and self.download_overlay.isVisible():
             self.download_overlay.setGeometry(0, 0, self.central_widget.width(), self.central_widget.height())
             self.download_overlay.raise_()
             self.download_cancel_btn.raise_()
+            self.download_force_cancel_btn.raise_()
         super().resizeEvent(event)
 
     def closeEvent(self, event: QCloseEvent):
@@ -1572,14 +1795,14 @@ class NotyCaptionWindow(QMainWindow):
         if hasattr(self, 'online_handler'):
             self.online_handler.poll_timer.stop()
             self.online_handler.cleanup_timer.stop()
+            self.online_handler.retry_timer.stop()
 
         if self.model_download_thread and self.model_download_thread.isRunning():
             logger.info("Download thread still running, requesting graceful cancellation...")
             self.model_download_thread.request_graceful_cancel()
             if not self.model_download_thread.wait(5000):
                 logger.warning("Download thread did not finish gracefully, forcing termination...")
-                self.model_download_thread.terminate()
-                self.model_download_thread.wait(1000)
+                self.model_download_thread.force_cancel()
 
         if self.enhancer_thread and self.enhancer_thread.isRunning():
             logger.info("Enhancer thread still running, requesting graceful cancellation...")
@@ -1780,17 +2003,35 @@ class NotyCaptionWindow(QMainWindow):
         
         row += 1
         
-        # Notebook URL display and reopen button
-        url_frame = QFrame()
-        url_frame.setFrameStyle(QFrame.Box)
-        url_frame.setStyleSheet("QFrame { background: #2d2d30; border: 1px solid #404040; border-radius: 5px; padding: 5px; }")
-        url_layout = QHBoxLayout(url_frame)
-        url_layout.setContentsMargins(5, 5, 5, 5)
+        # Status and URL display frame
+        status_frame = QFrame()
+        status_frame.setFrameStyle(QFrame.Box)
+        status_frame.setStyleSheet("QFrame { background: #2d2d30; border: 1px solid #404040; border-radius: 5px; padding: 5px; }")
+        status_layout = QVBoxLayout(status_frame)
+        status_layout.setContentsMargins(5, 5, 5, 5)
         
+        # Status indicator
+        status_row = QHBoxLayout()
+        status_label = QLabel("Status:")
+        status_label.setStyleSheet("color: #cccccc; font-size: 10px; font-weight: bold;")
+        status_row.addWidget(status_label)
+        
+        self.status_value = QLabel("Idle")
+        self.status_value.setStyleSheet("color: #00c853; font-size: 10px;")
+        status_row.addWidget(self.status_value)
+        status_row.addStretch()
+        status_layout.addLayout(status_row)
+        
+        # URL display
+        url_row = QHBoxLayout()
         self.url_label = QLabel("Notebook URL: Not available")
         self.url_label.setStyleSheet("color: #cccccc; font-size: 10px;")
         self.url_label.setWordWrap(True)
-        url_layout.addWidget(self.url_label, 1)
+        url_row.addWidget(self.url_label, 1)
+        status_layout.addLayout(url_row)
+        
+        # Button row
+        button_row = QHBoxLayout()
         
         self.reopen_btn = QPushButton("🔗 Reopen Notebook")
         self.reopen_btn.setMinimumHeight(30)
@@ -1801,9 +2042,22 @@ class NotyCaptionWindow(QMainWindow):
         """)
         self.reopen_btn.clicked.connect(self.reopen_notebook)
         self.reopen_btn.setEnabled(False)
-        url_layout.addWidget(self.reopen_btn)
+        button_row.addWidget(self.reopen_btn)
         
-        self.right_layout.addWidget(url_frame, row, 0, 1, 2)
+        self.copy_url_btn = QPushButton("📋 Copy URL")
+        self.copy_url_btn.setMinimumHeight(30)
+        self.copy_url_btn.setStyleSheet("""
+            QPushButton { background: #2196f3; color: white; border-radius: 5px; font-weight: bold; font-size: 10px; padding: 5px; }
+            QPushButton:hover { background: #1976d2; }
+            QPushButton:disabled { background: #666; }
+        """)
+        self.copy_url_btn.clicked.connect(self.copy_notebook_url)
+        self.copy_url_btn.setEnabled(False)
+        button_row.addWidget(self.copy_url_btn)
+        
+        status_layout.addLayout(button_row)
+        
+        self.right_layout.addWidget(status_frame, row, 0, 1, 2)
         
         logger.info("Right panel setup complete")
 
@@ -1970,6 +2224,7 @@ class NotyCaptionWindow(QMainWindow):
             self.overlay.show()
             self.overlay.raise_()
             self.overlay_cancel_btn.raise_()
+            self.overlay_force_cancel_btn.hide()
             self.overlay_cancel_btn.setEnabled(True)
             self.overlay_cancel_btn.setFocus()
             self.prog_title.setText(message)
@@ -1977,17 +2232,29 @@ class NotyCaptionWindow(QMainWindow):
             self.operation_progress.setValue(0)
             self.statusBar().showMessage(message, 0)
             self.show_cancel_only(True)
+            # Start timer to show force cancel option after 30 seconds
+            self._force_cancel_timer.start(30000)
         else:
             self._operation_in_progress = False
             self.overlay.hide()
+            self.overlay_force_cancel_btn.hide()
+            self._force_cancel_timer.stop()
             self.statusBar().clearMessage()
             self.show_cancel_only(False)
 
     def show_cancel_only(self, show=True):
+        """Make sure only cancel button is interactive on overlay"""
         self.overlay_cancel_btn.setEnabled(show)
         if show:
             self.overlay_cancel_btn.raise_()
             self.overlay_cancel_btn.setFocus()
+
+    def show_force_cancel_option(self):
+        """Show force cancel button when operation takes too long"""
+        if self._operation_in_progress and self.overlay.isVisible():
+            self.overlay_force_cancel_btn.show()
+            self.overlay_force_cancel_btn.raise_()
+            self.overlay_force_cancel_btn.setEnabled(True)
 
     def reset_progress_bars(self):
         self.operation_progress.setValue(0)
@@ -2009,10 +2276,33 @@ class NotyCaptionWindow(QMainWindow):
             self.url_label.setText(f"Notebook URL: {display_url}")
             self.url_label.setToolTip(url)
             self.reopen_btn.setEnabled(True)
+            self.copy_url_btn.setEnabled(True)
         else:
             self.url_label.setText("Notebook URL: Not available")
             self.url_label.setToolTip("")
             self.reopen_btn.setEnabled(False)
+            self.copy_url_btn.setEnabled(False)
+
+    def update_online_status_display(self, status):
+        """Update online mode status display"""
+        status_colors = {
+            "idle": "#cccccc",
+            "uploading": "#ff9800",
+            "waiting": "#2196f3",
+            "processing": "#9c27b0",
+            "downloading": "#4caf50",
+            "completed": "#00c853",
+            "failed": "#f44336",
+            "canceled": "#ff9800",
+            "force_canceled": "#9a0000",
+            "canceling": "#ff9800",
+            "timeout": "#f44336",
+            "network_error": "#ff9800"
+        }
+        color = status_colors.get(status, "#cccccc")
+        status_text = status.replace("_", " ").title()
+        self.status_value.setText(status_text)
+        self.status_value.setStyleSheet(f"color: {color}; font-size: 10px; font-weight: bold;")
 
     def reopen_notebook(self):
         """Reopen the Colab notebook in browser"""
@@ -2021,6 +2311,15 @@ class NotyCaptionWindow(QMainWindow):
             self.statusBar().showMessage("Reopening Colab notebook...", 3000)
         else:
             QMessageBox.information(self, "No Notebook", "No active Colab notebook to reopen.")
+
+    def copy_notebook_url(self):
+        """Copy notebook URL to clipboard"""
+        if self._current_notebook_url:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(self._current_notebook_url)
+            self.statusBar().showMessage("Notebook URL copied to clipboard", 3000)
+        else:
+            QMessageBox.information(self, "No URL", "No notebook URL to copy.")
 
     def open_settings_dialog(self):
         logger.info("Opening settings dialog")
@@ -2325,6 +2624,7 @@ class NotyCaptionWindow(QMainWindow):
         self.enhancer_thread.progress.connect(self.on_enhance_progress)
         self.enhancer_thread.finished.connect(self.on_enhance_finished)
         self.enhancer_thread.error.connect(self.on_enhance_error)
+        self.enhancer_thread.status_changed.connect(lambda s: self.update_online_status_display(s))
         self.enhancer_thread.start()
         logger.info("Enhancer thread started")
 
@@ -2440,6 +2740,7 @@ class NotyCaptionWindow(QMainWindow):
         self.download_overlay.show()
         self.download_overlay.raise_()
         self.download_cancel_btn.raise_()
+        self.download_force_cancel_btn.hide()
         self.download_progress.setValue(0)
         self.download_info.setText("Starting download...")
         self.download_cancel_btn.setEnabled(True)
@@ -2450,6 +2751,7 @@ class NotyCaptionWindow(QMainWindow):
         self.model_download_thread.progress.connect(self.on_download_progress)
         self.model_download_thread.finished.connect(self.on_model_download_finished)
         self.model_download_thread.canceled.connect(self.on_model_download_canceled)
+        self.model_download_thread.status_changed.connect(lambda s: self.update_online_status_display(s))
         self.model_download_thread.start()
 
         logger.info(f"Model download started to: {path}")
@@ -2542,6 +2844,7 @@ class NotyCaptionWindow(QMainWindow):
             self.enhancer_thread.progress.connect(lambda v: self.progress_update(v // 2))
             self.enhancer_thread.finished.connect(lambda p, s: self.on_auto_enhance_done(p, s))
             self.enhancer_thread.error.connect(self.on_auto_enhance_error)
+            self.enhancer_thread.status_changed.connect(lambda s: self.update_online_status_display(s))
             self.enhancer_thread.start()
             return
 
@@ -2819,8 +3122,8 @@ class NotyCaptionWindow(QMainWindow):
             if self.enhancer_thread and self.enhancer_thread.isRunning():
                 logger.info("Canceling Spleeter enhancement...")
                 self.enhancer_thread.request_graceful_cancel()
-                # Give it a moment to cancel gracefully
-                if not self.enhancer_thread.wait(3000):
+                # Give it time to cancel gracefully
+                if not self.enhancer_thread.wait(5000):
                     logger.warning("Enhancement did not cancel gracefully, forcing...")
                     self.enhancer_thread.terminate()
                     self.enhancer_thread.wait(1000)
@@ -2847,6 +3150,45 @@ class NotyCaptionWindow(QMainWindow):
             else:
                 self.statusBar().showMessage("Nothing to cancel", 3000)
 
+    def force_cancel_operation(self):
+        """Force cancel operation without waiting for graceful shutdown"""
+        logger.info("Force cancel button pressed - forcefully stopping operation")
+        
+        reply = QMessageBox.warning(
+            self,
+            "Force Cancel",
+            "⚠️ FORCE CANCEL ⚠️\n\n"
+            "This will immediately terminate the current operation.\n"
+            "This may cause corrupted files or unstable behavior.\n\n"
+            "Only use this if the operation is completely frozen.\n\n"
+            "Are you absolutely sure?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+        
+        with self._cancel_lock:
+            if hasattr(self, 'online_handler'):
+                logger.info("Force canceling online operation...")
+                self.online_handler.force_cancel_operation()
+                
+            if self.enhancer_thread and self.enhancer_thread.isRunning():
+                logger.info("Force canceling enhancement...")
+                self.enhancer_thread.terminate()
+                self.enhancer_thread.wait(1000)
+                self.enhancer_thread = None
+                
+            if self.model_download_thread and self.model_download_thread.isRunning():
+                logger.info("Force canceling download...")
+                self.model_download_thread.force_cancel()
+                
+            self.is_generating = False
+            self.freeze_ui(False)
+            self.reset_progress_bars()
+            self.update_notebook_url_display(None)
+            self.statusBar().showMessage("Operation force canceled", 5000)
+
     def _check_cancel_complete(self):
         try:
             if self._closing:
@@ -2854,8 +3196,7 @@ class NotyCaptionWindow(QMainWindow):
                 
             if self.model_download_thread and self.model_download_thread.isRunning():
                 logger.warning("Download thread still running after cancel - forcing termination")
-                self.model_download_thread.terminate()
-                self.model_download_thread.wait(1000)
+                self.model_download_thread.force_cancel()
                 self.on_model_download_canceled()
             else:
                 self.on_model_download_canceled()
