@@ -75,6 +75,508 @@ tf.get_logger().setLevel('ERROR')
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # ========================================
+# LOGGING SETUP (MUST BE FIRST)
+# ========================================
+def setup_logging():
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    log_dir = os.path.join(base_dir, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")[:-3]
+    log_file = os.path.join(log_dir, f"NotyCaption_{timestamp}.log")
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(levelname)-8s | %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, encoding='utf-8'),
+            logging.StreamHandler(sys.stdout)
+        ],
+        force=True
+    )
+    logger = logging.getLogger("NotyCaption")
+    logger.info("=== NotyCaption Secure Launch 2026 ===")
+    logger.info(f"Python version: {sys.version}")
+    logger.info(f"Working directory: {os.getcwd()}")
+    logger.info(f"Log file: {log_file}")
+    return logger
+
+# Initialize logger immediately
+logger = setup_logging()
+
+# ========================================
+# CONFIGURATION
+# ========================================
+APP_NAME = "NotyCaption"
+APP_AUTHOR = "NotY215"
+
+# Get app data directory for settings
+if getattr(sys, 'frozen', False):
+    # Running as compiled executable
+    if platform.system() == "Windows":
+        APP_DATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), f"{APP_NAME}Saves")
+    else:
+        # Linux/Mac fallback
+        APP_DATA_DIR = os.path.join(os.path.expanduser('~'), f".{APP_NAME.lower()}saves")
+else:
+    # Running in development
+    APP_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Create app data directory if it doesn't exist
+os.makedirs(APP_DATA_DIR, exist_ok=True)
+
+SETTINGS_FILE = os.path.join(APP_DATA_DIR, "settings.notcapz")
+KEY_FILE = os.path.join(APP_DATA_DIR, "key.notcapz")
+SESSION_FILE = os.path.join(APP_DATA_DIR, "session.json")
+TOKEN_FILE = os.path.join(APP_DATA_DIR, "token.json")
+CLIENT_JSON = os.path.join(APP_DATA_DIR, "client.json")
+CLIENT_ENCRYPTED = os.path.join(APP_DATA_DIR, "client.notycapz")
+
+logger.info(f"App data directory: {APP_DATA_DIR}")
+logger.info(f"PyInstaller frozen: {getattr(sys, 'frozen', False)}")
+logger.info(f"Executable path: {sys.executable if getattr(sys, 'frozen', False) else 'dev mode'}")
+logger.info(f"Client mode: {'EXE (encrypted)' if os.path.exists(CLIENT_ENCRYPTED) else 'Dev (plain)'}")
+
+# ========================================
+# HARDWARE DETECTION - IMPROVED VERSION
+# ========================================
+class HardwareDetector:
+    """Detect and report hardware capabilities with multiple fallback methods"""
+    
+    def __init__(self):
+        self.cuda_available = False
+        self.rocm_available = False
+        self.opencl_available = False
+        self.gpu_info = []
+        self.gpu_memory = []
+        self.cpu_info = ""
+        self.cpu_cores = 0
+        self.cpu_threads = 0
+        self.total_ram = 0
+        self.available_ram = 0
+        self.ram_usage = 0
+        self.disk_free = 0
+        self.disk_total = 0
+        self.tensorflow_gpu = False
+        self.pytorch_gpu = False
+        self.detect_hardware()
+        
+    def detect_hardware(self):
+        """Detect all hardware components with multiple fallback methods"""
+        self.detect_cpu()
+        self.detect_ram()
+        self.detect_disk()
+        self.detect_gpu_tensorflow()
+        self.detect_gpu_pytorch()
+        self.detect_gpu_gputil()
+        self.detect_gpu_nvidia_smi()
+        self.detect_gpu_wmi()
+        self.detect_opencl()
+        
+    def detect_cpu(self):
+        """Detect CPU information with multiple methods"""
+        try:
+            # Method 1: cpuinfo (most detailed)
+            import cpuinfo
+            cpu_info_dict = cpuinfo.get_cpu_info()
+            self.cpu_info = cpu_info_dict.get('brand_raw', 'Unknown CPU')
+            self.cpu_cores = cpu_info_dict.get('count', 0)
+            if 'hz_actual_friendly' in cpu_info_dict:
+                self.cpu_info += f" @ {cpu_info_dict['hz_actual_friendly']}"
+        except:
+            try:
+                # Method 2: platform module
+                import platform
+                self.cpu_info = platform.processor()
+                if not self.cpu_info or self.cpu_info == '':
+                    self.cpu_info = platform.machine()
+                
+                # Method 3: multiprocessing for core count
+                import multiprocessing
+                self.cpu_cores = multiprocessing.cpu_count()
+                self.cpu_threads = self.cpu_cores
+                
+                # Method 4: psutil for more details
+                try:
+                    import psutil
+                    cpu_freq = psutil.cpu_freq()
+                    if cpu_freq:
+                        self.cpu_info += f" @ {cpu_freq.current:.0f}MHz"
+                    self.cpu_cores = psutil.cpu_count(logical=False)
+                    self.cpu_threads = psutil.cpu_count(logical=True)
+                except:
+                    pass
+            except:
+                self.cpu_info = "Unknown CPU"
+                self.cpu_cores = 0
+                
+        logger.info(f"CPU detected: {self.cpu_info} ({self.cpu_cores} cores)")
+        
+    def detect_ram(self):
+        """Detect RAM information"""
+        try:
+            import psutil
+            mem = psutil.virtual_memory()
+            self.total_ram = mem.total / (1024**3)  # GB
+            self.available_ram = mem.available / (1024**3)
+            self.ram_usage = mem.percent
+        except:
+            try:
+                # Fallback method for RAM detection
+                import os
+                if os.name == 'nt':  # Windows
+                    import ctypes
+                    kernel32 = ctypes.windll.kernel32
+                    class MEMORYSTATUSEX(ctypes.Structure):
+                        _fields_ = [
+                            ("dwLength", ctypes.c_ulong),
+                            ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong),
+                            ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong),
+                            ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong),
+                            ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                        ]
+                    memoryStatus = MEMORYSTATUSEX()
+                    memoryStatus.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+                    if kernel32.GlobalMemoryStatusEx(ctypes.byref(memoryStatus)):
+                        self.total_ram = memoryStatus.ullTotalPhys / (1024**3)
+                        self.available_ram = memoryStatus.ullAvailPhys / (1024**3)
+                else:  # Linux/Mac
+                    with open('/proc/meminfo', 'r') as f:
+                        lines = f.readlines()
+                        for line in lines:
+                            if 'MemTotal' in line:
+                                self.total_ram = int(line.split()[1]) / (1024**2)  # Convert KB to GB
+                            if 'MemAvailable' in line:
+                                self.available_ram = int(line.split()[1]) / (1024**2)
+            except:
+                self.total_ram = 0
+                self.available_ram = 0
+                
+        logger.info(f"RAM detected: {self.total_ram:.1f}GB total, {self.available_ram:.1f}GB available")
+        
+    def detect_disk(self):
+        """Detect disk space"""
+        try:
+            import psutil
+            disk = psutil.disk_usage('/')
+            self.disk_total = disk.total / (1024**3)
+            self.disk_free = disk.free / (1024**3)
+        except:
+            try:
+                import shutil
+                total, used, free = shutil.disk_usage('/')
+                self.disk_total = total / (1024**3)
+                self.disk_free = free / (1024**3)
+            except:
+                self.disk_total = 0
+                self.disk_free = 0
+                
+    def detect_gpu_tensorflow(self):
+        """Detect GPU using TensorFlow"""
+        try:
+            import tensorflow as tf
+            gpus = tf.config.list_physical_devices('GPU')
+            if gpus:
+                self.tensorflow_gpu = True
+                self.cuda_available = True
+                for i, gpu in enumerate(gpus):
+                    try:
+                        # Try to get GPU details
+                        details = tf.config.experimental.get_device_details(gpu)
+                        if details:
+                            gpu_name = details.get('device_name', f'GPU {i}')
+                            compute_capability = details.get('compute_capability', '')
+                            if compute_capability:
+                                gpu_name += f" (CC {compute_capability})"
+                        else:
+                            gpu_name = str(gpu)
+                    except:
+                        gpu_name = str(gpu)
+                    
+                    # Get memory info if possible
+                    try:
+                        memory_info = tf.config.experimental.get_memory_info(f'GPU:{i}')
+                        if memory_info and 'current' in memory_info:
+                            memory_mb = memory_info['current'] / (1024**2)
+                            gpu_name += f" - {memory_mb:.0f}MB used"
+                    except:
+                        pass
+                        
+                    self.gpu_info.append(gpu_name)
+                    logger.info(f"TensorFlow GPU detected: {gpu_name}")
+        except:
+            self.tensorflow_gpu = False
+            
+    def detect_gpu_pytorch(self):
+        """Detect GPU using PyTorch"""
+        try:
+            import torch
+            if torch.cuda.is_available():
+                self.pytorch_gpu = True
+                self.cuda_available = True
+                count = torch.cuda.device_count()
+                for i in range(count):
+                    try:
+                        gpu_name = torch.cuda.get_device_name(i)
+                        try:
+                            memory_allocated = torch.cuda.memory_allocated(i) / (1024**2)
+                            memory_reserved = torch.cuda.memory_reserved(i) / (1024**2)
+                            gpu_name += f" - {memory_allocated:.0f}MB/{memory_reserved:.0f}MB"
+                        except:
+                            pass
+                        if gpu_name not in self.gpu_info:
+                            self.gpu_info.append(gpu_name)
+                            logger.info(f"PyTorch GPU detected: {gpu_name}")
+                    except:
+                        pass
+        except:
+            self.pytorch_gpu = False
+            
+    def detect_gpu_gputil(self):
+        """Detect GPU using GPUtil (most detailed)"""
+        try:
+            import GPUtil
+            gpus = GPUtil.getGPUs()
+            if gpus:
+                self.cuda_available = True
+                for gpu in gpus:
+                    gpu_name = f"{gpu.name}"
+                    if hasattr(gpu, 'memoryTotal') and gpu.memoryTotal:
+                        gpu_name += f" - {gpu.memoryTotal:.0f}MB"
+                    if hasattr(gpu, 'temperature') and gpu.temperature:
+                        gpu_name += f" - {gpu.temperature:.0f}°C"
+                    if hasattr(gpu, 'load') and gpu.load:
+                        gpu_name += f" - Load: {gpu.load*100:.0f}%"
+                    
+                    # Store memory info separately
+                    if hasattr(gpu, 'memoryTotal'):
+                        self.gpu_memory.append({
+                            'name': gpu.name,
+                            'total': gpu.memoryTotal,
+                            'used': gpu.memoryUsed if hasattr(gpu, 'memoryUsed') else 0,
+                            'free': gpu.memoryFree if hasattr(gpu, 'memoryFree') else 0
+                        })
+                    
+                    if gpu_name not in self.gpu_info:
+                        self.gpu_info.append(gpu_name)
+                        logger.info(f"GPUtil GPU detected: {gpu_name}")
+        except:
+            pass
+            
+    def detect_gpu_nvidia_smi(self):
+        """Detect GPU using nvidia-smi command line"""
+        if self.gpu_info:  # Already have GPU info
+            return
+            
+        try:
+            import subprocess
+            import shutil
+            
+            # Check if nvidia-smi is available
+            nvidia_smi_path = shutil.which('nvidia-smi')
+            if nvidia_smi_path:
+                # Get GPU info
+                result = subprocess.run(
+                    [nvidia_smi_path, '--query-gpu=name,memory.total,memory.used,memory.free,temperature.gpu', '--format=csv,noheader'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if result.returncode == 0 and result.stdout:
+                    lines = result.stdout.strip().split('\n')
+                    for line in lines:
+                        if line.strip():
+                            parts = [p.strip() for p in line.split(',')]
+                            if len(parts) >= 1:
+                                gpu_name = parts[0]
+                                if len(parts) >= 2:
+                                    gpu_name += f" - {parts[1]}"
+                                if len(parts) >= 5:
+                                    gpu_name += f" - {parts[4]}°C"
+                                self.gpu_info.append(gpu_name)
+                                self.cuda_available = True
+                                logger.info(f"nvidia-smi GPU detected: {gpu_name}")
+        except:
+            pass
+            
+    def detect_gpu_wmi(self):
+        """Detect GPU using WMI on Windows"""
+        if self.gpu_info or not sys.platform.startswith('win'):
+            return
+            
+        try:
+            import wmi
+            c = wmi.WMI()
+            for gpu in c.Win32_VideoController():
+                gpu_name = gpu.Name
+                if gpu.AdapterRAM:
+                    ram_gb = int(gpu.AdapterRAM) / (1024**3)
+                    gpu_name += f" - {ram_gb:.1f}GB"
+                self.gpu_info.append(gpu_name)
+                # Could be Intel, AMD, or NVIDIA
+                if 'nvidia' in gpu_name.lower() or 'amd' in gpu_name.lower():
+                    self.cuda_available = True
+                logger.info(f"WMI GPU detected: {gpu_name}")
+        except:
+            pass
+            
+    def detect_opencl(self):
+        """Detect OpenCL capability"""
+        try:
+            import pyopencl as cl
+            platforms = cl.get_platforms()
+            if platforms:
+                self.opencl_available = True
+                for platform in platforms:
+                    devices = platform.get_devices()
+                    for device in devices:
+                        if device.type == cl.device_type.GPU:
+                            gpu_name = f"OpenCL: {device.name}"
+                            if gpu_name not in self.gpu_info:
+                                self.gpu_info.append(gpu_name)
+                                logger.info(f"OpenCL GPU detected: {gpu_name}")
+        except:
+            self.opencl_available = False
+            
+    def get_acceleration_status(self):
+        """Get human-readable acceleration status with recommendations"""
+        if self.cuda_available:
+            return "gpu", f"✅ GPU Acceleration Available\n{chr(10).join(self.gpu_info)}"
+        elif self.rocm_available:
+            return "gpu", f"✅ ROCm Acceleration Available\n{chr(10).join(self.gpu_info)}"
+        elif self.opencl_available:
+            return "gpu", f"⚠️ OpenCL Available (Limited Acceleration)\n{chr(10).join(self.gpu_info)}"
+        else:
+            cpu_rec = self.get_cpu_recommendation()
+            return "cpu", f"⚠️ CPU Mode Only\nCPU: {self.cpu_info}\n{cpu_rec}"
+            
+    def get_cpu_recommendation(self):
+        """Get CPU-based recommendations"""
+        if self.cpu_cores >= 8:
+            return "✓ High-performance CPU detected - Good for processing"
+        elif self.cpu_cores >= 4:
+            return "✓ Medium-performance CPU - Will work but may be slower"
+        else:
+            return "! Low-performance CPU - Consider using online mode with GPU"
+            
+    def get_memory_status(self):
+        """Get memory status with warnings"""
+        status = f"RAM: {self.available_ram:.1f}GB / {self.total_ram:.1f}GB ({self.ram_usage:.0f}% used)"
+        if self.available_ram < 2:
+            status += "\n⚠️ Low memory! Close other applications"
+        elif self.available_ram < 4:
+            status += "\n⚠️ Limited memory available"
+        return status
+        
+    def get_disk_status(self):
+        """Get disk status"""
+        return f"Disk: {self.disk_free:.1f}GB free / {self.disk_total:.1f}GB total"
+        
+    def get_detailed_info(self):
+        """Get detailed hardware info for display"""
+        info = []
+        info.append("=" * 50)
+        info.append("HARDWARE DETECTION REPORT")
+        info.append("=" * 50)
+        
+        # CPU Info
+        info.append(f"\n📌 CPU:")
+        info.append(f"   Model: {self.cpu_info}")
+        info.append(f"   Cores: {self.cpu_cores} physical, {self.cpu_threads} logical")
+        
+        # RAM Info
+        info.append(f"\n📌 Memory:")
+        info.append(f"   Total: {self.total_ram:.1f} GB")
+        info.append(f"   Available: {self.available_ram:.1f} GB")
+        info.append(f"   Usage: {self.ram_usage:.0f}%")
+        
+        # Disk Info
+        info.append(f"\n📌 Storage:")
+        info.append(self.get_disk_status())
+        
+        # GPU Info
+        info.append(f"\n📌 Graphics:")
+        if self.gpu_info:
+            for i, gpu in enumerate(self.gpu_info, 1):
+                info.append(f"   GPU {i}: {gpu}")
+                
+            # Memory details if available
+            if self.gpu_memory:
+                for mem in self.gpu_memory:
+                    info.append(f"   VRAM: {mem['used']:.0f}MB / {mem['total']:.0f}MB used")
+        else:
+            info.append("   No GPU detected")
+            
+        # Acceleration Capabilities
+        info.append(f"\n📌 Acceleration:")
+        info.append(f"   CUDA: {'✅ Available' if self.cuda_available else '❌ Not Available'}")
+        info.append(f"   ROCm: {'✅ Available' if self.rocm_available else '❌ Not Available'}")
+        info.append(f"   OpenCL: {'✅ Available' if self.opencl_available else '❌ Not Available'}")
+        info.append(f"   TensorFlow GPU: {'✅ Yes' if self.tensorflow_gpu else '❌ No'}")
+        info.append(f"   PyTorch GPU: {'✅ Yes' if self.pytorch_gpu else '❌ No'}")
+        
+        # Recommendations
+        info.append(f"\n📌 Recommendations:")
+        accel_type, accel_msg = self.get_acceleration_status()
+        info.append(f"   {accel_msg}")
+        
+        info.append("=" * 50)
+        return info
+        
+    def get_performance_estimate(self):
+        """Get estimated performance for different tasks"""
+        if self.cuda_available:
+            return {
+                'transcription': 'Very Fast (GPU accelerated)',
+                'enhancement': 'Fast',
+                'model_download': 'Limited by internet speed'
+            }
+        elif self.cpu_cores >= 8:
+            return {
+                'transcription': 'Fast (Multi-core CPU)',
+                'enhancement': 'Moderate',
+                'model_download': 'Limited by internet speed'
+            }
+        elif self.cpu_cores >= 4:
+            return {
+                'transcription': 'Moderate',
+                'enhancement': 'Slow',
+                'model_download': 'Limited by internet speed'
+            }
+        else:
+            return {
+                'transcription': 'Slow - Use online mode',
+                'enhancement': 'Very Slow - Use online mode',
+                'model_download': 'Limited by internet speed'
+            }
+
+# Initialize hardware detector
+try:
+    hardware_detector = HardwareDetector()
+    logger.info("Hardware detector initialized successfully")
+    accel_type, accel_info = hardware_detector.get_acceleration_status()
+    logger.info(f"Hardware acceleration: {accel_type}")
+    logger.info(f"Hardware info: {accel_info}")
+    logger.info(f"Memory: {hardware_detector.get_memory_status()}")
+except Exception as e:
+    logger.error(f"Failed to initialize hardware detector: {e}")
+    # Create a minimal fallback
+    class MinimalHardwareDetector:
+        def get_acceleration_status(self): return "cpu", "⚠️ Hardware detection failed"
+        def get_memory_status(self): return "Memory: Unknown"
+        def get_detailed_info(self): return ["Hardware detection failed"]
+        def get_performance_estimate(self): return {}
+    hardware_detector = MinimalHardwareDetector()
+
+# ========================================
 # TRANSLATIONS
 # ========================================
 TRANSLATIONS = {
@@ -676,512 +1178,6 @@ TRANSLATIONS = {
         'settings_title': 'NotyCaption設定 - セキュアエディション',
     }
 }
-
-# ========================================
-# HARDWARE DETECTION - IMPROVED VERSION
-# ========================================
-class HardwareDetector:
-    """Detect and report hardware capabilities with multiple fallback methods"""
-    
-    def __init__(self):
-        self.cuda_available = False
-        self.rocm_available = False
-        self.opencl_available = False
-        self.gpu_info = []
-        self.gpu_memory = []
-        self.cpu_info = ""
-        self.cpu_cores = 0
-        self.cpu_threads = 0
-        self.total_ram = 0
-        self.available_ram = 0
-        self.ram_usage = 0
-        self.disk_free = 0
-        self.disk_total = 0
-        self.tensorflow_gpu = False
-        self.pytorch_gpu = False
-        self.detect_hardware()
-        
-    def detect_hardware(self):
-        """Detect all hardware components with multiple fallback methods"""
-        self.detect_cpu()
-        self.detect_ram()
-        self.detect_disk()
-        self.detect_gpu_tensorflow()
-        self.detect_gpu_pytorch()
-        self.detect_gpu_gputil()
-        self.detect_gpu_nvidia_smi()
-        self.detect_gpu_wmi()
-        self.detect_opencl()
-        
-    def detect_cpu(self):
-        """Detect CPU information with multiple methods"""
-        try:
-            # Method 1: cpuinfo (most detailed)
-            import cpuinfo
-            cpu_info_dict = cpuinfo.get_cpu_info()
-            self.cpu_info = cpu_info_dict.get('brand_raw', 'Unknown CPU')
-            self.cpu_cores = cpu_info_dict.get('count', 0)
-            if 'hz_actual_friendly' in cpu_info_dict:
-                self.cpu_info += f" @ {cpu_info_dict['hz_actual_friendly']}"
-        except:
-            try:
-                # Method 2: platform module
-                import platform
-                self.cpu_info = platform.processor()
-                if not self.cpu_info or self.cpu_info == '':
-                    self.cpu_info = platform.machine()
-                
-                # Method 3: multiprocessing for core count
-                import multiprocessing
-                self.cpu_cores = multiprocessing.cpu_count()
-                self.cpu_threads = self.cpu_cores
-                
-                # Method 4: psutil for more details
-                try:
-                    import psutil
-                    cpu_freq = psutil.cpu_freq()
-                    if cpu_freq:
-                        self.cpu_info += f" @ {cpu_freq.current:.0f}MHz"
-                    self.cpu_cores = psutil.cpu_count(logical=False)
-                    self.cpu_threads = psutil.cpu_count(logical=True)
-                except:
-                    pass
-            except:
-                self.cpu_info = "Unknown CPU"
-                self.cpu_cores = 0
-                
-        logger.info(f"CPU detected: {self.cpu_info} ({self.cpu_cores} cores)")
-        
-    def detect_ram(self):
-        """Detect RAM information"""
-        try:
-            import psutil
-            mem = psutil.virtual_memory()
-            self.total_ram = mem.total / (1024**3)  # GB
-            self.available_ram = mem.available / (1024**3)
-            self.ram_usage = mem.percent
-        except:
-            try:
-                # Fallback method for RAM detection
-                import os
-                if os.name == 'nt':  # Windows
-                    import ctypes
-                    kernel32 = ctypes.windll.kernel32
-                    class MEMORYSTATUSEX(ctypes.Structure):
-                        _fields_ = [
-                            ("dwLength", ctypes.c_ulong),
-                            ("dwMemoryLoad", ctypes.c_ulong),
-                            ("ullTotalPhys", ctypes.c_ulonglong),
-                            ("ullAvailPhys", ctypes.c_ulonglong),
-                            ("ullTotalPageFile", ctypes.c_ulonglong),
-                            ("ullAvailPageFile", ctypes.c_ulonglong),
-                            ("ullTotalVirtual", ctypes.c_ulonglong),
-                            ("ullAvailVirtual", ctypes.c_ulonglong),
-                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
-                        ]
-                    memoryStatus = MEMORYSTATUSEX()
-                    memoryStatus.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
-                    if kernel32.GlobalMemoryStatusEx(ctypes.byref(memoryStatus)):
-                        self.total_ram = memoryStatus.ullTotalPhys / (1024**3)
-                        self.available_ram = memoryStatus.ullAvailPhys / (1024**3)
-                else:  # Linux/Mac
-                    with open('/proc/meminfo', 'r') as f:
-                        lines = f.readlines()
-                        for line in lines:
-                            if 'MemTotal' in line:
-                                self.total_ram = int(line.split()[1]) / (1024**2)  # Convert KB to GB
-                            if 'MemAvailable' in line:
-                                self.available_ram = int(line.split()[1]) / (1024**2)
-            except:
-                self.total_ram = 0
-                self.available_ram = 0
-                
-        logger.info(f"RAM detected: {self.total_ram:.1f}GB total, {self.available_ram:.1f}GB available")
-        
-    def detect_disk(self):
-        """Detect disk space"""
-        try:
-            import psutil
-            disk = psutil.disk_usage('/')
-            self.disk_total = disk.total / (1024**3)
-            self.disk_free = disk.free / (1024**3)
-        except:
-            try:
-                import shutil
-                total, used, free = shutil.disk_usage('/')
-                self.disk_total = total / (1024**3)
-                self.disk_free = free / (1024**3)
-            except:
-                self.disk_total = 0
-                self.disk_free = 0
-                
-    def detect_gpu_tensorflow(self):
-        """Detect GPU using TensorFlow"""
-        try:
-            import tensorflow as tf
-            gpus = tf.config.list_physical_devices('GPU')
-            if gpus:
-                self.tensorflow_gpu = True
-                self.cuda_available = True
-                for i, gpu in enumerate(gpus):
-                    try:
-                        # Try to get GPU details
-                        details = tf.config.experimental.get_device_details(gpu)
-                        if details:
-                            gpu_name = details.get('device_name', f'GPU {i}')
-                            compute_capability = details.get('compute_capability', '')
-                            if compute_capability:
-                                gpu_name += f" (CC {compute_capability})"
-                        else:
-                            gpu_name = str(gpu)
-                    except:
-                        gpu_name = str(gpu)
-                    
-                    # Get memory info if possible
-                    try:
-                        memory_info = tf.config.experimental.get_memory_info(f'GPU:{i}')
-                        if memory_info and 'current' in memory_info:
-                            memory_mb = memory_info['current'] / (1024**2)
-                            gpu_name += f" - {memory_mb:.0f}MB used"
-                    except:
-                        pass
-                        
-                    self.gpu_info.append(gpu_name)
-                    logger.info(f"TensorFlow GPU detected: {gpu_name}")
-        except:
-            self.tensorflow_gpu = False
-            
-    def detect_gpu_pytorch(self):
-        """Detect GPU using PyTorch"""
-        try:
-            import torch
-            if torch.cuda.is_available():
-                self.pytorch_gpu = True
-                self.cuda_available = True
-                count = torch.cuda.device_count()
-                for i in range(count):
-                    try:
-                        gpu_name = torch.cuda.get_device_name(i)
-                        try:
-                            memory_allocated = torch.cuda.memory_allocated(i) / (1024**2)
-                            memory_reserved = torch.cuda.memory_reserved(i) / (1024**2)
-                            gpu_name += f" - {memory_allocated:.0f}MB/{memory_reserved:.0f}MB"
-                        except:
-                            pass
-                        if gpu_name not in self.gpu_info:
-                            self.gpu_info.append(gpu_name)
-                            logger.info(f"PyTorch GPU detected: {gpu_name}")
-                    except:
-                        pass
-        except:
-            self.pytorch_gpu = False
-            
-    def detect_gpu_gputil(self):
-        """Detect GPU using GPUtil (most detailed)"""
-        try:
-            import GPUtil
-            gpus = GPUtil.getGPUs()
-            if gpus:
-                self.cuda_available = True
-                for gpu in gpus:
-                    gpu_name = f"{gpu.name}"
-                    if hasattr(gpu, 'memoryTotal') and gpu.memoryTotal:
-                        gpu_name += f" - {gpu.memoryTotal:.0f}MB"
-                    if hasattr(gpu, 'temperature') and gpu.temperature:
-                        gpu_name += f" - {gpu.temperature:.0f}°C"
-                    if hasattr(gpu, 'load') and gpu.load:
-                        gpu_name += f" - Load: {gpu.load*100:.0f}%"
-                    
-                    # Store memory info separately
-                    if hasattr(gpu, 'memoryTotal'):
-                        self.gpu_memory.append({
-                            'name': gpu.name,
-                            'total': gpu.memoryTotal,
-                            'used': gpu.memoryUsed if hasattr(gpu, 'memoryUsed') else 0,
-                            'free': gpu.memoryFree if hasattr(gpu, 'memoryFree') else 0
-                        })
-                    
-                    if gpu_name not in self.gpu_info:
-                        self.gpu_info.append(gpu_name)
-                        logger.info(f"GPUtil GPU detected: {gpu_name}")
-        except:
-            pass
-            
-    def detect_gpu_nvidia_smi(self):
-        """Detect GPU using nvidia-smi command line"""
-        if self.gpu_info:  # Already have GPU info
-            return
-            
-        try:
-            import subprocess
-            import shutil
-            
-            # Check if nvidia-smi is available
-            nvidia_smi_path = shutil.which('nvidia-smi')
-            if nvidia_smi_path:
-                # Get GPU info
-                result = subprocess.run(
-                    [nvidia_smi_path, '--query-gpu=name,memory.total,memory.used,memory.free,temperature.gpu', '--format=csv,noheader'],
-                    capture_output=True,
-                    text=True,
-                    timeout=5
-                )
-                if result.returncode == 0 and result.stdout:
-                    lines = result.stdout.strip().split('\n')
-                    for line in lines:
-                        if line.strip():
-                            parts = [p.strip() for p in line.split(',')]
-                            if len(parts) >= 1:
-                                gpu_name = parts[0]
-                                if len(parts) >= 2:
-                                    gpu_name += f" - {parts[1]}"
-                                if len(parts) >= 5:
-                                    gpu_name += f" - {parts[4]}°C"
-                                self.gpu_info.append(gpu_name)
-                                self.cuda_available = True
-                                logger.info(f"nvidia-smi GPU detected: {gpu_name}")
-        except:
-            pass
-            
-    def detect_gpu_wmi(self):
-        """Detect GPU using WMI on Windows"""
-        if self.gpu_info or not sys.platform.startswith('win'):
-            return
-            
-        try:
-            import wmi
-            c = wmi.WMI()
-            for gpu in c.Win32_VideoController():
-                gpu_name = gpu.Name
-                if gpu.AdapterRAM:
-                    ram_gb = int(gpu.AdapterRAM) / (1024**3)
-                    gpu_name += f" - {ram_gb:.1f}GB"
-                self.gpu_info.append(gpu_name)
-                # Could be Intel, AMD, or NVIDIA
-                if 'nvidia' in gpu_name.lower() or 'amd' in gpu_name.lower():
-                    self.cuda_available = True
-                logger.info(f"WMI GPU detected: {gpu_name}")
-        except:
-            pass
-            
-    def detect_opencl(self):
-        """Detect OpenCL capability"""
-        try:
-            import pyopencl as cl
-            platforms = cl.get_platforms()
-            if platforms:
-                self.opencl_available = True
-                for platform in platforms:
-                    devices = platform.get_devices()
-                    for device in devices:
-                        if device.type == cl.device_type.GPU:
-                            gpu_name = f"OpenCL: {device.name}"
-                            if gpu_name not in self.gpu_info:
-                                self.gpu_info.append(gpu_name)
-                                logger.info(f"OpenCL GPU detected: {gpu_name}")
-        except:
-            self.opencl_available = False
-            
-    def get_acceleration_status(self):
-        """Get human-readable acceleration status with recommendations"""
-        if self.cuda_available:
-            return "gpu", f"✅ GPU Acceleration Available\n{chr(10).join(self.gpu_info)}"
-        elif self.rocm_available:
-            return "gpu", f"✅ ROCm Acceleration Available\n{chr(10).join(self.gpu_info)}"
-        elif self.opencl_available:
-            return "gpu", f"⚠️ OpenCL Available (Limited Acceleration)\n{chr(10).join(self.gpu_info)}"
-        else:
-            cpu_rec = self.get_cpu_recommendation()
-            return "cpu", f"⚠️ CPU Mode Only\nCPU: {self.cpu_info}\n{cpu_rec}"
-            
-    def get_cpu_recommendation(self):
-        """Get CPU-based recommendations"""
-        if self.cpu_cores >= 8:
-            return "✓ High-performance CPU detected - Good for processing"
-        elif self.cpu_cores >= 4:
-            return "✓ Medium-performance CPU - Will work but may be slower"
-        else:
-            return "! Low-performance CPU - Consider using online mode with GPU"
-            
-    def get_memory_status(self):
-        """Get memory status with warnings"""
-        status = f"RAM: {self.available_ram:.1f}GB / {self.total_ram:.1f}GB ({self.ram_usage:.0f}% used)"
-        if self.available_ram < 2:
-            status += "\n⚠️ Low memory! Close other applications"
-        elif self.available_ram < 4:
-            status += "\n⚠️ Limited memory available"
-        return status
-        
-    def get_disk_status(self):
-        """Get disk status"""
-        return f"Disk: {self.disk_free:.1f}GB free / {self.disk_total:.1f}GB total"
-        
-    def get_detailed_info(self):
-        """Get detailed hardware info for display"""
-        info = []
-        info.append("=" * 50)
-        info.append("HARDWARE DETECTION REPORT")
-        info.append("=" * 50)
-        
-        # CPU Info
-        info.append(f"\n📌 CPU:")
-        info.append(f"   Model: {self.cpu_info}")
-        info.append(f"   Cores: {self.cpu_cores} physical, {self.cpu_threads} logical")
-        
-        # RAM Info
-        info.append(f"\n📌 Memory:")
-        info.append(f"   Total: {self.total_ram:.1f} GB")
-        info.append(f"   Available: {self.available_ram:.1f} GB")
-        info.append(f"   Usage: {self.ram_usage:.0f}%")
-        
-        # Disk Info
-        info.append(f"\n📌 Storage:")
-        info.append(self.get_disk_status())
-        
-        # GPU Info
-        info.append(f"\n📌 Graphics:")
-        if self.gpu_info:
-            for i, gpu in enumerate(self.gpu_info, 1):
-                info.append(f"   GPU {i}: {gpu}")
-                
-            # Memory details if available
-            if self.gpu_memory:
-                for mem in self.gpu_memory:
-                    info.append(f"   VRAM: {mem['used']:.0f}MB / {mem['total']:.0f}MB used")
-        else:
-            info.append("   No GPU detected")
-            
-        # Acceleration Capabilities
-        info.append(f"\n📌 Acceleration:")
-        info.append(f"   CUDA: {'✅ Available' if self.cuda_available else '❌ Not Available'}")
-        info.append(f"   ROCm: {'✅ Available' if self.rocm_available else '❌ Not Available'}")
-        info.append(f"   OpenCL: {'✅ Available' if self.opencl_available else '❌ Not Available'}")
-        info.append(f"   TensorFlow GPU: {'✅ Yes' if self.tensorflow_gpu else '❌ No'}")
-        info.append(f"   PyTorch GPU: {'✅ Yes' if self.pytorch_gpu else '❌ No'}")
-        
-        # Recommendations
-        info.append(f"\n📌 Recommendations:")
-        accel_type, accel_msg = self.get_acceleration_status()
-        info.append(f"   {accel_msg}")
-        
-        info.append("=" * 50)
-        return info
-        
-    def get_performance_estimate(self):
-        """Get estimated performance for different tasks"""
-        if self.cuda_available:
-            return {
-                'transcription': 'Very Fast (GPU accelerated)',
-                'enhancement': 'Fast',
-                'model_download': 'Limited by internet speed'
-            }
-        elif self.cpu_cores >= 8:
-            return {
-                'transcription': 'Fast (Multi-core CPU)',
-                'enhancement': 'Moderate',
-                'model_download': 'Limited by internet speed'
-            }
-        elif self.cpu_cores >= 4:
-            return {
-                'transcription': 'Moderate',
-                'enhancement': 'Slow',
-                'model_download': 'Limited by internet speed'
-            }
-        else:
-            return {
-                'transcription': 'Slow - Use online mode',
-                'enhancement': 'Very Slow - Use online mode',
-                'model_download': 'Limited by internet speed'
-            }
-
-# Initialize global hardware detector (after logger is defined)
-try:
-    hardware_detector = HardwareDetector()
-    logger.info("Hardware detector initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize hardware detector: {e}")
-    # Create a minimal fallback
-    class MinimalHardwareDetector:
-        def get_acceleration_status(self): return "cpu", "⚠️ Hardware detection failed"
-        def get_memory_status(self): return "Memory: Unknown"
-        def get_detailed_info(self): return ["Hardware detection failed"]
-        def get_performance_estimate(self): return {}
-    hardware_detector = MinimalHardwareDetector()
-
-# ========================================
-# CONFIGURATION
-# ========================================
-APP_NAME = "NotyCaption"
-APP_AUTHOR = "NotY215"
-
-# Get app data directory for settings
-if getattr(sys, 'frozen', False):
-    # Running as compiled executable
-    if platform.system() == "Windows":
-        APP_DATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), f"{APP_NAME}Saves")
-    else:
-        # Linux/Mac fallback
-        APP_DATA_DIR = os.path.join(os.path.expanduser('~'), f".{APP_NAME.lower()}saves")
-else:
-    # Running in development
-    APP_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Create app data directory if it doesn't exist
-os.makedirs(APP_DATA_DIR, exist_ok=True)
-
-SETTINGS_FILE = os.path.join(APP_DATA_DIR, "settings.notcapz")
-KEY_FILE = os.path.join(APP_DATA_DIR, "key.notcapz")
-SESSION_FILE = os.path.join(APP_DATA_DIR, "session.json")
-TOKEN_FILE = os.path.join(APP_DATA_DIR, "token.json")
-CLIENT_JSON = os.path.join(APP_DATA_DIR, "client.json")
-CLIENT_ENCRYPTED = os.path.join(APP_DATA_DIR, "client.notycapz")
-
-# ========================================
-# LOGGING SETUP
-# ========================================
-def setup_logging():
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    log_dir = os.path.join(base_dir, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")[:-3]
-    log_file = os.path.join(log_dir, f"NotyCaption_{timestamp}.log")
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s | %(levelname)-8s | %(message)s',
-        handlers=[
-            logging.FileHandler(log_file, encoding='utf-8'),
-            logging.StreamHandler(sys.stdout)
-        ],
-        force=True
-    )
-    logger = logging.getLogger("NotyCaption")
-    logger.info("=== NotyCaption Secure Launch 2026 ===")
-    logger.info(f"Python version: {sys.version}")
-    logger.info(f"Working directory: {os.getcwd()}")
-    logger.info(f"Log file: {log_file}")
-    logger.info(f"App data directory: {APP_DATA_DIR}")
-    logger.info(f"PyInstaller frozen: {getattr(sys, 'frozen', False)}")
-    logger.info(f"Executable path: {sys.executable if getattr(sys, 'frozen', False) else 'dev mode'}")
-    logger.info(f"Client mode: {'EXE (encrypted)' if os.path.exists(CLIENT_ENCRYPTED) else 'Dev (plain)'}")
-    
-    # Hardware detection (now using the global hardware_detector)
-    try:
-        accel_type, accel_info = hardware_detector.get_acceleration_status()
-        logger.info(f"Hardware acceleration: {accel_type}")
-        logger.info(f"Hardware info: {accel_info}")
-        logger.info(f"Memory: {hardware_detector.get_memory_status()}")
-    except:
-        logger.info("Hardware detection not available")
-    
-    return logger
-
-logger = setup_logging()
 
 # ========================================
 # TRANSLATION HELPER
@@ -2159,24 +2155,24 @@ class OnlineHandler:
             self.update_status("waiting")
             
             # Create clickable link message
-            link_message = (f"<b>{tr('colab_launched')}</b><br><br>"
-                           f"{tr('reopen_notebook_msg')}<br>"
+            link_message = (f"<b>Colab Launched (GPU Runtime Recommended)</b><br><br>"
+                           f"If you closed the tab, click below to reopen:<br>"
                            f"<a href='{colab_url}' style='color: #00c853;'>{colab_url}</a><br><br>"
-                           f"<b>{tr('instructions')}:</b><br>"
-                           f"1. {tr('colab_step1')}<br>"
-                           f"2. {tr('colab_step2')}<br>"
-                           f"3. {tr('colab_step3')}")
+                           f"<b>Instructions:</b><br>"
+                           f"1. In Colab → Runtime → Change runtime type → Hardware accelerator → GPU<br>"
+                           f"2. Wait 60 seconds → then Runtime → Run All<br>"
+                           f"3. App will auto-download subtitles when finished")
             
             # Show message with clickable link
             msg_box = QMessageBox(self.parent)
-            msg_box.setWindowTitle(tr('colab_launched'))
+            msg_box.setWindowTitle("Colab Launched")
             msg_box.setTextFormat(Qt.RichText)
             msg_box.setText(link_message)
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec_()
 
             self.poll_local_out = out_path
-            self.parent.statusBar().showMessage(tr('online_waiting'), 12000)
+            self.parent.statusBar().showMessage("Online mode active – waiting for Colab to finish...", 12000)
 
             # Start polling
             self.poll_timer.stop()
@@ -2384,17 +2380,17 @@ class OnlineHandler:
             self.update_status("timeout")
             
             # Show timeout message with reopen link
-            link_message = (f"<b>{tr('colab_timeout')}</b><br><br>"
-                           f"{tr('colab_timeout_msg')}<br><br>"
-                           f"{tr('reopen_notebook_msg')}<br>"
+            link_message = (f"<b>Colab Timeout / Crash Detected</b><br><br>"
+                           f"No result file appeared in Google Drive after long wait.<br><br>"
+                           f"If you closed the tab, you can reopen it here:<br>"
                            f"<a href='{self._current_colab_url}' style='color: #00c853;'>{self._current_colab_url}</a><br><br>"
-                           f"<b>{tr('next_steps')}:</b><br>"
-                           f"1. {tr('check_notebook')}<br>"
-                           f"2. {tr('download_manually')}<br>"
-                           f"3. {tr('try_shorter')}")
+                           f"<b>Next steps:</b><br>"
+                           f"1. Check if the notebook finished or errored<br>"
+                           f"2. If subtitles appeared in Drive → download manually<br>"
+                           f"3. Try again with shorter clip or 'tiny'/'base' model")
             
             msg_box = QMessageBox(self.parent)
-            msg_box.setWindowTitle(tr('colab_timeout'))
+            msg_box.setWindowTitle("Colab Timeout")
             msg_box.setTextFormat(Qt.RichText)
             msg_box.setText(link_message)
             msg_box.setStandardButtons(QMessageBox.Ok)
@@ -2439,11 +2435,11 @@ class OnlineHandler:
                                             eta_seconds = remaining_bytes / speed
                                             eta_str = str(timedelta(seconds=int(eta_seconds)))
                                         else:
-                                            eta_str = tr('calculating')
+                                            eta_str = "calculating..."
                                     else:
-                                        eta_str = tr('calculating')
+                                        eta_str = "calculating..."
                                 else:
-                                    eta_str = tr('calculating')
+                                    eta_str = "calculating..."
                                 
                                 logger.info(f"Download progress: {progress_pct}%")
                                 self.parent.progress_update(progress_pct, eta_str, speed if 'speed' in locals() else 0)
@@ -2464,27 +2460,27 @@ class OnlineHandler:
                         
                     QMessageBox.information(
                         self.parent,
-                        tr('completed'),
-                        f"{tr('generation_success')}\n{self.poll_local_out}\n\n{tr('cleanup_complete')}"
+                        "Success",
+                        f"Downloaded and loaded:\n{self.poll_local_out}\n\nAll temporary files have been cleaned up from Google Drive."
                     )
                     self.poll_attempts = 0
                     logger.info("Online polling complete - success")
                 except Exception as dl_err:
                     logger.error(f"Download failed: {dl_err}")
                     self.update_status("failed")
-                    QMessageBox.critical(self.parent, tr('failed'), str(dl_err))
+                    QMessageBox.critical(self.parent, "Download Error", str(dl_err))
             else:
                 logger.debug(f"Poll attempt {self.poll_attempts}/{self.max_poll_attempts} — waiting...")
                 self.update_status("waiting")
                 if self.poll_attempts % 15 == 0:
                     mins = (self.poll_attempts * 8) // 60
                     self.parent.statusBar().showMessage(
-                        f"{tr('waiting')}... ({mins} {tr('min_elapsed')})", 10000
+                        f"Waiting for Colab result... ({mins} min elapsed)", 10000
                     )
         except Exception as poll_err:
             logger.warning(f"Poll network/drive error: {poll_err}")
             self.update_status("network_error")
-            self.parent.show_error_details(tr('network_error'), str(poll_err), tr('retry_auto'))
+            self.parent.show_error_details("Network Error", str(poll_err), "This may be a temporary network issue. The app will retry automatically.")
             # Schedule retry
             if not self.retry_timer.isActive() and not self._stop_event.is_set():
                 self.retry_timer.start(5000)  # Retry after 5 seconds
@@ -2600,7 +2596,7 @@ class AudioEnhancerThread(QThread):
                 elapsed = time.time() - self._start_time
                 if elapsed > 0:
                     speed = 1.0 / elapsed  # Simplified speed metric
-                    eta_str = tr('completed')
+                    eta_str = "completed"
                     self.speed_update.emit(speed, eta_str)
             
             if self.is_canceled():
@@ -2729,11 +2725,11 @@ class CancellableWhisperDownloader:
     def calculate_speed_and_eta(self):
         """Calculate download speed and ETA"""
         if not self._start_time or self._downloaded == 0:
-            return 0, tr('calculating')
+            return 0, "calculating..."
             
         elapsed = time.time() - self._start_time
         if elapsed <= 0:
-            return 0, tr('calculating')
+            return 0, "calculating..."
             
         # Calculate current speed (smoothed average)
         current_speed = self._downloaded / elapsed
@@ -2749,7 +2745,7 @@ class CancellableWhisperDownloader:
             eta_seconds = remaining_bytes / avg_speed
             eta_str = str(timedelta(seconds=int(eta_seconds)))
         else:
-            eta_str = tr('calculating')
+            eta_str = "calculating..."
             
         return avg_speed, eta_str
         
@@ -2891,7 +2887,7 @@ class CancellableWhisperDownloader:
             self.update_status("completed")
             
             if progress_callback:
-                progress_callback(100, 0, tr('completed'))
+                progress_callback(100, 0, "completed")
                 
             return model
             
@@ -2905,7 +2901,7 @@ class CancellableWhisperDownloader:
                 for path in [model_path, temp_path]:
                     if os.path.exists(path):
                         os.remove(path)
-                raise Exception(tr('canceled'))
+                raise Exception("Download canceled by user")
             else:
                 logger.error(f"Download error: {e}")
                 self.update_status("failed")
@@ -2985,7 +2981,7 @@ class ModelDownloadThread(QThread):
         try:
             cleanup_corrupt_models(self.model_dir)
             
-            self.progress.emit(5, 0, tr('calculating'))
+            self.progress.emit(5, 0, "calculating...")
             logger.info("Starting model download process")
             self.update_status("starting")
             
@@ -2994,15 +2990,15 @@ class ModelDownloadThread(QThread):
             
             if validate_model_file(model_path_v1):
                 logger.info("Valid large-v1 model already exists, skipping download")
-                self.progress.emit(100, 0, tr('completed'))
+                self.progress.emit(100, 0, "completed")
                 self.update_status("completed")
-                self.finished.emit(True, tr('model_exists'))
+                self.finished.emit(True, "Model already exists and is valid!")
                 return
             elif validate_model_file(model_path):
                 logger.info("Valid large model already exists, skipping download")
-                self.progress.emit(100, 0, tr('completed'))
+                self.progress.emit(100, 0, "completed")
                 self.update_status("completed")
-                self.finished.emit(True, tr('model_exists'))
+                self.finished.emit(True, "Model already exists and is valid!")
                 return
             
             with self._lock:
@@ -3032,9 +3028,9 @@ class ModelDownloadThread(QThread):
             
             if validate_model_file(model_path_v1):
                 logger.info("Model downloaded and validated successfully")
-                self.progress.emit(100, 0, tr('completed'))
+                self.progress.emit(100, 0, "completed")
                 self.update_status("completed")
-                self.finished.emit(True, tr('download_success'))
+                self.finished.emit(True, "Model large-v1 downloaded and validated successfully!")
             else:
                 raise Exception("Downloaded model validation failed")
                 
@@ -3212,22 +3208,22 @@ class NotyCaptionWindow(QMainWindow):
         if not self.settings.get("show_tooltips", True):
             return
             
-        self.import_btn.setToolTip(tr('import_tooltip'))
-        self.enhance_btn.setToolTip(tr('enhance_tooltip'))
-        self.gen_btn.setToolTip(tr('generate_tooltip'))
-        self.play_btn.setToolTip(tr('play_tooltip'))
-        self.edit_btn.setToolTip(tr('edit_tooltip'))
-        self.download_btn.setToolTip(tr('download_tooltip'))
-        self.login_button.setToolTip(tr('login_tooltip'))
-        self.reopen_btn.setToolTip(tr('reopen_tooltip'))
-        self.copy_url_btn.setToolTip(tr('copy_tooltip'))
+        self.import_btn.setToolTip("Import video or audio file (Ctrl+O)")
+        self.enhance_btn.setToolTip("Extract vocals only using Spleeter (Ctrl+E)")
+        self.gen_btn.setToolTip("Generate captions using Whisper AI (Ctrl+G)")
+        self.play_btn.setToolTip("Play/Pause audio (Space or Ctrl+P)")
+        self.edit_btn.setToolTip("Edit captions (Ctrl+S)")
+        self.download_btn.setToolTip("Download Whisper large-v1 model (~2.9 GB)")
+        self.login_button.setToolTip("Login with Google for online mode (Ctrl+L)")
+        self.reopen_btn.setToolTip("Reopen Colab notebook in browser (Ctrl+R)")
+        self.copy_url_btn.setToolTip("Copy notebook URL to clipboard")
         
         # Settings
-        self.mode_combo.setToolTip(tr('mode_tooltip'))
-        self.lang_combo.setToolTip(tr('lang_tooltip'))
-        self.words_spin.setToolTip(tr('words_tooltip'))
-        self.format_combo.setToolTip(tr('format_tooltip'))
-        self.out_folder_edit.setToolTip(tr('folder_tooltip'))
+        self.mode_combo.setToolTip("Choose processing mode: Local or Online")
+        self.lang_combo.setToolTip("Select language and task")
+        self.words_spin.setToolTip("Number of words per subtitle line")
+        self.format_combo.setToolTip("Subtitle output format")
+        self.out_folder_edit.setToolTip("Output folder for generated subtitles")
 
     def create_overlays(self):
         """Create overlay widgets"""
@@ -3511,7 +3507,7 @@ class NotyCaptionWindow(QMainWindow):
             self.tray_icon.show()
             self.tray_icon.showMessage(
                 APP_NAME,
-                tr('minimized_to_tray'),
+                "Application minimized to system tray",
                 QSystemTrayIcon.Information,
                 2000
             )
@@ -3521,8 +3517,9 @@ class NotyCaptionWindow(QMainWindow):
         if self._operation_in_progress or self.is_generating:
             reply = QMessageBox.question(
                 self,
-                tr('operation_in_progress'),
-                tr('exit_confirm'),
+                "Operation in Progress",
+                "An operation is currently in progress.\n\n"
+                "Are you sure you want to exit? Any unsaved progress will be lost.",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
@@ -3625,7 +3622,7 @@ class NotyCaptionWindow(QMainWindow):
                 selection-background-color: #007acc;
             }
         """)
-        self.caption_edit.setPlaceholderText(tr('captions_placeholder'))
+        self.caption_edit.setPlaceholderText("Captions will appear here after generation...")
         self.left_layout.addWidget(self.caption_edit, stretch=1)
 
         btn_row = QHBoxLayout()
@@ -3747,7 +3744,7 @@ class NotyCaptionWindow(QMainWindow):
         self.out_folder_edit = QLineEdit()
         self.out_folder_edit.setReadOnly(True)
         self.out_folder_edit.setMinimumHeight(50)
-        self.out_folder_edit.setPlaceholderText(tr('default_source'))
+        self.out_folder_edit.setPlaceholderText("Default: Source Folder")
         self.out_folder_edit.setText(self.settings.get("last_output_folder", ""))
         self.right_layout.addWidget(self.out_folder_edit, row, 1)
         row += 1
@@ -3887,7 +3884,7 @@ class NotyCaptionWindow(QMainWindow):
 
     def setup_footer(self):
         """Setup footer with copyright"""
-        footer = QLabel(tr('footer'))
+        footer = QLabel("NotyCaption Pro • Secure Edition 2026 • All rights reserved by NotY215 • Powered by Whisper AI & Spleeter")
         footer.setAlignment(Qt.AlignCenter)
         footer.setStyleSheet("color: #6c757d; font-size: 10px; margin: 15px 0; padding: 10px; border-top: 1px solid #404040;")
         self.main_layout.addWidget(footer)
@@ -4122,18 +4119,18 @@ class NotyCaptionWindow(QMainWindow):
         """Reopen Colab notebook"""
         if self._current_notebook_url:
             webbrowser.open(self._current_notebook_url)
-            self.statusBar().showMessage(tr('reopening_notebook'), 3000)
+            self.statusBar().showMessage("Reopening Colab notebook...", 3000)
         else:
-            QMessageBox.information(self, tr('no_notebook'), tr('no_notebook_msg'))
+            QMessageBox.information(self, "No Notebook", "No active Colab notebook to reopen.")
 
     def copy_notebook_url(self):
         """Copy notebook URL to clipboard"""
         if self._current_notebook_url:
             clipboard = QApplication.clipboard()
             clipboard.setText(self._current_notebook_url)
-            self.statusBar().showMessage(tr('url_copied'), 3000)
+            self.statusBar().showMessage("Notebook URL copied to clipboard", 3000)
         else:
-            QMessageBox.information(self, tr('no_url'), tr('no_url_msg'))
+            QMessageBox.information(self, "No URL", "No notebook URL to copy.")
 
     def open_settings_dialog(self):
         """Open settings dialog"""
@@ -4254,9 +4251,9 @@ class NotyCaptionWindow(QMainWindow):
         """Initiate Google login"""
         client_secrets = load_client_secrets()
         if not client_secrets:
-            msg = tr('missing_credentials')
+            msg = "Google client secrets not found.\nIn dev mode, ensure client.json exists.\nIn EXE mode, rebuild with build.py to encrypt client.notycapz."
             logger.warning(msg)
-            QMessageBox.warning(self, tr('missing_credentials'), msg)
+            QMessageBox.warning(self, "Missing Credentials", msg)
             return
 
         client_path = tempfile.mktemp(suffix='.json')
@@ -4273,10 +4270,10 @@ class NotyCaptionWindow(QMainWindow):
             self.mode_combo.setCurrentText(tr('online_mode'))
             self.update_download_button_visibility()
             logger.info("Google login successful - Online mode enabled")
-            QMessageBox.information(self, tr('login_success'), tr('drive_connected'))
+            QMessageBox.information(self, "Login Success", "Google Drive connected. Online mode ready.")
         except Exception as login_err:
             logger.error(f"Google login failed: {traceback.format_exc()}")
-            QMessageBox.critical(self, tr('login_error'), f"{tr('auth_failed')}\n{str(login_err)}")
+            QMessageBox.critical(self, "Login Error", f"Authentication failed:\n{str(login_err)}")
         finally:
             if os.path.exists(client_path):
                 os.remove(client_path)
@@ -4322,7 +4319,7 @@ class NotyCaptionWindow(QMainWindow):
             return model
         except Exception as load_err:
             logger.error(f"Whisper load failed: {traceback.format_exc()}")
-            QMessageBox.critical(self, tr('model_load_error'), f"{tr('model_load_failed')}\n{str(load_err)}")
+            QMessageBox.critical(self, "Model Load Error", f"Failed to load Whisper model:\n{str(load_err)}")
             raise RuntimeError(f"Model load error: {str(load_err)}")
 
     def on_media_status_changed(self, status):
@@ -4347,9 +4344,9 @@ class NotyCaptionWindow(QMainWindow):
 
     def on_player_error(self, error):
         """Handle player error"""
-        err_str = self.player.errorString() or tr('unknown_error')
+        err_str = self.player.errorString() or "Unknown error"
         logger.warning(f"Media player error: {err_str}")
-        QMessageBox.warning(self, tr('playback_error'), f"{tr('playback_failed')}\n{err_str}")
+        QMessageBox.warning(self, "Playback Error", f"Audio playback failed:\n{err_str}")
 
     def update_timeline(self):
         """Update timeline slider"""
@@ -4386,9 +4383,11 @@ class NotyCaptionWindow(QMainWindow):
 
         except Exception as play_err:
             logger.error(f"Playback setup failed: {play_err}", exc_info=True)
-            QMessageBox.critical(self, tr('playback_error'),
-                                f"{tr('qt_prepare_failed')}\n{str(play_err)}\n\n"
-                                f"{tr('playback_tips')}")
+            QMessageBox.critical(self, "Critical Playback Error",
+                                f"Qt could not prepare audio:\n{str(play_err)}\n\n"
+                                "Try:\n1. Play the .temp.wav file in VLC/Media Player\n"
+                                "2. If it plays → issue is QtMultimedia\n"
+                                "3. Re-import or restart app")
 
     def check_playback_status(self):
         """Check playback status"""
@@ -4398,8 +4397,12 @@ class NotyCaptionWindow(QMainWindow):
             logger.info("Media loaded OK")
         elif status in (QMediaPlayer.NoMedia, QMediaPlayer.InvalidMedia):
             logger.error("Media invalid after load attempt")
-            QMessageBox.warning(self, tr('cannot_play'),
-                               tr('media_invalid_msg'))
+            QMessageBox.warning(self, "Cannot Play",
+                                "Qt says media is invalid.\n\n"
+                                "Common fixes:\n"
+                                "• Shorten filename (remove spaces/special chars)\n"
+                                "• Re-extract audio\n"
+                                "• Install/update K-Lite Codec Pack (Basic)")
 
     def seek_media_position(self, position):
         """Seek to position"""
@@ -4442,7 +4445,7 @@ class NotyCaptionWindow(QMainWindow):
         """Import media file"""
         logger.info("Media import dialog opened")
         if not file_path:
-            filter_str = tr('media_filter')
+            filter_str = "Media Files (*.mp4 *.mkv *.avi *.mov *.webm *.flv *.wmv *.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma *.amr *.opus)"
             file_path, _ = QFileDialog.getOpenFileName(self, tr('import_media'), self.settings.get("last_input_file", ""), filter_str)
             
         if not file_path:
@@ -4593,12 +4596,12 @@ class NotyCaptionWindow(QMainWindow):
         lay = QVBoxLayout()
         dlg.setLayout(lay)
 
-        title = QLabel(tr('download_model_desc'))
+        title = QLabel("Download Whisper large-v1 Model (~2.9 GB)")
         title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         lay.addWidget(title)
 
-        desc = QLabel(tr('model_info'))
+        desc = QLabel("large-v1 is the most accurate model.\nRequires ~3 GB disk space.\nDownload may take 5-30 minutes depending on internet speed.")
         desc.setWordWrap(True)
         desc.setAlignment(Qt.AlignCenter)
         lay.addWidget(desc)
@@ -5198,7 +5201,7 @@ if __name__ == "__main__":
     instance = SingleInstance()
     if instance.is_already_running():
         logger.warning("Duplicate instance detected")
-        QMessageBox.warning(None, tr('already_running'), tr('already_running_msg'))
+        QMessageBox.warning(None, "Already Running", "NotyCaption is already open in another window.")
         sys.exit(1)
 
     app = QApplication(sys.argv)
