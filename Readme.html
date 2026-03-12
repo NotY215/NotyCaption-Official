@@ -1,123 +1,359 @@
-<h1 id="notycaption-pro-ai-powered-smart-caption-generator">NotyCaption Pro – AI-Powered Smart Caption Generator</h1>
-<p align="center">
-  <br><br>
-  <strong>Generate perfectly synced, beautiful subtitles automatically with Whisper AI</strong><br>
-  Local + Online (Colab) modes • SRT/ASS support • Vocal enhancement • GPU acceleration
-</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NotyCaption Pro</title>
 
-<p align="center">
-  <a href="https://github.com/NotY215/NotyCaption/releases/latest">
-    <img src="https://img.shields.io/github/v/release/NotY215/NotyCaption?color=00c853&label=Latest%20Release&logo=windows&logoColor=white&style=for-the-badge" alt="Latest Release">
-  </a>
-  <a href="https://github.com/NotY215/NotyCaption/releases">
-    <img src="https://img.shields.io/github/downloads/NotY215/NotyCaption/total?color=4285f4&style=for-the-badge&logo=google-drive&logoColor=white" alt="Downloads">
-  </a>
-  <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
-  <img src="https://img.shields.io/badge/License-GNU%20GPLv3-red?style=for-the-badge" alt="License">
-</p>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<p align="center">
-  <a href="https://github.com/NotY215/NotyCaption/releases/">
-    <img src="https://img.shields.io/badge/DOWNLOAD%20INSTALLER-2.9%E2%80%93GB%20Model%20Ready-00c853?style=for-the-badge&logo=windows&logoColor=white&labelColor=111111" alt="Download Windows Installer">
-  </a>
-</p>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
-<hr>
-<h2 id="-features">✨ Features</h2>
-<ul>
-<li><strong>AI Subtitle Generation</strong> powered by OpenAI Whisper (local + online Colab mode)</li>
-<li><strong>Large-v1 model support</strong> – highest accuracy (~2.9 GB download)</li>
-<li><strong>Words-per-line control</strong> (1–20 words) with model validation</li>
-<li><strong>SRT</strong> (standard) and <strong>ASS</strong> (advanced styling) export</li>
-<li><strong>Vocal-only enhancement</strong> using Spleeter (remove background music/noise)</li>
-<li><strong>Media playback</strong> with real-time subtitle highlighting</li>
-<li><strong>Editable captions</strong> directly in the app</li>
-<li><strong>Google Drive / Colab integration</strong> for GPU-accelerated processing</li>
-<li><strong>Dark &amp; Light themes</strong>, UI scaling, secure encrypted settings</li>
-<li><strong>Single-instance lock</strong> – prevents multiple app launches</li>
-<li><strong>Model integrity check</strong> + automatic corrupt file cleanup</li>
-<li><strong>Cancellation-safe model download</strong> with progress bar</li>
-</ul>
-<hr>
-<h2 id="-quick-start-windows-installer-recommended-">🚀 Quick Start – Windows Installer (Recommended)</h2>
-<ol>
-<li>Go to → <a href="https://github.com/NotY215/NotyCaption/releases/latest">Latest Release Page</a></li>
-<li>Download <strong>NotyCaption.exe</strong> (~80–120 MB)</li>
-<li>Run the installer (no installation needed – portable app)</li>
-<li>First launch → download <strong>large-v1</strong> model (~2.9 GB) when prompted</li>
-<li>Import video/audio → Generate captions → Export SRT/ASS</li>
-</ol>
-<p><strong>Direct download link (latest stable):</strong>
-<a href="https://github.com/NotY215/NotyCaption/releases/latest/download">https://github.com/NotY215/NotyCaption/releases/latest/download</a></p>
-<hr>
-<h2 id="-manual-installation-developer-advanced-users-">🛠️ Manual Installation (Developer / Advanced Users)</h2>
-<h3 id="requirements">Requirements</h3>
-<ul>
-<li>Python 3.9+</li>
-<li>Windows 10/11 (64-bit)</li>
-</ul>
-<h3 id="dependencies">Dependencies</h3>
-<pre><code class="lang-bash">pip <span class="hljs-keyword">install</span> <span class="hljs-comment">--upgrade pip</span>
-pip <span class="hljs-keyword">install</span> pyqt5 moviepy whisper-openai pysrt pysubs2 spleeter tqdm cryptography google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-<span class="hljs-keyword">client</span> requests
-</code></pre>
-<h3 id="you-may-also-need-ffmpeg-in-path-">You may also need ffmpeg in PATH:</h3>
-<ul>
-<li>Download from: <a href="https://www.gyan.dev/ffmpeg/builds/">https://www.gyan.dev/ffmpeg/builds/</a></li>
-<li>Extract and add bin folder to system PATH</li>
-</ul>
-<hr>
-<h3 id="run-from-source">Run from source</h3>
-<ul>
-<li>git clone <a href="https://github.com/NotY215/NotyCaption.git">https://github.com/NotY215/NotyCaption.git</a></li>
-<li>cd NotyCaption</li>
-<li>python NotyCaption.py</li>
-</ul>
-<h1 id="-download-releases">📥 Download &amp; Releases</h1>
-<ul>
-<li>All pre-built binaries and model files are available here:</li>
-<li>→ <a href="https://github.com/NotY215/NotyCaption/releases">https://github.com/NotY215/NotyCaption/releases</a></li>
-<li>Recommended version: Latest Stable</li>
-<li>File: NotyCaption.exe</li>
-</ul>
-<h2 id="-security-notes">🔒 Security Notes</h2>
-<ul>
-<li>All settings are encrypted using Fernet (AES-128 in CBC mode + HMAC)</li>
-<li>Google client secrets are encrypted in EXE builds (client.notycapz)</li>
-<li>No telemetry or external tracking</li>
-<li>Model files are validated for size &amp; integrity before use</li>
-</ul>
-<h2 id="-building-from-source-for-developers-">🛠️ Building from Source (for Developers)</h2>
-<ul>
-<li>Install PyInstaller:Bashpip install pyinstaller cryptography</li>
-<li>Place your client.json (Google API credentials) in the project root</li>
-<li>Run the build script:Bashpython build.py</li>
-<li>Output will appear in a release_YYYYMMDD_HHMMSS folder</li>
-</ul>
-<h1 id="-performance-tips">⚡ Performance Tips</h1>
-<ul>
-<li>Use large-v1 model for best accuracy (requires ~3 GB RAM + disk)</li>
-<li>Enable GPU in online Colab mode for 5–10× faster transcription</li>
-<li>Use vocal enhancement for videos with background music</li>
-<li>Set 1 word per line + large model for karaoke-style subtitles</li>
-</ul>
-<h1 id="-license">📜 License</h1>
-<ul>
-<li>GNU General Public License v3.0</li>
-<li>See LICENSE file for full details.</li>
-<li>Copyright © 2026 NotY215</li>
-</ul>
-<h2 id="-acknowledgments">🙏 Acknowledgments</h2>
-<ul>
-<li>OpenAI Whisper</li>
-<li>Spleeter</li>
-<li>PyQt5</li>
-<li>MoviePy</li>
-<li>pysrt &amp; pysubs2 – subtitle handling</li>
-<li>Google Colab &amp; Google Drive API</li>
-</ul>
-<h1 id="made-with-in-india">Made with ❤️ in India</h1>
-<ul>
-<li>Star ⭐ the repo if you find it useful!</li>
-<li><h2 id="-download-latest-installer-https-github-com-noty215-notycaption-releases-latest-"><a href="https://github.com/NotY215/NotyCaption/releases/latest">Download Latest Installer </a></h2>
-</li>
-</ul>
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.2/dist/vanilla-tilt.min.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins,sans-serif;
+}
+
+body{
+background:#050510;
+color:white;
+overflow-x:hidden;
+}
+
+/* aurora background */
+
+body::before{
+content:"";
+position:fixed;
+width:100%;
+height:100%;
+background:linear-gradient(120deg,#00e5ff,#00c853,#7c4dff,#ff4081);
+background-size:400% 400%;
+animation:aurora 18s ease infinite;
+opacity:.15;
+z-index:-2;
+}
+
+@keyframes aurora{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* particles */
+
+#particles-js{
+position:fixed;
+width:100%;
+height:100%;
+z-index:-1;
+}
+
+/* navbar */
+
+.nav{
+position:fixed;
+top:0;
+width:100%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:15px 40px;
+background:rgba(0,0,0,.35);
+backdrop-filter:blur(10px);
+z-index:999;
+}
+
+.nav a{
+color:white;
+text-decoration:none;
+margin-left:20px;
+font-size:14px;
+}
+
+/* hero */
+
+.hero{
+text-align:center;
+padding:150px 20px;
+}
+
+.hero h1{
+font-size:60px;
+background:linear-gradient(90deg,#00e5ff,#00c853);
+-webkit-background-clip:text;
+background-clip:text;
+color:transparent;
+}
+
+.hero p{
+margin-top:20px;
+font-size:20px;
+color:#ccc;
+}
+
+.btn{
+display:inline-block;
+margin-top:30px;
+padding:15px 35px;
+border-radius:30px;
+background:#00c853;
+color:white;
+font-weight:bold;
+text-decoration:none;
+box-shadow:0 0 20px #00c853;
+transition:.3s;
+}
+
+.btn:hover{
+transform:scale(1.1);
+box-shadow:0 0 40px #00c853;
+}
+
+/* stats */
+
+.stats{
+display:none;
+justify-content:center;
+gap:40px;
+margin-top:60px;
+flex-wrap:wrap;
+}
+
+.stat{
+background:rgba(255,255,255,0.05);
+padding:20px 40px;
+border-radius:15px;
+backdrop-filter:blur(10px);
+}
+
+.stat h2{
+font-size:32px;
+color:#00e5ff;
+}
+
+/* features */
+
+.features{
+padding:100px 10%;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:30px;
+}
+
+.card{
+background:rgba(255,255,255,0.05);
+padding:30px;
+border-radius:20px;
+text-align:center;
+transition:.4s;
+backdrop-filter:blur(10px);
+}
+
+.card:hover{
+transform:scale(1.05);
+box-shadow:0 0 40px rgba(0,255,200,.4);
+}
+
+.card i{
+font-size:40px;
+margin-bottom:15px;
+}
+
+/* slider */
+
+.slider{
+width:80%;
+margin:auto;
+overflow:hidden;
+border-radius:20px;
+margin-top:80px;
+}
+
+.slides{
+display:flex;
+transition:.6s;
+}
+
+.slides img{
+width:100%;
+border-radius:20px;
+}
+
+/* footer */
+
+.footer{
+text-align:center;
+padding:60px;
+color:#aaa;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="particles-js"></div>
+
+<div class="nav">
+<div><b>NotyCaption</b></div>
+<div>
+<a href="#features">Features</a>
+<a href="https://github.com/NotY215/NotyCaption">GitHub</a>
+<a href="https://github.com/NotY215/NotyCaption/releases/latest">Download</a>
+</div>
+</div>
+
+<section class="hero">
+
+<h1>NotyCaption Pro</h1>
+
+<p>AI Powered Smart Caption Generator using Whisper</p>
+
+<a class="btn" href="https://github.com/NotY215/NotyCaption/releases/latest">
+Download Installer
+</a>
+
+<div class="stats" id="stats">
+
+<div class="stat">
+<h2 id="stars"></h2>
+<p>Stars</p>
+</div>
+
+<div class="stat">
+<h2 id="downloads"></h2>
+<p>Downloads</p>
+</div>
+
+<div class="stat">
+<h2 id="version"></h2>
+<p>Latest Release</p>
+</div>
+
+</div>
+
+</section>
+
+<section class="features" id="features">
+
+<div class="card" data-tilt>
+<i>🤖</i>
+<h3>AI Subtitle Generation</h3>
+<p>OpenAI Whisper transcription</p>
+</div>
+
+<div class="card" data-tilt>
+<i>⚡</i>
+<h3>GPU Processing</h3>
+<p>Google Colab acceleration</p>
+</div>
+
+<div class="card" data-tilt>
+<i>🎤</i>
+<h3>Vocal Enhancement</h3>
+<p>Remove background music</p>
+</div>
+
+<div class="card" data-tilt>
+<i>🎬</i>
+<h3>ASS Styling</h3>
+<p>Advanced subtitle effects</p>
+</div>
+
+<div class="card" data-tilt>
+<i>🧠</i>
+<h3>Large-v1 Model</h3>
+<p>Highest accuracy AI captions</p>
+</div>
+
+<div class="card" data-tilt>
+<i>🌙</i>
+<h3>Dark / Light Themes</h3>
+<p>Modern interface</p>
+</div>
+
+</section>
+
+<section class="slider">
+
+<div class="slides" id="slides">
+
+<img src="https://raw.githubusercontent.com/NotY215/NotyCaption/main/screenshots/1.png">
+<img src="https://raw.githubusercontent.com/NotY215/NotyCaption/main/screenshots/2.png">
+<img src="https://raw.githubusercontent.com/NotY215/NotyCaption/main/screenshots/3.png">
+
+</div>
+
+</section>
+
+<div class="footer">
+Made with ❤️ in India  
+Star the repo ⭐
+</div>
+
+<script>
+
+/* particles */
+
+particlesJS("particles-js",{
+particles:{
+number:{value:80},
+size:{value:3},
+move:{speed:1},
+line_linked:{enable:true}
+}
+});
+
+/* 3D tilt */
+
+VanillaTilt.init(document.querySelectorAll("[data-tilt]"),{
+max:15,
+speed:400
+});
+
+/* slider */
+
+let i=0;
+
+setInterval(()=>{
+i++;
+document.getElementById("slides").style.transform=
+"translateX(-"+i*100+"%)";
+
+if(i==3)i=0;
+},4000);
+
+/* github stats */
+
+Promise.all([
+fetch("https://api.github.com/repos/NotY215/NotyCaption").then(r=>r.json()),
+fetch("https://api.github.com/repos/NotY215/NotyCaption/releases").then(r=>r.json())
+]).then(([repo,releases])=>{
+
+let downloads=0;
+
+releases.forEach(r=>{
+r.assets.forEach(a=>{
+downloads+=a.download_count;
+});
+});
+
+document.getElementById("stars").innerText=repo.stargazers_count;
+document.getElementById("version").innerText=releases[0]?.tag_name || "";
+document.getElementById("downloads").innerText=downloads;
+
+document.getElementById("stats").style.display="flex";
+
+}).catch(()=>{});
+
+</script>
+
+</body>
+</html>
