@@ -2,6 +2,7 @@
 """
 NotyCaption Pro - Complete Build System
 Builds: Main App, Uninstaller, and Creates Professional Installer Package
+Includes comprehensive cleanup at start and end
 """
 
 import os
@@ -11,8 +12,9 @@ import base64
 import shutil
 import subprocess
 import datetime
-import struct
-import zlib
+import time
+import glob
+import stat
 from pathlib import Path
 from cryptography.fernet import Fernet
 
@@ -35,21 +37,37 @@ KEY_FILE_NAME   = "key.notcapz"
 README_FILE     = "Readme.html"
 TOC_FILE        = "T&C.html"
 
-REQUIRED_FILES = [
-    MAIN_SCRIPT,
-    INSTALLER_SCRIPT,
-    UNINSTALLER_SCRIPT,
-    ICON_FILE,
-    UNINSTALLER_ICON,
-    CLIENT_JSON_SRC,
-]
-
-# Output directories
-BUILD_DIR       = "build_temp"
+# Build directories
+BUILD_DIR       = "build"
 DIST_DIR        = "dist"
 PACKAGE_DIR     = "package"
-INSTALLER_OUTPUT = f"{APP_NAME}_Setup.exe"
+SPEC_DIR        = "spec"
+CACHE_DIR       = "__pycache__"
 RELEASE_FOLDER  = f"release_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+# All temporary directories to clean
+TEMP_DIRECTORIES = [
+    BUILD_DIR,
+    DIST_DIR,
+    PACKAGE_DIR,
+    SPEC_DIR,
+    CACHE_DIR,
+    "build_temp",
+    "*.spec",
+    "__pycache__",
+]
+
+# Files to clean
+TEMP_FILES = [
+    "*.log",
+    "*.tmp",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    "*.so",
+    "*.dll",
+    "*.exe.manifest",
+]
 
 # PyInstaller common args
 PYINSTALLER_ARGS = [
@@ -57,8 +75,131 @@ PYINSTALLER_ARGS = [
     "--windowed",
     "--clean",
     "--noupx",
-    "--log-level=INFO",
+    "--log-level=ERROR",  # Reduce noise
 ]
+
+# ────────────────────────────────────────────────
+# CLEANUP UTILITIES
+# ────────────────────────────────────────────────
+
+def force_remove(path):
+    """Force remove a file or directory with retries"""
+    max_retries = 3
+    for i in range(max_retries):
+        try:
+            if os.path.isfile(path) or os.path.islink(path):
+                os.unlink(path)
+            elif os.path.isdir(path):
+                # First try normal rmtree
+                try:
+                    shutil.rmtree(path, ignore_errors=False)
+                except:
+                    # If fails, try to change permissions and remove
+                    for root, dirs, files in os.walk(path):
+                        for d in dirs:
+                            os.chmod(os.path.join(root, d), stat.S_IWRITE)
+                        for f in files:
+                            os.chmod(os.path.join(root, f), stat.S_IWRITE)
+                    shutil.rmtree(path, ignore_errors=True)
+            return True
+        except Exception as e:
+            if i < max_retries - 1:
+                time.sleep(1)
+                continue
+            print(f"⚠ Could not remove {path}: {e}")
+            return False
+    return False
+
+def clean_all_temp():
+    """Comprehensive cleanup of all temporary files and directories"""
+    print("\n" + "="*60)
+    print(" CLEANING ALL TEMPORARY FILES ".center(60))
+    print("="*60)
+    
+    removed_count = 0
+    failed_count = 0
+    
+    # Clean temp directories
+    for pattern in TEMP_DIRECTORIES:
+        if '*' in pattern:
+            # Handle wildcard patterns
+            for path in glob.glob(pattern):
+                if force_remove(path):
+                    print(f"✓ Removed: {path}")
+                    removed_count += 1
+                else:
+                    failed_count += 1
+        else:
+            # Handle exact directory names
+            if os.path.exists(pattern):
+                if force_remove(pattern):
+                    print(f"✓ Removed directory: {pattern}/")
+                    removed_count += 1
+                else:
+                    failed_count += 1
+    
+    # Clean temp files
+    for pattern in TEMP_FILES:
+        for path in glob.glob(pattern):
+            if os.path.exists(path):
+                if force_remove(path):
+                    print(f"✓ Removed file: {path}")
+                    removed_count += 1
+                else:
+                    failed_count += 1
+    
+    # Clean Python cache directories recursively
+    for root, dirs, files in os.walk('.'):
+        if '__pycache__' in dirs:
+            pycache = os.path.join(root, '__pycache__')
+            if force_remove(pycache):
+                print(f"✓ Removed: {pycache}/")
+                removed_count += 1
+        
+        # Clean .pyc files
+        for file in files:
+            if file.endswith('.pyc'):
+                pyc_file = os.path.join(root, file)
+                if force_remove(pyc_file):
+                    print(f"✓ Removed: {pyc_file}")
+                    removed_count += 1
+    
+    # Clean PyInstaller specific files
+    pyinstaller_files = [
+        "warn*.txt",
+        "*.toc",
+        "*.pyz",
+        "*.spec",
+    ]
+    for pattern in pyinstaller_files:
+        for path in glob.glob(pattern):
+            if os.path.exists(path):
+                if force_remove(path):
+                    print(f"✓ Removed: {path}")
+                    removed_count += 1
+    
+    print(f"\n✅ Cleanup complete: {removed_count} items removed, {failed_count} failures")
+    return removed_count > 0
+
+def kill_pyinstaller_processes():
+    """Kill any lingering PyInstaller processes"""
+    try:
+        import psutil
+        killed = 0
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if proc.info['name'] and 'pyinstaller' in proc.info['name'].lower():
+                    proc.kill()
+                    killed += 1
+                elif proc.info['cmdline'] and any('pyinstaller' in ' '.join(proc.info['cmdline']).lower() for _ in [0]):
+                    proc.kill()
+                    killed += 1
+            except:
+                pass
+        if killed > 0:
+            print(f"✓ Killed {killed} lingering PyInstaller processes")
+    except:
+        pass
 
 # ────────────────────────────────────────────────
 # ENCRYPTION UTILS
@@ -249,16 +390,12 @@ def create_documentation():
 # BUILD FUNCTIONS
 # ────────────────────────────────────────────────
 
-def clean_directories():
-    """Clean build directories"""
-    dirs = [BUILD_DIR, DIST_DIR, PACKAGE_DIR]
+def create_directories():
+    """Create necessary build directories"""
+    dirs = [BUILD_DIR, DIST_DIR, PACKAGE_DIR, RELEASE_FOLDER]
     for d in dirs:
-        if os.path.exists(d):
-            shutil.rmtree(d, ignore_errors=True)
-            print(f"✓ Cleaned {d}/")
-    os.makedirs(BUILD_DIR, exist_ok=True)
-    os.makedirs(DIST_DIR, exist_ok=True)
-    os.makedirs(PACKAGE_DIR, exist_ok=True)
+        os.makedirs(d, exist_ok=True)
+        print(f"✓ Created directory: {d}/")
 
 def build_app():
     """Build main NotyCaption application"""
@@ -303,16 +440,25 @@ def build_app():
         MAIN_SCRIPT
     ]
 
-    print("Running PyInstaller...")
+    print("Running PyInstaller (this may take several minutes)...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print("❌ App build failed!")
-        print(result.stderr)
+        if result.stderr:
+            print("\nError output:")
+            print(result.stderr)
         sys.exit(1)
     
     # Copy to package folder
-    shutil.copy2(f"dist/{APP_NAME}.exe", f"{PACKAGE_DIR}/{APP_NAME}.exe")
-    print(f"✓ App built: {PACKAGE_DIR}/{APP_NAME}.exe")
+    src = f"dist/{APP_NAME}.exe"
+    dst = f"{PACKAGE_DIR}/{APP_NAME}.exe"
+    if os.path.exists(src):
+        shutil.copy2(src, dst)
+        size = os.path.getsize(dst) / (1024*1024)
+        print(f"✓ App built: {dst} ({size:.2f} MB)")
+    else:
+        print(f"❌ Build output not found: {src}")
+        sys.exit(1)
 
 def build_uninstaller():
     """Build uninstaller application"""
@@ -320,7 +466,6 @@ def build_uninstaller():
     print(" Building Uninstaller ".center(60))
     print("="*60)
 
-    # Create uninstaller with its own icon
     cmd = [
         "pyinstaller",
         *PYINSTALLER_ARGS,
@@ -333,15 +478,25 @@ def build_uninstaller():
         UNINSTALLER_SCRIPT
     ]
 
+    print("Running PyInstaller...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print("❌ Uninstaller build failed!")
-        print(result.stderr)
+        if result.stderr:
+            print("\nError output:")
+            print(result.stderr)
         sys.exit(1)
     
     # Copy to package folder
-    shutil.copy2("dist/uninstall.exe", f"{PACKAGE_DIR}/uninstall.exe")
-    print(f"✓ Uninstaller built: {PACKAGE_DIR}/uninstall.exe")
+    src = "dist/uninstall.exe"
+    dst = f"{PACKAGE_DIR}/uninstall.exe"
+    if os.path.exists(src):
+        shutil.copy2(src, dst)
+        size = os.path.getsize(dst) / (1024*1024)
+        print(f"✓ Uninstaller built: {dst} ({size:.2f} MB)")
+    else:
+        print(f"❌ Uninstaller not found: {src}")
+        sys.exit(1)
 
 def build_installer():
     """Build installer as self-extracting executable"""
@@ -358,8 +513,10 @@ def build_installer():
     
     # Copy documentation
     create_documentation()
-    shutil.copy2(README_FILE, f"{PACKAGE_DIR}/Readme.html")
-    shutil.copy2(TOC_FILE, f"{PACKAGE_DIR}/T&C.html")
+    if os.path.exists(README_FILE):
+        shutil.copy2(README_FILE, f"{PACKAGE_DIR}/Readme.html")
+    if os.path.exists(TOC_FILE):
+        shutil.copy2(TOC_FILE, f"{PACKAGE_DIR}/T&C.html")
 
     # Create the installer executable
     cmd = [
@@ -377,64 +534,29 @@ def build_installer():
         INSTALLER_SCRIPT
     ]
 
+    print("Building installer (this may take a moment)...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print("❌ Installer build failed!")
-        print(result.stderr)
+        if result.stderr:
+            print("\nError output:")
+            print(result.stderr)
         sys.exit(1)
 
-    print(f"✓ Installer built: dist/{APP_NAME}_Setup.exe")
+    # Copy to release folder
+    src = f"dist/{APP_NAME}_Setup.exe"
+    dst = f"{RELEASE_FOLDER}/{APP_NAME}_Setup.exe"
+    if os.path.exists(src):
+        shutil.copy2(src, dst)
+        size = os.path.getsize(dst) / (1024*1024)
+        print(f"✓ Installer built: {dst} ({size:.2f} MB)")
+    else:
+        print(f"❌ Installer not found: {src}")
+        sys.exit(1)
 
 # ────────────────────────────────────────────────
-# PACKAGE CREATION
+# PACKAGE VERIFICATION
 # ────────────────────────────────────────────────
-
-def create_installer_package():
-    """Create the final installer package with embedded data"""
-    print("\n" + "="*60)
-    print(" Creating Final Installer Package ".center(60))
-    print("="*60)
-
-    # Create release folder
-    os.makedirs(RELEASE_FOLDER, exist_ok=True)
-
-    # Copy installer
-    shutil.copy2(f"dist/{APP_NAME}_Setup.exe", f"{RELEASE_FOLDER}/{APP_NAME}_Setup.exe")
-
-    # Create README
-    readme_txt = f"""=== {APP_NAME} Pro ===
-Version: 2026.1.0
-Publisher: {PUBLISHER}
-
-Installation Instructions:
-1. Run {APP_NAME}_Setup.exe as Administrator
-2. Follow the installation wizard
-3. Launch {APP_NAME} from Desktop or Start Menu
-
-Features:
-- AI-Powered Caption Generation
-- Vocal Enhancement with Spleeter
-- Google Drive Integration
-- Multi-language Support (8 languages)
-- Hardware Acceleration Detection
-
-System Requirements:
-- Windows 10/11 (64-bit)
-- 4GB RAM minimum
-- 3GB free disk space
-
-Support: Visit our documentation for help
-
-All rights reserved © 2026 {PUBLISHER}
-"""
-    with open(f"{RELEASE_FOLDER}/README.txt", "w") as f:
-        f.write(readme_txt)
-
-    # Get file sizes
-    installer_size = os.path.getsize(f"{RELEASE_FOLDER}/{APP_NAME}_Setup.exe") / (1024*1024)
-    print(f"\n📦 Package Details:")
-    print(f"   • Installer: {installer_size:.2f} MB")
-    print(f"   • Location: {RELEASE_FOLDER}/")
 
 def verify_package():
     """Verify all components are present"""
@@ -451,8 +573,12 @@ def verify_package():
     ]
 
     missing = []
+    sizes = {}
+    
     for f in required_in_package:
-        if not os.path.exists(f):
+        if os.path.exists(f):
+            sizes[f] = os.path.getsize(f) / (1024*1024)  # MB
+        else:
             missing.append(f)
 
     if missing:
@@ -461,8 +587,46 @@ def verify_package():
             print(f"   • {f}")
         return False
     
-    print("\n✓ Package verification passed")
+    print("\n📦 Package contents:")
+    for f, size in sizes.items():
+        print(f"   • {os.path.basename(f)}: {size:.2f} MB")
+    
     return True
+
+def create_release_info():
+    """Create release information file"""
+    info = f"""=== {APP_NAME} Pro ===
+Version: 2026.1.0
+Build Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Publisher: {PUBLISHER}
+
+Installation Instructions:
+1. Run {APP_NAME}_Setup.exe as Administrator
+2. Follow the installation wizard
+3. Launch {APP_NAME} from Desktop or Start Menu
+
+Package Contents:
+- Main Application: {APP_NAME}.exe
+- Uninstaller: uninstall.exe
+- Installer: {APP_NAME}_Setup.exe
+- Documentation: Readme.html, T&C.html
+- Configuration files
+
+System Requirements:
+- Windows 10/11 (64-bit)
+- 4GB RAM minimum (8GB recommended)
+- 3GB free disk space
+- Internet connection for online mode
+
+Build Environment:
+- Python: {sys.version.split()[0]}
+- Platform: {sys.platform}
+
+All rights reserved © 2026 {PUBLISHER}
+"""
+    with open(f"{RELEASE_FOLDER}/RELEASE.txt", "w") as f:
+        f.write(info)
+    print(f"✓ Created release info: {RELEASE_FOLDER}/RELEASE.txt")
 
 # ────────────────────────────────────────────────
 # MAIN BUILD PROCESS
@@ -474,40 +638,68 @@ def main():
     print("="*80)
     print(f"Started: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
     print(f"Python: {sys.version.split()[0]}")
-    print(f"Platform: {sys.platform}\n")
+    print(f"Platform: {sys.platform}")
+    
+    start_time = time.time()
 
-    # Step 1: Encrypt client secrets
-    print("📁 Step 1: Preparing secrets...")
+    # Step 1: Kill any lingering PyInstaller processes
+    print("\n🔪 Step 1: Killing lingering processes...")
+    kill_pyinstaller_processes()
+
+    # Step 2: Comprehensive cleanup
+    print("\n🧹 Step 2: Cleaning all temporary files...")
+    clean_all_temp()
+
+    # Step 3: Encrypt client secrets
+    print("\n📁 Step 3: Preparing secrets...")
     encrypt_client()
 
-    # Step 2: Create documentation
-    print("\n📄 Step 2: Creating documentation...")
+    # Step 4: Create documentation
+    print("\n📄 Step 4: Creating documentation...")
     create_documentation()
 
-    # Step 3: Clean directories
-    print("\n🧹 Step 3: Cleaning directories...")
-    clean_directories()
+    # Step 5: Create necessary directories
+    print("\n📂 Step 5: Creating build directories...")
+    create_directories()
 
-    # Step 4: Build main app
-    print("\n🔨 Step 4: Building main application...")
+    # Step 6: Build main app
+    print("\n🔨 Step 6: Building main application...")
     build_app()
 
-    # Step 5: Build uninstaller
-    print("\n🔨 Step 5: Building uninstaller...")
+    # Step 7: Build uninstaller
+    print("\n🔨 Step 7: Building uninstaller...")
     build_uninstaller()
 
-    # Step 6: Build installer
-    print("\n🔨 Step 6: Building installer...")
+    # Step 8: Build installer
+    print("\n🔨 Step 8: Building installer...")
     build_installer()
 
-    # Step 7: Verify package
-    print("\n✅ Step 7: Verifying package...")
+    # Step 9: Verify package
+    print("\n✅ Step 9: Verifying package...")
     if not verify_package():
+        print("❌ Package verification failed!")
         sys.exit(1)
 
-    # Step 8: Create final release
-    print("\n📦 Step 8: Creating release package...")
-    create_installer_package()
+    # Step 10: Create release info
+    print("\n📝 Step 10: Creating release information...")
+    create_release_info()
+
+    # Calculate build time
+    build_time = time.time() - start_time
+    minutes = int(build_time // 60)
+    seconds = int(build_time % 60)
+
+    # Final cleanup
+    print("\n🧹 Final cleanup...")
+    temp_to_keep = [RELEASE_FOLDER]  # Keep only the release folder
+    all_items = [d for d in os.listdir('.') if os.path.isdir(d) and d not in temp_to_keep]
+    for item in all_items:
+        if item.startswith('build') or item.startswith('dist') or item.startswith('package') or item.startswith('spec'):
+            force_remove(item)
+    
+    # Clean spec files
+    for spec in glob.glob("*.spec"):
+        force_remove(spec)
 
     # Final summary
     print("\n" + "="*80)
@@ -515,24 +707,30 @@ def main():
     print("="*80)
     print(f"\n📂 Release folder: {RELEASE_FOLDER}/")
     print(f"   ├─ {APP_NAME}_Setup.exe")
-    print(f"   └─ README.txt")
+    print(f"   ├─ RELEASE.txt")
+    print(f"   └─ (package contents)")
     
     installer_size = os.path.getsize(f"{RELEASE_FOLDER}/{APP_NAME}_Setup.exe") / (1024*1024)
     print(f"\n📊 Statistics:")
+    print(f"   • Build time: {minutes}m {seconds}s")
     print(f"   • Installer size: {installer_size:.2f} MB")
     print(f"   • Package includes: Main App, Uninstaller, Documentation")
     
     print(f"\n▶️  Run {RELEASE_FOLDER}/{APP_NAME}_Setup.exe to install")
-    print(f"\n{datetime.datetime.now():%Y-%m-%d %H:%M:%S} - Build finished\n")
+    print(f"\n{datetime.datetime.now():%Y-%m-%d %H:%M:%S} - Build finished successfully\n")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
         print("\n\n⚠️ Build cancelled by user")
+        print("\n🧹 Performing cleanup...")
+        clean_all_temp()
         sys.exit(1)
     except Exception as e:
         print(f"\n❌ Build failed: {e}")
         import traceback
         traceback.print_exc()
+        print("\n🧹 Performing cleanup...")
+        clean_all_temp()
         sys.exit(1)

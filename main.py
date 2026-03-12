@@ -22,10 +22,19 @@ from PyQt5.QtWidgets import (
     QMessageBox, QLineEdit, QScrollArea, QSlider, QProgressBar, QDialog,
     QGroupBox, QRadioButton, QStyleFactory, QTabWidget, QButtonGroup,
     QFrame, QGraphicsOpacityEffect, QStackedWidget, QStatusBar, QSystemTrayIcon,
-    QMenu, QShortcut, QToolTip, QApplication
+    QMenu, QShortcut, QToolTip, QApplication, QSizePolicy, QSpacerItem,
+    QDesktopWidget
 )
-from PyQt5.QtGui import QIcon, QColor, QTextCharFormat, QTextCursor, QFont, QPalette, QCloseEvent, QPixmap, QBrush, QLinearGradient, QDesktopServices, QKeySequence
-from PyQt5.QtCore import QTimer, Qt, QUrl, QDir, pyqtSignal, QThread, pyqtSlot, QPropertyAnimation, QEasingCurve, QProcess, QSettings, QTranslator, QLocale
+from PyQt5.QtGui import (
+    QIcon, QColor, QTextCharFormat, QTextCursor, QFont, QPalette, QCloseEvent,
+    QPixmap, QBrush, QLinearGradient, QDesktopServices, QKeySequence, QPainter,
+    QPen, QRadialGradient, QFontDatabase
+)
+from PyQt5.QtCore import (
+    QTimer, Qt, QUrl, QDir, pyqtSignal, QThread, pyqtSlot, QPropertyAnimation,
+    QEasingCurve, QProcess, QSettings, QTranslator, QLocale, QPoint, QRect,
+    QSize, QParallelAnimationGroup, QPauseAnimation
+)
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from moviepy.editor import VideoFileClip, AudioFileClip
 import pysrt
@@ -73,6 +82,480 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 import tensorflow as tf
 tf.get_logger().setLevel('ERROR')
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+# ========================================
+# CUSTOM DARK BLUE TOPAZ THEME
+# ========================================
+DARK_BLUE_TOPAZ = {
+    'primary': '#0a1929',           # Deep navy blue
+    'secondary': '#1a2b3f',          # Slightly lighter navy
+    'accent': '#3b6ea5',              # Bright blue accent
+    'accent2': '#5d9bcf',             # Light blue accent
+    'text': '#e6f1ff',                # Off-white text
+    'text_secondary': '#b0c7e0',       # Muted blue text
+    'success': '#4caf50',              # Green
+    'warning': '#ff9800',              # Orange
+    'error': '#f44336',                 # Red
+    'info': '#2196f3',                   # Blue info
+    'border': '#2d4a6e',                 # Border color
+    'hover': '#2c3f5a',                   # Hover background
+    'gradient_start': '#0d2842',          # Gradient start
+    'gradient_end': '#1a3f5f',            # Gradient end
+    'progress_start': '#3b6ea5',          # Progress bar start
+    'progress_end': '#5d9bcf',             # Progress bar end
+    'overlay': 'rgba(10, 25, 41, 0.9)'    # Overlay background
+}
+
+# ========================================
+# CSS STYLESHEETS
+# ========================================
+MAIN_STYLESHEET = f"""
+/* Global Styles */
+QMainWindow, QDialog {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 {DARK_BLUE_TOPAZ['gradient_start']},
+        stop:1 {DARK_BLUE_TOPAZ['gradient_end']});
+}}
+
+QWidget {{
+    color: {DARK_BLUE_TOPAZ['text']};
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}}
+
+/* Labels */
+QLabel {{
+    color: {DARK_BLUE_TOPAZ['text']};
+    background: transparent;
+}}
+
+QLabel[role="title"] {{
+    font-size: 20px;
+    font-weight: bold;
+    color: {DARK_BLUE_TOPAZ['accent2']};
+    padding: 10px;
+    border-bottom: 2px solid {DARK_BLUE_TOPAZ['accent']};
+}}
+
+QLabel[role="subtitle"] {{
+    font-size: 14px;
+    font-weight: 600;
+    color: {DARK_BLUE_TOPAZ['text_secondary']};
+}}
+
+/* Buttons */
+QPushButton {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 {DARK_BLUE_TOPAZ['accent']},
+        stop:1 {DARK_BLUE_TOPAZ['primary']});
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    min-height: 30px;
+}}
+
+QPushButton:hover {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 {DARK_BLUE_TOPAZ['accent2']},
+        stop:1 {DARK_BLUE_TOPAZ['accent']});
+    border-color: {DARK_BLUE_TOPAZ['accent2']};
+}}
+
+QPushButton:pressed {{
+    background: {DARK_BLUE_TOPAZ['primary']};
+}}
+
+QPushButton:disabled {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text_secondary']};
+    border-color: {DARK_BLUE_TOPAZ['border']};
+}}
+
+QPushButton[type="success"] {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4caf50,
+        stop:1 #2e7d32);
+}}
+
+QPushButton[type="warning"] {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #ff9800,
+        stop:1 #f57c00);
+}}
+
+QPushButton[type="danger"] {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #f44336,
+        stop:1 #d32f2f);
+}}
+
+/* ComboBox */
+QComboBox {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 30px;
+}}
+
+QComboBox:hover {{
+    border-color: {DARK_BLUE_TOPAZ['accent']};
+}}
+
+QComboBox::drop-down {{
+    border: none;
+    background: transparent;
+}}
+
+QComboBox::down-arrow {{
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid {DARK_BLUE_TOPAZ['text']};
+    margin-right: 5px;
+}}
+
+QComboBox QAbstractItemView {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    selection-background-color: {DARK_BLUE_TOPAZ['accent']};
+}}
+
+/* LineEdit */
+QLineEdit, QTextEdit, QSpinBox {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 6px;
+    padding: 6px 10px;
+    selection-background-color: {DARK_BLUE_TOPAZ['accent']};
+}}
+
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus {{
+    border-color: {DARK_BLUE_TOPAZ['accent']};
+    border-width: 2px;
+}}
+
+/* Progress Bar */
+QProgressBar {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 8px;
+    text-align: center;
+    color: {DARK_BLUE_TOPAZ['text']};
+    font-weight: bold;
+    height: 25px;
+}}
+
+QProgressBar::chunk {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 {DARK_BLUE_TOPAZ['progress_start']},
+        stop:1 {DARK_BLUE_TOPAZ['progress_end']});
+    border-radius: 7px;
+}}
+
+/* GroupBox */
+QGroupBox {{
+    font-weight: bold;
+    border: 2px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 10px;
+    margin-top: 15px;
+    padding-top: 10px;
+}}
+
+QGroupBox::title {{
+    subcontrol-origin: margin;
+    left: 15px;
+    padding: 0 5px;
+    color: {DARK_BLUE_TOPAZ['accent2']};
+}}
+
+/* ScrollArea */
+QScrollArea {{
+    border: none;
+    background: transparent;
+}}
+
+QScrollBar:vertical {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    width: 12px;
+    border-radius: 6px;
+}}
+
+QScrollBar::handle:vertical {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+    border-radius: 6px;
+    min-height: 20px;
+}}
+
+QScrollBar::handle:vertical:hover {{
+    background: {DARK_BLUE_TOPAZ['accent2']};
+}}
+
+QScrollBar:horizontal {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    height: 12px;
+    border-radius: 6px;
+}}
+
+QScrollBar::handle:horizontal {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+    border-radius: 6px;
+    min-width: 20px;
+}}
+
+/* Slider */
+QSlider::groove:horizontal {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    height: 8px;
+    border-radius: 4px;
+}}
+
+QSlider::handle:horizontal {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 {DARK_BLUE_TOPAZ['accent']},
+        stop:1 {DARK_BLUE_TOPAZ['accent2']});
+    width: 18px;
+    height: 18px;
+    margin: -5px 0;
+    border-radius: 9px;
+    border: 2px solid {DARK_BLUE_TOPAZ['text']};
+}}
+
+QSlider::sub-page:horizontal {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 {DARK_BLUE_TOPAZ['accent']},
+        stop:1 {DARK_BLUE_TOPAZ['accent2']});
+    border-radius: 4px;
+}}
+
+/* Tab Widget */
+QTabWidget::pane {{
+    background: transparent;
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 8px;
+}}
+
+QTabBar::tab {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    padding: 8px 16px;
+    margin-right: 2px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}}
+
+QTabBar::tab:selected {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+    font-weight: bold;
+}}
+
+QTabBar::tab:hover {{
+    background: {DARK_BLUE_TOPAZ['hover']};
+}}
+
+/* Menu */
+QMenu {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 6px;
+}}
+
+QMenu::item {{
+    padding: 6px 25px;
+    border-radius: 3px;
+}}
+
+QMenu::item:selected {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+}}
+
+QMenu::separator {{
+    height: 1px;
+    background: {DARK_BLUE_TOPAZ['border']};
+    margin: 5px 10px;
+}}
+
+/* ToolTip */
+QToolTip {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    color: {DARK_BLUE_TOPAZ['text']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 4px;
+    padding: 4px 8px;
+}}
+
+/* Status Bar */
+QStatusBar {{
+    background: {DARK_BLUE_TOPAZ['primary']};
+    color: {DARK_BLUE_TOPAZ['text_secondary']};
+    border-top: 1px solid {DARK_BLUE_TOPAZ['border']};
+}}
+
+/* Message Box */
+QMessageBox {{
+    background: {DARK_BLUE_TOPAZ['secondary']};
+}}
+
+QMessageBox QLabel {{
+    color: {DARK_BLUE_TOPAZ['text']};
+}}
+
+/* CheckBox */
+QCheckBox {{
+    color: {DARK_BLUE_TOPAZ['text']};
+    spacing: 8px;
+}}
+
+QCheckBox::indicator {{
+    width: 18px;
+    height: 18px;
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 3px;
+}}
+
+QCheckBox::indicator:checked {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+    image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='white'><path d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/></svg>");
+}}
+
+QCheckBox::indicator:hover {{
+    border-color: {DARK_BLUE_TOPAZ['accent']};
+}}
+
+/* RadioButton */
+QRadioButton {{
+    color: {DARK_BLUE_TOPAZ['text']};
+    spacing: 8px;
+}}
+
+QRadioButton::indicator {{
+    width: 18px;
+    height: 18px;
+    background: {DARK_BLUE_TOPAZ['secondary']};
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 9px;
+}}
+
+QRadioButton::indicator:checked {{
+    background: {DARK_BLUE_TOPAZ['accent']};
+    border: 1px solid {DARK_BLUE_TOPAZ['accent2']};
+}}
+
+QRadioButton::indicator:checked::after {{
+    content: "";
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 4px;
+    margin: 4px;
+}}
+
+/* Frame */
+QFrame {{
+    background: transparent;
+}}
+
+QFrame[frameShape="4"] {{
+    border: 1px solid {DARK_BLUE_TOPAZ['border']};
+    border-radius: 8px;
+    background: {DARK_BLUE_TOPAZ['secondary']};
+}}
+"""
+
+# ========================================
+# ANIMATED BUTTON CLASS
+# ========================================
+class AnimatedButton(QPushButton):
+    """Custom animated button with hover effects"""
+    
+    def __init__(self, text="", parent=None):
+        super().__init__(text, parent)
+        self._animation = QPropertyAnimation(self, b"pos")
+        self._animation.setDuration(200)
+        self._animation.setEasingCurve(QEasingCurve.OutCubic)
+        self.installEventFilter(self)
+        
+    def eventFilter(self, obj, event):
+        if event.type() == event.Enter:
+            self.animate_hover(True)
+        elif event.type() == event.Leave:
+            self.animate_hover(False)
+        return super().eventFilter(obj, event)
+    
+    def animate_hover(self, entering):
+        """Animate button on hover"""
+        if entering:
+            self.setStyleSheet(self.styleSheet() + """
+                QPushButton {
+                    transform: scale(1.05);
+                }
+            """)
+        else:
+            self.setStyleSheet(self.styleSheet().replace("transform: scale(1.05);", ""))
+
+# ========================================
+# GRADIENT LABEL CLASS
+# ========================================
+class GradientLabel(QLabel):
+    """Label with gradient text effect"""
+    
+    def __init__(self, text="", parent=None):
+        super().__init__(text, parent)
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Create gradient for text
+        gradient = QLinearGradient(0, 0, self.width(), 0)
+        gradient.setColorAt(0, QColor(DARK_BLUE_TOPAZ['accent']))
+        gradient.setColorAt(0.5, QColor(DARK_BLUE_TOPAZ['accent2']))
+        gradient.setColorAt(1, QColor(DARK_BLUE_TOPAZ['accent']))
+        
+        # Set font
+        font = self.font()
+        font.setPointSize(font.pointSize() + 4)
+        font.setBold(True)
+        painter.setFont(font)
+        
+        # Draw text with gradient
+        painter.setPen(QPen(gradient, 1))
+        painter.drawText(self.rect(), self.alignment(), self.text())
+        
+        # Add glow effect
+        painter.setPen(QPen(QColor(DARK_BLUE_TOPAZ['accent2']).lighter(), 2))
+        painter.drawText(self.rect().translated(2, 2), self.alignment(), self.text())
+
+# ========================================
+# CARD WIDGET CLASS
+# ========================================
+class CardWidget(QFrame):
+    """Modern card-style widget with shadow effect"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFrameStyle(QFrame.Box)
+        self.setStyleSheet(f"""
+            CardWidget {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 1px solid {DARK_BLUE_TOPAZ['border']};
+                border-radius: 10px;
+                padding: 15px;
+            }}
+        """)
+        
+        # Add shadow effect
+        self.shadow = QGraphicsOpacityEffect()
+        self.shadow.setOpacity(0.5)
+        self.setGraphicsEffect(self.shadow)
 
 # ========================================
 # LOGGING SETUP (MUST BE FIRST)
@@ -1393,7 +1876,10 @@ def load_settings():
         "last_output_folder": "",
         "window_geometry": None,
         "window_state": None,
-        "language": "en"
+        "language": "en",
+        "window_width": 1024,
+        "window_height": 768,
+        "window_maximized": False
     }
     
     if not os.path.exists(SETTINGS_FILE):
@@ -1557,7 +2043,7 @@ class ProgressWhisper:
         return result
 
 # ========================================
-# SETTINGS DIALOG
+# SETTINGS DIALOG (RESIZABLE)
 # ========================================
 class SettingsDialog(QDialog):
     settingsChanged = pyqtSignal(dict)
@@ -1565,15 +2051,46 @@ class SettingsDialog(QDialog):
     def __init__(self, current_settings, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr('settings_title'))
-        self.setFixedSize(700, 800)
+        self.resize(750, 850)
+        self.setMinimumSize(600, 700)
         self.current_settings = current_settings
         self.parent_window = parent
-        lay = QVBoxLayout()
-        self.setLayout(lay)
+        
+        # Set window flags to allow minimize/maximize
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinMaxButtonsHint)
+        
+        # Apply dark blue topaz theme
+        self.setStyleSheet(MAIN_STYLESHEET)
+        
+        # Main layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
 
         # Create tab widget
         tabs = QTabWidget()
-        lay.addWidget(tabs)
+        tabs.setStyleSheet("""
+            QTabWidget::pane {
+                background: transparent;
+                border: 1px solid """ + DARK_BLUE_TOPAZ['border'] + """;
+                border-radius: 8px;
+            }
+            QTabBar::tab {
+                background: """ + DARK_BLUE_TOPAZ['secondary'] + """;
+                color: """ + DARK_BLUE_TOPAZ['text'] + """;
+                padding: 10px 20px;
+                margin-right: 2px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+            }
+            QTabBar::tab:selected {
+                background: """ + DARK_BLUE_TOPAZ['accent'] + """;
+                font-weight: bold;
+            }
+            QTabBar::tab:hover {
+                background: """ + DARK_BLUE_TOPAZ['hover'] + """;
+            }
+        """)
+        main_layout.addWidget(tabs)
 
         # ===== General Tab =====
         general_tab = QWidget()
@@ -1756,6 +2273,19 @@ class SettingsDialog(QDialog):
         # Detailed info button
         hw_details_btn = QPushButton("Show Detailed Hardware Info")
         hw_details_btn.clicked.connect(self.show_hardware_details)
+        hw_details_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['accent']};
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['accent2']};
+            }}
+        """)
         hw_lay.addWidget(hw_details_btn)
         
         hw_gb.setLayout(hw_lay)
@@ -1814,15 +2344,49 @@ class SettingsDialog(QDialog):
         # Buttons
         btn_lay = QHBoxLayout()
         apply_btn = QPushButton(tr('apply_restart'))
-        apply_btn.setStyleSheet("background:#007aff; color:white; padding:12px; border-radius:8px; font-weight:bold;")
+        apply_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {DARK_BLUE_TOPAZ['accent']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent2']});
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 25px;
+                font-weight: bold;
+                font-size: 14px;
+                min-width: 150px;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {DARK_BLUE_TOPAZ['accent2']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent']});
+            }}
+        """)
         apply_btn.clicked.connect(self.apply_close)
+        
         cancel_btn = QPushButton(tr('cancel'))
-        cancel_btn.setStyleSheet("background:#8e8e93; color:white; padding:12px; border-radius:8px;")
+        cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text']};
+                border: 1px solid {DARK_BLUE_TOPAZ['border']};
+                border-radius: 8px;
+                padding: 12px 25px;
+                font-weight: bold;
+                font-size: 14px;
+                min-width: 150px;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['hover']};
+            }}
+        """)
         cancel_btn.clicked.connect(self.reject)
+        
         btn_lay.addStretch()
         btn_lay.addWidget(apply_btn)
         btn_lay.addWidget(cancel_btn)
-        lay.addLayout(btn_lay)
+        main_layout.addLayout(btn_lay)
 
         logger.info("Settings dialog initialized with current settings")
 
@@ -1830,7 +2394,22 @@ class SettingsDialog(QDialog):
         """Show detailed hardware information"""
         details = hardware_detector.get_detailed_info()
         msg = "\n".join(details)
-        QMessageBox.information(self, tr('hardware_acceleration'), msg)
+        
+        # Create styled message box
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(tr('hardware_acceleration'))
+        msg_box.setText(msg)
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setStyleSheet(f"""
+            QMessageBox {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+            }}
+            QLabel {{
+                color: {DARK_BLUE_TOPAZ['text']};
+                font-family: 'Consolas', monospace;
+            }}
+        """)
+        msg_box.exec_()
 
     def browse_temp(self):
         d = QFileDialog.getExistingDirectory(self, tr('temp_dir'))
@@ -1868,7 +2447,10 @@ class SettingsDialog(QDialog):
             "last_output_folder": self.current_settings.get("last_output_folder", ""),
             "window_geometry": self.current_settings.get("window_geometry"),
             "window_state": self.current_settings.get("window_state"),
-            "language": lang_code
+            "language": lang_code,
+            "window_width": self.current_settings.get("window_width", 1024),
+            "window_height": self.current_settings.get("window_height", 768),
+            "window_maximized": self.current_settings.get("window_maximized", False)
         }
         save_settings(new_settings)
         
@@ -2157,7 +2739,7 @@ class OnlineHandler:
             # Create clickable link message
             link_message = (f"<b>Colab Launched (GPU Runtime Recommended)</b><br><br>"
                            f"If you closed the tab, click below to reopen:<br>"
-                           f"<a href='{colab_url}' style='color: #00c853;'>{colab_url}</a><br><br>"
+                           f"<a href='{colab_url}' style='color: {DARK_BLUE_TOPAZ['accent2']};'>{colab_url}</a><br><br>"
                            f"<b>Instructions:</b><br>"
                            f"1. In Colab → Runtime → Change runtime type → Hardware accelerator → GPU<br>"
                            f"2. Wait 60 seconds → then Runtime → Run All<br>"
@@ -2169,6 +2751,17 @@ class OnlineHandler:
             msg_box.setTextFormat(Qt.RichText)
             msg_box.setText(link_message)
             msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.setStyleSheet(f"""
+                QMessageBox {{
+                    background: {DARK_BLUE_TOPAZ['secondary']};
+                }}
+                QLabel {{
+                    color: {DARK_BLUE_TOPAZ['text']};
+                }}
+                a {{
+                    color: {DARK_BLUE_TOPAZ['accent2']};
+                }}
+            """)
             msg_box.exec_()
 
             self.poll_local_out = out_path
@@ -2383,7 +2976,7 @@ class OnlineHandler:
             link_message = (f"<b>Colab Timeout / Crash Detected</b><br><br>"
                            f"No result file appeared in Google Drive after long wait.<br><br>"
                            f"If you closed the tab, you can reopen it here:<br>"
-                           f"<a href='{self._current_colab_url}' style='color: #00c853;'>{self._current_colab_url}</a><br><br>"
+                           f"<a href='{self._current_colab_url}' style='color: {DARK_BLUE_TOPAZ['accent2']};'>{self._current_colab_url}</a><br><br>"
                            f"<b>Next steps:</b><br>"
                            f"1. Check if the notebook finished or errored<br>"
                            f"2. If subtitles appeared in Drive → download manually<br>"
@@ -2393,6 +2986,17 @@ class OnlineHandler:
             msg_box.setWindowTitle("Colab Timeout")
             msg_box.setTextFormat(Qt.RichText)
             msg_box.setText(link_message)
+            msg_box.setStyleSheet(f"""
+                QMessageBox {{
+                    background: {DARK_BLUE_TOPAZ['secondary']};
+                }}
+                QLabel {{
+                    color: {DARK_BLUE_TOPAZ['text']};
+                }}
+                a {{
+                    color: {DARK_BLUE_TOPAZ['accent2']};
+                }}
+            """)
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec_()
             
@@ -3057,41 +3661,56 @@ class ModelDownloadThread(QThread):
 class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(tr('window_title'))
-        self.setMinimumSize(1024, 768)
-        logger.info("Initializing main window")
 
-        # Set window icon
-        icon_path = resource_path('App.ico')
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-            logger.info("App icon set")
-
-        # Load settings
+        # ───────────────────────────────────────────────
+        # 1. Load settings FIRST — nothing should read self.settings before this
+        # ───────────────────────────────────────────────
         self.settings = load_settings()
-        
-        # Set language from settings
+
+        # Now it's safe to use settings
         _translator.set_language(self.settings.get("language", "en"))
-        
-        # Initialize session manager
-        self.session_manager = SessionManager()
-        
-        # Clean up corrupt models
-        cleanup_corrupt_models(self.settings.get("models_dir", APP_DATA_DIR))
-        
-        # Apply settings
+
+        # ───────────────────────────────────────────────
+        # 2. Basic window setup
+        # ───────────────────────────────────────────────
+        self.setWindowTitle(tr('window_title'))
+        self.setMinimumSize(800, 600)
+
+        # Restore saved size (now safe)
+        saved_width  = self.settings.get("window_width",  1024)
+        saved_height = self.settings.get("window_height", 768)
+        self.resize(saved_width, saved_height)
+
+        # Restore maximized state
+        if self.settings.get("window_maximized", False):
+            self.showMaximized()
+
+        # ───────────────────────────────────────────────
+        # 3. Apply appearance early (depends on settings)
+        # ───────────────────────────────────────────────
         self.apply_ui_scale()
         self.apply_theme()
 
+        # Center window on screen
         self.center_window()
 
-        # Restore window geometry if available
+        # Restore exact geometry & window state if previously saved
         if self.settings.get("window_geometry"):
             self.restoreGeometry(bytes.fromhex(self.settings["window_geometry"]))
         if self.settings.get("window_state"):
             self.restoreState(bytes.fromhex(self.settings["window_state"]))
 
-        # Create central widget
+        # ───────────────────────────────────────────────
+        # 4. Window icon
+        # ───────────────────────────────────────────────
+        icon_path = resource_path('App.ico')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+            logger.info("App icon set")
+
+        # ───────────────────────────────────────────────
+        # 5. Central widget & main layout
+        # ───────────────────────────────────────────────
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout()
@@ -3100,51 +3719,67 @@ class NotyCaptionWindow(QMainWindow):
         # Status bar
         self.statusBar().showMessage(tr('ready'))
 
-        # Create system tray icon
+        # ───────────────────────────────────────────────
+        # 6. System tray
+        # ───────────────────────────────────────────────
         self.create_tray_icon()
 
-        # Main layout
+        # ───────────────────────────────────────────────
+        # 7. Main UI panels
+        # ───────────────────────────────────────────────
         self.top_layout = QHBoxLayout()
         self.main_layout.addLayout(self.top_layout)
 
-        # Setup UI panels
         self.setup_left_panel()
         self.setup_right_panel()
         self.setup_bottom_panel()
         self.setup_footer()
 
-        # Initialize state
+        # ───────────────────────────────────────────────
+        # 8. Initialize state variables
+        # ───────────────────────────────────────────────
         self.initialize_state()
+
+        # Session manager (initialize before restore_session)
+        self.session_manager = SessionManager()
+
+        # Online handler
         self.online_handler = OnlineHandler(self)
 
-        # Threads
+        # Threads (initially None)
         self.enhancer_thread = None
         self.model_download_thread = None
         self.progress_whisper = None
+
+        # Player timer
         self.player_timer = QTimer(self)
         self.player_timer.timeout.connect(self.update_timeline)
         self.player_timer.start(50)
+
+        # Flags
         self._closing = False
         self._cancel_lock = threading.Lock()
         self._operation_in_progress = False
         self._current_notebook_url = None
+
+        # Force cancel timer
         self._force_cancel_timer = QTimer(self)
         self._force_cancel_timer.setSingleShot(True)
         self._force_cancel_timer.timeout.connect(self.show_force_cancel_option)
 
-        # Load existing credentials
+        # Load any existing Google credentials
         self.load_existing_credentials()
 
-        # Setup keyboard shortcuts
+        # Keyboard shortcuts
         self.setup_shortcuts()
 
-        # Setup tooltips
+        # Tooltips (if enabled)
         self.setup_tooltips()
 
-        # Create overlays
+        # Overlays for progress / cancel
         self.create_overlays()
 
-        # Restore last session if available
+        # Try to restore last session (now after session_manager is initialized)
         self.restore_session()
 
         logger.info("Main window fully initialized")
@@ -3226,14 +3861,14 @@ class NotyCaptionWindow(QMainWindow):
         self.out_folder_edit.setToolTip("Output folder for generated subtitles")
 
     def create_overlays(self):
-        """Create overlay widgets"""
+        """Create overlay widgets with dark blue topaz theme"""
         # Main operation overlay
         self.overlay = QFrame(self.central_widget)
-        self.overlay.setStyleSheet("""
-            QFrame {
-                background: rgba(0,0,0,0.85);
+        self.overlay.setStyleSheet(f"""
+            QFrame {{
+                background: {DARK_BLUE_TOPAZ['overlay']};
                 border: none;
-            }
+            }}
         """)
         self.overlay.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self.overlay.setGeometry(0, 0, self.central_widget.width(), self.central_widget.height())
@@ -3243,64 +3878,67 @@ class NotyCaptionWindow(QMainWindow):
         self.overlay_layout.setAlignment(Qt.AlignCenter)
 
         self.progress_container = QWidget()
-        self.progress_container.setStyleSheet("""
-            QWidget {
-                background: #2d2d30;
+        self.progress_container.setStyleSheet(f"""
+            QWidget {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
                 border-radius: 15px;
-                padding: 20px;
+                padding: 25px;
                 max-width: 500px;
-            }
+            }}
         """)
         prog_lay = QVBoxLayout(self.progress_container)
 
-        self.prog_title = QLabel(tr('processing'))
-        self.prog_title.setStyleSheet("color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        # Animated title
+        self.prog_title = GradientLabel(tr('processing'))
         self.prog_title.setAlignment(Qt.AlignCenter)
         prog_lay.addWidget(self.prog_title)
 
         self.prog_info = QLabel(tr('starting'))
-        self.prog_info.setStyleSheet("color: #cccccc; font-size: 12px; margin-bottom: 15px;")
+        self.prog_info.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 13px; margin: 10px;")
         self.prog_info.setAlignment(Qt.AlignCenter)
         prog_lay.addWidget(self.prog_info)
 
         self.operation_progress = QProgressBar()
         self.operation_progress.setMinimum(0)
         self.operation_progress.setMaximum(100)
-        self.operation_progress.setStyleSheet("""
-            QProgressBar {
-                background: #3a3f44;
-                border: 2px solid #4a4f55;
-                border-radius: 10px;
-                text-align: center;
-                color: white;
-                font-weight: bold;
-                height: 35px;
-                min-width: 400px;
-            }
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #00c853, stop:0.5 #00b140, stop:1 #009624);
+        self.operation_progress.setStyleSheet(f"""
+            QProgressBar {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
                 border-radius: 8px;
-            }
+                text-align: center;
+                color: {DARK_BLUE_TOPAZ['text']};
+                font-weight: bold;
+                height: 30px;
+                min-width: 400px;
+            }}
+            QProgressBar::chunk {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DARK_BLUE_TOPAZ['progress_start']},
+                    stop:1 {DARK_BLUE_TOPAZ['progress_end']});
+                border-radius: 7px;
+            }}
         """)
         prog_lay.addWidget(self.operation_progress)
 
         # Speed and ETA labels
         speed_layout = QHBoxLayout()
         self.speed_label = QLabel(f"{tr('speed')} --")
-        self.speed_label.setStyleSheet("color: #cccccc; font-size: 11px;")
+        self.speed_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 12px;")
         speed_layout.addWidget(self.speed_label)
         
         self.eta_label = QLabel(f"{tr('eta')} --")
-        self.eta_label.setStyleSheet("color: #cccccc; font-size: 11px;")
+        self.eta_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 12px;")
         speed_layout.addWidget(self.eta_label)
         speed_layout.addStretch()
         prog_lay.addLayout(speed_layout)
 
+        # Cancel buttons
         self.overlay_cancel_btn = QPushButton(tr('cancel'))
-        self.overlay_cancel_btn.setStyleSheet("""
-            QPushButton {
-                background: #d32f2f;
+        self.overlay_cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['error']};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -3309,25 +3947,18 @@ class NotyCaptionWindow(QMainWindow):
                 padding: 12px 25px;
                 margin-top: 15px;
                 min-width: 200px;
-            }
-            QPushButton:hover {
-                background: #b71c1c;
-            }
-            QPushButton:pressed {
-                background: #9a0000;
-            }
-            QPushButton:disabled {
-                background: #666666;
-                color: #999999;
-            }
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['error']}cc;
+            }}
         """)
         self.overlay_cancel_btn.clicked.connect(lambda: self.cancel_current_operation(with_confirmation=self.settings.get("confirm_cancel", True)))
         self.overlay_cancel_btn.setEnabled(False)
 
         self.overlay_force_cancel_btn = QPushButton(tr('force_cancel'))
-        self.overlay_force_cancel_btn.setStyleSheet("""
-            QPushButton {
-                background: #9a0000;
+        self.overlay_force_cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['warning']};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -3336,17 +3967,10 @@ class NotyCaptionWindow(QMainWindow):
                 padding: 12px 25px;
                 margin-top: 10px;
                 min-width: 200px;
-            }
-            QPushButton:hover {
-                background: #7a0000;
-            }
-            QPushButton:pressed {
-                background: #5a0000;
-            }
-            QPushButton:disabled {
-                background: #666666;
-                color: #999999;
-            }
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['warning']}cc;
+            }}
         """)
         self.overlay_force_cancel_btn.clicked.connect(self.force_cancel_operation)
         self.overlay_force_cancel_btn.setEnabled(False)
@@ -3360,11 +3984,11 @@ class NotyCaptionWindow(QMainWindow):
 
         # Download overlay
         self.download_overlay = QFrame(self.central_widget)
-        self.download_overlay.setStyleSheet("""
-            QFrame {
-                background: rgba(0,0,0,0.85);
+        self.download_overlay.setStyleSheet(f"""
+            QFrame {{
+                background: {DARK_BLUE_TOPAZ['overlay']};
                 border: none;
-            }
+            }}
         """)
         self.download_overlay.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self.download_overlay.setGeometry(0, 0, self.central_widget.width(), self.central_widget.height())
@@ -3374,64 +3998,65 @@ class NotyCaptionWindow(QMainWindow):
         download_overlay_layout.setAlignment(Qt.AlignCenter)
 
         download_container = QWidget()
-        download_container.setStyleSheet("""
-            QWidget {
-                background: #2d2d30;
+        download_container.setStyleSheet(f"""
+            QWidget {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
                 border-radius: 15px;
-                padding: 20px;
+                padding: 25px;
                 max-width: 500px;
-            }
+            }}
         """)
         download_lay = QVBoxLayout(download_container)
 
-        download_title = QLabel(tr('downloading'))
-        download_title.setStyleSheet("color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        download_title = GradientLabel(tr('downloading'))
         download_title.setAlignment(Qt.AlignCenter)
         download_lay.addWidget(download_title)
 
         self.download_info = QLabel(tr('starting'))
-        self.download_info.setStyleSheet("color: #cccccc; font-size: 12px; margin-bottom: 15px;")
+        self.download_info.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 13px; margin: 10px;")
         self.download_info.setAlignment(Qt.AlignCenter)
         download_lay.addWidget(self.download_info)
 
         self.download_progress = QProgressBar()
         self.download_progress.setMinimum(0)
         self.download_progress.setMaximum(100)
-        self.download_progress.setStyleSheet("""
-            QProgressBar {
-                background: #3a3f44;
-                border: 2px solid #4a4f55;
-                border-radius: 10px;
-                text-align: center;
-                color: white;
-                font-weight: bold;
-                height: 35px;
-                min-width: 400px;
-            }
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #00c853, stop:0.5 #00b140, stop:1 #009624);
+        self.download_progress.setStyleSheet(f"""
+            QProgressBar {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
                 border-radius: 8px;
-            }
+                text-align: center;
+                color: {DARK_BLUE_TOPAZ['text']};
+                font-weight: bold;
+                height: 30px;
+                min-width: 400px;
+            }}
+            QProgressBar::chunk {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DARK_BLUE_TOPAZ['progress_start']},
+                    stop:1 {DARK_BLUE_TOPAZ['progress_end']});
+                border-radius: 7px;
+            }}
         """)
         download_lay.addWidget(self.download_progress)
 
         # Download speed and ETA
         download_speed_layout = QHBoxLayout()
         self.download_speed_label = QLabel(f"{tr('speed')} --")
-        self.download_speed_label.setStyleSheet("color: #cccccc; font-size: 11px;")
+        self.download_speed_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 12px;")
         download_speed_layout.addWidget(self.download_speed_label)
         
         self.download_eta_label = QLabel(f"{tr('eta')} --")
-        self.download_eta_label.setStyleSheet("color: #cccccc; font-size: 11px;")
+        self.download_eta_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 12px;")
         download_speed_layout.addWidget(self.download_eta_label)
         download_speed_layout.addStretch()
         download_lay.addLayout(download_speed_layout)
 
         self.download_cancel_btn = QPushButton(tr('cancel'))
-        self.download_cancel_btn.setStyleSheet("""
-            QPushButton {
-                background: #d32f2f;
+        self.download_cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['error']};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -3440,20 +4065,17 @@ class NotyCaptionWindow(QMainWindow):
                 padding: 12px 25px;
                 margin-top: 15px;
                 min-width: 200px;
-            }
-            QPushButton:hover {
-                background: #b71c1c;
-            }
-            QPushButton:pressed {
-                background: #9a0000;
-            }
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['error']}cc;
+            }}
         """)
         self.download_cancel_btn.clicked.connect(lambda: self.cancel_current_operation(with_confirmation=self.settings.get("confirm_cancel", True)))
         
         self.download_force_cancel_btn = QPushButton(tr('force_cancel'))
-        self.download_force_cancel_btn.setStyleSheet("""
-            QPushButton {
-                background: #9a0000;
+        self.download_force_cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['warning']};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -3462,17 +4084,10 @@ class NotyCaptionWindow(QMainWindow):
                 padding: 12px 25px;
                 margin-top: 10px;
                 min-width: 200px;
-            }
-            QPushButton:hover {
-                background: #7a0000;
-            }
-            QPushButton:pressed {
-                background: #5a0000;
-            }
-            QPushButton:disabled {
-                background: #666666;
-                color: #999999;
-            }
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['warning']}cc;
+            }}
         """)
         self.download_force_cancel_btn.clicked.connect(self.force_cancel_operation)
         self.download_force_cancel_btn.hide()
@@ -3497,7 +4112,11 @@ class NotyCaptionWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent):
         """Handle window close event"""
-        # Save window geometry
+        # Save window geometry and size
+        if not self.isMaximized():
+            self.settings["window_width"] = self.width()
+            self.settings["window_height"] = self.height()
+        self.settings["window_maximized"] = self.isMaximized()
         self.settings["window_geometry"] = self.saveGeometry().toHex().data().decode()
         self.settings["window_state"] = self.saveState().toHex().data().decode()
         save_settings(self.settings)
@@ -3603,52 +4222,86 @@ class NotyCaptionWindow(QMainWindow):
         self.left_panel.setLayout(self.left_layout)
         self.top_layout.addWidget(self.left_panel)
 
-        title = QLabel(tr('ai_caption_editor'))
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        # Gradient title
+        title = GradientLabel(tr('ai_caption_editor'))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #ffffff; margin: 10px; padding: 10px;")
         self.left_layout.addWidget(title)
 
         self.caption_edit = QTextEdit()
         self.caption_edit.setReadOnly(True)
         self.caption_edit.setFont(QFont("Consolas", 12))
-        self.caption_edit.setStyleSheet("""
-            QTextEdit {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1e1e1e, stop:1 #2d2d30);
-                color: #e0e0e0;
-                border: 2px solid #404040;
+        self.caption_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 {DARK_BLUE_TOPAZ['primary']},
+                    stop:1 {DARK_BLUE_TOPAZ['secondary']});
+                color: {DARK_BLUE_TOPAZ['text']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
                 border-radius: 8px;
                 padding: 10px;
-                selection-background-color: #007acc;
-            }
+                selection-background-color: {DARK_BLUE_TOPAZ['accent']};
+            }}
         """)
         self.caption_edit.setPlaceholderText("Captions will appear here after generation...")
         self.left_layout.addWidget(self.caption_edit, stretch=1)
 
         btn_row = QHBoxLayout()
-        self.edit_btn = QPushButton(tr('edit_captions'))
+        self.edit_btn = AnimatedButton(tr('edit_captions'))
         self.edit_btn.setMinimumHeight(60)
-        self.edit_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #0a84ff,stop:1 #0066cc); color: white; border-radius: 12px; font-weight: bold; font-size: 14px; padding: 12px; }
-            QPushButton:disabled { background: #666; }
+        self.edit_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 {DARK_BLUE_TOPAZ['accent']},
+                    stop:1 {DARK_BLUE_TOPAZ['progress_start']});
+                color: white;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 12px;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.edit_btn.clicked.connect(self.toggle_edit_mode)
         self.edit_btn.setEnabled(False)
         btn_row.addWidget(self.edit_btn)
 
-        settings_btn = QPushButton(tr('settings'))
+        settings_btn = AnimatedButton(tr('settings'))
         settings_btn.setMinimumHeight(60)
-        settings_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #5e5ce6,stop:1 #4a4ad8); color: white; border-radius: 12px; font-weight: bold; font-size: 14px; padding: 12px; }
+        settings_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 {DARK_BLUE_TOPAZ['accent2']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent']});
+                color: white;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 12px;
+            }}
         """)
         settings_btn.clicked.connect(self.open_settings_dialog)
         btn_row.addWidget(settings_btn)
 
-        self.download_btn = QPushButton(tr('download_model'))
+        self.download_btn = AnimatedButton(tr('download_model'))
         self.download_btn.setMinimumHeight(60)
-        self.download_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ff9500,stop:1 #e68900); color: white; border-radius: 12px; font-weight: bold; font-size: 14px; padding: 12px; }
-            QPushButton:disabled { background: #666; }
+        self.download_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #ff9500,
+                    stop:1 #e68900);
+                color: white;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 12px;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.download_btn.clicked.connect(self.open_model_download_dialog)
         btn_row.addWidget(self.download_btn)
@@ -3660,21 +4313,34 @@ class NotyCaptionWindow(QMainWindow):
         """Setup right panel with controls"""
         self.right_scroll = QScrollArea()
         self.right_scroll.setWidgetResizable(True)
-        self.right_scroll.setStyleSheet("QScrollArea { border: none; }")
+        self.right_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         self.top_layout.addWidget(self.right_scroll)
 
         self.right_panel = QWidget()
+        self.right_panel.setStyleSheet("background: transparent;")
         self.right_layout = QGridLayout()
         self.right_panel.setLayout(self.right_layout)
         self.right_scroll.setWidget(self.right_panel)
 
         row = 0
 
-        self.login_button = QPushButton(tr('login_google'))
+        self.login_button = AnimatedButton(tr('login_google'))
         self.login_button.setMinimumHeight(60)
-        self.login_button.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #4285f4,stop:1 #3367d6); color: white; border-radius: 15px; font-weight: bold; font-size: 14px; padding: 15px; }
-            QPushButton:disabled { background: #ccc; color: #666; }
+        self.login_button.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #4285f4,
+                    stop:1 #3367d6);
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 15px;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.login_button.clicked.connect(self.initiate_google_login)
         self.right_layout.addWidget(self.login_button, row, 0, 1, 2)
@@ -3682,6 +4348,7 @@ class NotyCaptionWindow(QMainWindow):
 
         mode_label = QLabel(tr('processing_mode'))
         mode_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        mode_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         self.right_layout.addWidget(mode_label, row, 0)
         self.mode_combo = QComboBox()
         self.mode_combo.addItems([tr('normal_mode'), tr('online_mode')])
@@ -3692,6 +4359,7 @@ class NotyCaptionWindow(QMainWindow):
 
         lang_label = QLabel(tr('language'))
         lang_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        lang_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         self.right_layout.addWidget(lang_label, row, 0)
         self.lang_combo = QComboBox()
         self.lang_combo.addItems([
@@ -3710,19 +4378,43 @@ class NotyCaptionWindow(QMainWindow):
 
         wpl_label = QLabel(tr('words_per_line'))
         wpl_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        wpl_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         self.right_layout.addWidget(wpl_label, row, 0)
         self.words_spin = QSpinBox()
         self.words_spin.setRange(1, 20)
         self.words_spin.setValue(self.settings.get("words_per_line", 5))
         self.words_spin.setMinimumHeight(50)
-        self.words_spin.setStyleSheet("QSpinBox { font-size: 14px; padding: 10px; }")
+        self.words_spin.setStyleSheet(f"""
+            QSpinBox {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text']};
+                border: 1px solid {DARK_BLUE_TOPAZ['border']};
+                border-radius: 6px;
+                font-size: 14px;
+                padding: 5px;
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
+                background: {DARK_BLUE_TOPAZ['accent']};
+                border: none;
+                border-radius: 3px;
+            }}
+        """)
         self.right_layout.addWidget(self.words_spin, row, 1)
         row += 1
 
-        self.import_btn = QPushButton(tr('import_media'))
+        self.import_btn = AnimatedButton(tr('import_media'))
         self.import_btn.setMinimumHeight(70)
-        self.import_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #007aff,stop:1 #0056b3); color: white; border-radius: 15px; font-weight: bold; font-size: 16px; padding: 15px; }
+        self.import_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #007aff,
+                    stop:1 #0056b3);
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 16px;
+                padding: 15px;
+            }}
         """)
         self.import_btn.clicked.connect(self.import_media_file)
         self.right_layout.addWidget(self.import_btn, row, 0, 1, 2)
@@ -3730,6 +4422,7 @@ class NotyCaptionWindow(QMainWindow):
 
         fmt_label = QLabel(tr('output_format'))
         fmt_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        fmt_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         self.right_layout.addWidget(fmt_label, row, 0)
         self.format_combo = QComboBox()
         self.format_combo.addItems([tr('srt_format'), tr('ass_format')])
@@ -3740,6 +4433,7 @@ class NotyCaptionWindow(QMainWindow):
 
         out_label = QLabel(tr('output_folder'))
         out_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        out_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         self.right_layout.addWidget(out_label, row, 0)
         self.out_folder_edit = QLineEdit()
         self.out_folder_edit.setReadOnly(True)
@@ -3749,20 +4443,42 @@ class NotyCaptionWindow(QMainWindow):
         self.right_layout.addWidget(self.out_folder_edit, row, 1)
         row += 1
 
-        browse_btn = QPushButton(tr('browse_output'))
+        browse_btn = AnimatedButton(tr('browse_output'))
         browse_btn.setMinimumHeight(50)
-        browse_btn.setStyleSheet("""
-            QPushButton { background: #3a3a3c; color: white; border-radius: 10px; font-size: 12px; padding: 10px; }
+        browse_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text']};
+                border: 1px solid {DARK_BLUE_TOPAZ['border']};
+                border-radius: 10px;
+                font-size: 12px;
+                padding: 10px;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['hover']};
+            }}
         """)
         browse_btn.clicked.connect(self.browse_output_folder)
         self.right_layout.addWidget(browse_btn, row, 0, 1, 2)
         row += 1
 
-        self.enhance_btn = QPushButton(tr('enhance_audio'))
+        self.enhance_btn = AnimatedButton(tr('enhance_audio'))
         self.enhance_btn.setMinimumHeight(70)
-        self.enhance_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffcc00,stop:1 #cc9900); color: white; border-radius: 15px; font-weight: bold; font-size: 16px; padding: 15px; }
-            QPushButton:disabled { background: #ccc; }
+        self.enhance_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #ffcc00,
+                    stop:1 #cc9900);
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 16px;
+                padding: 15px;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.enhance_btn.clicked.connect(self.enhance_audio_vocals)
         self.enhance_btn.setEnabled(False)
@@ -3770,21 +4486,18 @@ class NotyCaptionWindow(QMainWindow):
         
         row += 1
         
-        # Status and URL display frame
-        status_frame = QFrame()
-        status_frame.setFrameStyle(QFrame.Box)
-        status_frame.setStyleSheet("QFrame { background: #2d2d30; border: 1px solid #404040; border-radius: 5px; padding: 5px; }")
-        status_layout = QVBoxLayout(status_frame)
-        status_layout.setContentsMargins(5, 5, 5, 5)
+        # Status and URL display frame (Card)
+        status_card = CardWidget()
+        status_layout = QVBoxLayout(status_card)
         
         # Status indicator
         status_row = QHBoxLayout()
         status_label = QLabel(tr('status'))
-        status_label.setStyleSheet("color: #cccccc; font-size: 10px; font-weight: bold;")
+        status_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']}; font-size: 12px; font-weight: bold;")
         status_row.addWidget(status_label)
         
         self.status_value = QLabel(tr('idle'))
-        self.status_value.setStyleSheet("color: #00c853; font-size: 10px;")
+        self.status_value.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['success']}; font-size: 12px; font-weight: bold;")
         status_row.addWidget(self.status_value)
         status_row.addStretch()
         status_layout.addLayout(status_row)
@@ -3792,7 +4505,7 @@ class NotyCaptionWindow(QMainWindow):
         # URL display
         url_row = QHBoxLayout()
         self.url_label = QLabel(f"{tr('notebook_url')} {tr('not_available')}")
-        self.url_label.setStyleSheet("color: #cccccc; font-size: 10px;")
+        self.url_label.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 11px;")
         self.url_label.setWordWrap(True)
         url_row.addWidget(self.url_label, 1)
         status_layout.addLayout(url_row)
@@ -3800,23 +4513,47 @@ class NotyCaptionWindow(QMainWindow):
         # Button row
         button_row = QHBoxLayout()
         
-        self.reopen_btn = QPushButton(tr('reopen_notebook'))
+        self.reopen_btn = AnimatedButton(tr('reopen_notebook'))
         self.reopen_btn.setMinimumHeight(30)
-        self.reopen_btn.setStyleSheet("""
-            QPushButton { background: #00c853; color: white; border-radius: 5px; font-weight: bold; font-size: 10px; padding: 5px; }
-            QPushButton:hover { background: #00b140; }
-            QPushButton:disabled { background: #666; }
+        self.reopen_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['success']};
+                color: white;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 6px;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['success']}cc;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.reopen_btn.clicked.connect(self.reopen_notebook)
         self.reopen_btn.setEnabled(False)
         button_row.addWidget(self.reopen_btn)
         
-        self.copy_url_btn = QPushButton(tr('copy_url'))
+        self.copy_url_btn = AnimatedButton(tr('copy_url'))
         self.copy_url_btn.setMinimumHeight(30)
-        self.copy_url_btn.setStyleSheet("""
-            QPushButton { background: #2196f3; color: white; border-radius: 5px; font-weight: bold; font-size: 10px; padding: 5px; }
-            QPushButton:hover { background: #1976d2; }
-            QPushButton:disabled { background: #666; }
+        self.copy_url_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['info']};
+                color: white;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 6px;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['info']}cc;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.copy_url_btn.clicked.connect(self.copy_notebook_url)
         self.copy_url_btn.setEnabled(False)
@@ -3824,7 +4561,7 @@ class NotyCaptionWindow(QMainWindow):
         
         status_layout.addLayout(button_row)
         
-        self.right_layout.addWidget(status_frame, row, 0, 1, 2)
+        self.right_layout.addWidget(status_card, row, 0, 1, 2)
         
         logger.info("Right panel setup complete")
 
@@ -3833,49 +4570,95 @@ class NotyCaptionWindow(QMainWindow):
         bottom_layout = QHBoxLayout()
         self.main_layout.addLayout(bottom_layout)
 
-        self.play_btn = QPushButton(tr('play_pause'))
+        self.play_btn = AnimatedButton(tr('play_pause'))
         self.play_btn.setMinimumHeight(70)
-        self.play_btn.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #007aff,stop:1 #0056b3);
+        self.play_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #007aff,
+                    stop:1 #0056b3);
                 color: white;
                 border-radius: 15px;
                 font-weight: bold;
                 font-size: 16px;
                 padding: 15px;
                 min-width: 120px;
-            }
-            QPushButton:disabled { 
-                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #cccccc,stop:1 #aaaaaa); 
-                color: #666666; 
-            }
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.play_btn.clicked.connect(self.toggle_media_playback)
         self.play_btn.setEnabled(False)
         bottom_layout.addWidget(self.play_btn)
 
         self.timeline = QSlider(Qt.Horizontal)
-        self.timeline.setStyleSheet("""
-            QSlider::groove:horizontal { background: #2a2e34; height: 16px; border-radius: 8px; margin: 2px 0; }
-            QSlider::handle:horizontal { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #0a84ff,stop:1 #0066cc); width: 24px; border-radius: 12px; margin: -10px 0; border: 2px solid white; }
-            QSlider::sub-page:horizontal { background: #0a84ff; border-radius: 8px; }
+        self.timeline.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                height: 8px;
+                border-radius: 4px;
+            }}
+            QSlider::handle:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DARK_BLUE_TOPAZ['accent']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent2']});
+                width: 20px;
+                height: 20px;
+                margin: -6px 0;
+                border-radius: 10px;
+                border: 2px solid white;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DARK_BLUE_TOPAZ['accent']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent2']});
+                border-radius: 4px;
+            }}
         """)
         self.timeline.sliderMoved.connect(self.seek_media_position)
         bottom_layout.addWidget(self.timeline, stretch=1)
 
-        self.gen_btn = QPushButton(tr('generate'))
+        self.gen_btn = AnimatedButton(tr('generate'))
         self.gen_btn.setMinimumHeight(70)
-        self.gen_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ff3b30,stop:1 #d32f2f); color: white; border-radius: 15px; font-weight: bold; font-size: 16px; padding: 15px; min-width: 180px; }
-            QPushButton:disabled { background: #ccc; }
+        self.gen_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+                    stop:0 #ff3b30,
+                    stop:1 #d32f2f);
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 16px;
+                padding: 15px;
+                min-width: 180px;
+            }}
+            QPushButton:disabled {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                color: {DARK_BLUE_TOPAZ['text_secondary']};
+            }}
         """)
         self.gen_btn.clicked.connect(self.start_caption_generation)
         bottom_layout.addWidget(self.gen_btn)
 
         self.main_progress = QProgressBar()
-        self.main_progress.setStyleSheet("""
-            QProgressBar { background: #22252a; border: 2px solid #3a3f44; border-radius: 10px; text-align: center; color: white; font-weight: bold; height: 25px; }
-            QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #0a84ff,stop:1 #0066cc); border-radius: 8px; }
+        self.main_progress.setStyleSheet(f"""
+            QProgressBar {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+                border: 2px solid {DARK_BLUE_TOPAZ['border']};
+                border-radius: 8px;
+                text-align: center;
+                color: {DARK_BLUE_TOPAZ['text']};
+                font-weight: bold;
+                height: 25px;
+            }}
+            QProgressBar::chunk {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DARK_BLUE_TOPAZ['accent']},
+                    stop:1 {DARK_BLUE_TOPAZ['accent2']});
+                border-radius: 7px;
+            }}
         """)
         self.main_progress.setFormat(f"{tr('progress')}: %p%")
         bottom_layout.addWidget(self.main_progress)
@@ -3886,7 +4669,7 @@ class NotyCaptionWindow(QMainWindow):
         """Setup footer with copyright"""
         footer = QLabel("NotyCaption Pro • Secure Edition 2026 • All rights reserved by NotY215 • Powered by Whisper AI & Spleeter")
         footer.setAlignment(Qt.AlignCenter)
-        footer.setStyleSheet("color: #6c757d; font-size: 10px; margin: 15px 0; padding: 10px; border-top: 1px solid #404040;")
+        footer.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text_secondary']}; font-size: 10px; margin: 15px 0; padding: 10px; border-top: 1px solid {DARK_BLUE_TOPAZ['border']};")
         self.main_layout.addWidget(footer)
         logger.info("Footer setup complete")
 
@@ -3940,41 +4723,43 @@ class NotyCaptionWindow(QMainWindow):
             font = QApplication.font()
             font.setPointSizeF(font.pointSizeF() * scale)
             QApplication.setFont(font)
-            self.resize(int(1024 * scale), int(768 * scale))
             logger.info(f"UI scaled to {scale*100}% successfully")
         except Exception as scale_err:
             logger.warning(f"UI scale apply failed: {scale_err}")
 
     def apply_theme(self):
-        """Apply UI theme"""
+        """Apply UI theme - immediate update"""
         theme = self.settings.get("theme", "Dark")
+        
         if theme == "Light":
-            pal = QPalette()
-            pal.setColor(QPalette.Window, QColor(248, 249, 250))
-            pal.setColor(QPalette.WindowText, QColor(33, 37, 41))
-            pal.setColor(QPalette.Base, QColor(255, 255, 255))
-            pal.setColor(QPalette.Text, QColor(33, 37, 41))
-            pal.setColor(QPalette.Button, QColor(248, 249, 250))
-            pal.setColor(QPalette.ButtonText, QColor(33, 37, 41))
-            pal.setColor(QPalette.Highlight, QColor(0, 123, 255))
-            QApplication.setPalette(pal)
+            # Light theme colors
+            light_palette = {
+                'primary': '#f5f5f5',
+                'secondary': '#ffffff',
+                'text': '#333333',
+                'text_secondary': '#666666',
+                'border': '#dddddd',
+                'accent': '#007aff',
+                'accent2': '#5ac8fa'
+            }
+            # Apply light theme stylesheet
+            self.setStyleSheet(MAIN_STYLESHEET.replace(DARK_BLUE_TOPAZ['primary'], light_palette['primary'])
+                                               .replace(DARK_BLUE_TOPAZ['secondary'], light_palette['secondary'])
+                                               .replace(DARK_BLUE_TOPAZ['text'], light_palette['text'])
+                                               .replace(DARK_BLUE_TOPAZ['text_secondary'], light_palette['text_secondary'])
+                                               .replace(DARK_BLUE_TOPAZ['border'], light_palette['border'])
+                                               .replace(DARK_BLUE_TOPAZ['accent'], light_palette['accent'])
+                                               .replace(DARK_BLUE_TOPAZ['accent2'], light_palette['accent2']))
             logger.info("Light theme applied")
         elif theme == "Windows Default":
+            # Reset to system default
+            self.setStyleSheet("")
             QApplication.setStyle(QStyleFactory.create('windows'))
             logger.info("Windows Default theme applied")
         else:
-            pal = QPalette()
-            pal.setColor(QPalette.Window, QColor(30, 30, 30))
-            pal.setColor(QPalette.WindowText, QColor(255, 255, 255))
-            pal.setColor(QPalette.Base, QColor(45, 45, 48))
-            pal.setColor(QPalette.Text, QColor(255, 255, 255))
-            pal.setColor(QPalette.Button, QColor(52, 52, 52))
-            pal.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-            pal.setColor(QPalette.Highlight, QColor(0, 122, 255))
-            QApplication.setPalette(pal)
-            QApplication.setStyle(QStyleFactory.create('Fusion'))
-            logger.info("Dark theme applied")
-        logger.info(f"Theme applied: {theme}")
+            # Dark blue topaz theme (default)
+            self.setStyleSheet(MAIN_STYLESHEET)
+            logger.info("Dark Blue Topaz theme applied")
 
     def freeze_ui(self, freeze=True, message=tr('processing')):
         """Freeze/unfreeze UI"""
@@ -4074,7 +4859,19 @@ class NotyCaptionWindow(QMainWindow):
         msg_box.setIcon(QMessageBox.Critical)
         msg_box.setText(error)
         msg_box.setDetailedText(details)
-        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.setStyleSheet(f"""
+            QMessageBox {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+            }}
+            QLabel {{
+                color: {DARK_BLUE_TOPAZ['text']};
+            }}
+            QTextEdit {{
+                background: {DARK_BLUE_TOPAZ['primary']};
+                color: {DARK_BLUE_TOPAZ['text']};
+                border: 1px solid {DARK_BLUE_TOPAZ['border']};
+            }}
+        """)
         msg_box.exec_()
 
     def update_notebook_url_display(self, url):
@@ -4095,22 +4892,22 @@ class NotyCaptionWindow(QMainWindow):
     def update_online_status_display(self, status):
         """Update online status display"""
         status_colors = {
-            "idle": "#cccccc",
-            "uploading": "#ff9800",
-            "waiting": "#2196f3",
+            "idle": DARK_BLUE_TOPAZ['text_secondary'],
+            "uploading": DARK_BLUE_TOPAZ['warning'],
+            "waiting": DARK_BLUE_TOPAZ['info'],
             "processing": "#9c27b0",
-            "downloading": "#4caf50",
-            "completed": "#00c853",
-            "failed": "#f44336",
-            "canceled": "#ff9800",
-            "force_canceled": "#9a0000",
-            "canceling": "#ff9800",
-            "timeout": "#f44336",
-            "network_error": "#ff9800",
-            "starting": "#2196f3",
-            "initializing": "#2196f3"
+            "downloading": DARK_BLUE_TOPAZ['success'],
+            "completed": DARK_BLUE_TOPAZ['success'],
+            "failed": DARK_BLUE_TOPAZ['error'],
+            "canceled": DARK_BLUE_TOPAZ['warning'],
+            "force_canceled": DARK_BLUE_TOPAZ['error'],
+            "canceling": DARK_BLUE_TOPAZ['warning'],
+            "timeout": DARK_BLUE_TOPAZ['error'],
+            "network_error": DARK_BLUE_TOPAZ['warning'],
+            "starting": DARK_BLUE_TOPAZ['info'],
+            "initializing": DARK_BLUE_TOPAZ['info']
         }
-        color = status_colors.get(status, "#cccccc")
+        color = status_colors.get(status, DARK_BLUE_TOPAZ['text_secondary'])
         status_text = status.replace("_", " ").title()
         self.status_value.setText(status_text)
         self.status_value.setStyleSheet(f"color: {color}; font-size: 10px; font-weight: bold;")
@@ -4593,11 +5390,20 @@ class NotyCaptionWindow(QMainWindow):
         dlg = QDialog(self)
         dlg.setWindowTitle(tr('download_model'))
         dlg.setFixedSize(520, 340)
+        dlg.setStyleSheet(f"""
+            QDialog {{
+                background: {DARK_BLUE_TOPAZ['secondary']};
+            }}
+            QLabel {{
+                color: {DARK_BLUE_TOPAZ['text']};
+            }}
+        """)
         lay = QVBoxLayout()
         dlg.setLayout(lay)
 
         title = QLabel("Download Whisper large-v1 Model (~2.9 GB)")
         title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        title.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['accent2']};")
         title.setAlignment(Qt.AlignCenter)
         lay.addWidget(title)
 
@@ -4615,16 +5421,43 @@ class NotyCaptionWindow(QMainWindow):
         rbs = [QRadioButton(opt) for opt in options]
         rbs[0].setChecked(True)
         for rb in rbs:
+            rb.setStyleSheet(f"color: {DARK_BLUE_TOPAZ['text']};")
             lay.addWidget(rb)
             rb_group.addButton(rb)
 
         btn_lay = QHBoxLayout()
-        ok_btn = QPushButton(tr('start_download'))
-        ok_btn.setStyleSheet("background:#00c853; color:white; padding:12px; border-radius:8px; font-weight:bold;")
+        ok_btn = AnimatedButton(tr('start_download'))
+        ok_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['success']};
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 25px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['success']}cc;
+            }}
+        """)
         ok_btn.clicked.connect(dlg.accept)
-        cancel_btn = QPushButton(tr('cancel'))
-        cancel_btn.setStyleSheet("background:#d32f2f; color:white; padding:12px; border-radius:8px;")
+        
+        cancel_btn = AnimatedButton(tr('cancel'))
+        cancel_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {DARK_BLUE_TOPAZ['error']};
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 25px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {DARK_BLUE_TOPAZ['error']}cc;
+            }}
+        """)
         cancel_btn.clicked.connect(dlg.reject)
+        
         btn_lay.addStretch()
         btn_lay.addWidget(ok_btn)
         btn_lay.addWidget(cancel_btn)
