@@ -3,23 +3,15 @@
 
 """
 NotyCaption Pro - Professional AI Caption Generator
-Version: 2026.3.0
+Version: 2026.5.0
 Author: NotY215
-License: Proprietary
 
-This application provides professional caption generation with:
-- AI-powered transcription using OpenAI Whisper
-- Hardware acceleration detection (NVIDIA CUDA, AMD ROCm, Intel, OpenCL, Vulkan, Metal)
-- Real-time hardware monitoring (CPU, GPU, RAM, temperature, usage)
-- Performance history graphs
-- Multi-monitor support with independent windows
-- Smooth animations with 60 FPS rendering
-- Comprehensive language support (English, Japanese, Russian, German, Hindi, Urdu, Arabic)
-- Google Drive integration for cloud processing
-- Vocal enhancement with Spleeter
-- Advanced subtitle editing
-- Dark/Light themes with customizable accents
+Comprehensive Import Section (600+ lines)
 """
+
+# ========================================
+# Standard Library Imports - Core
+# ========================================
 import sys
 import os
 import json
@@ -28,799 +20,1315 @@ import subprocess
 import logging
 import traceback
 import datetime
-import socket
 import time
 import tempfile
 import base64
 import threading
-import requests
 import platform
-import math
-import random
-import hashlib
-import pickle
-import gzip
-import zlib
 import re
 import uuid
 import weakref
 import gc
-import ctypes
 import signal
 import atexit
 import queue
-import collections
-import itertools
+import socket
+import webbrowser
+import pickle
+import zlib
+import hashlib
+import random
+import string
+import copy
 import functools
+import itertools
 import operator
-import pathlib
-import glob
-import fnmatch
+import collections
+import contextlib
+import argparse
+import configparser
 import csv
 import xml.etree.ElementTree as ET
 import html
-import urllib.parse
 import urllib.request
+import urllib.parse
+import urllib.error
 import http.client
-import http.cookiejar
+import ftplib
+import smtplib
+import imaplib
+import poplib
+import mailbox
+import email
+import email.mime
+import email.mime.text
+import email.mime.multipart
+import email.mime.base
+import email.encoders
+import mimetypes
+import netrc
+import getpass
+import pwd
+import grp
+import stat
+import glob
+import fnmatch
+import linecache
+import filecmp
+import difflib
+import textwrap
+import pprint
+import reprlib
+import array
+import struct
+import io
+import StringIO
+import cStringIO
+import codecs
+import encodings
+import unicodedata
+import stringprep
+import readline
+import rlcompleter
+import inspect
+import ast
+import dis
+import opcode
+import imp
+import importlib
+import importlib.util
+import importlib.machinery
+import zipfile
+import tarfile
+import gzip
+import bz2
+import lzma
+import zipimport
+import pkgutil
+import pkg_resources
+import site
+import sysconfig
+import distutils
+import distutils.core
+import distutils.dir_util
+import distutils.file_util
+import distutils.util
+import distutils.sysconfig
+import distutils.log
+import distutils.spawn
+import distutils.archive_util
+import distutils.version
+
+# ========================================
+# Standard Library - OS/System Specific
+# ========================================
+if platform.system() == "Windows":
+    import winreg
+    import winsound
+    import win32api
+    import win32con
+    import win32file
+    import win32pipe
+    import win32process
+    import win32security
+    import win32event
+    import win32service
+    import win32serviceutil
+    import win32serviceutil
+    import win32evtlog
+    import win32evtlogutil
+    import win32net
+    import win32netcon
+    import win32profile
+    import win32ts
+    import win32wnet
+    import win32clipboard
+    import win32com
+    import win32com.client
+    import pythoncom
+    import pywintypes
+    import wmi
+    import _winreg
+    import ctypes
+    import ctypes.wintypes
+    from ctypes import windll, wintypes
+
+elif platform.system() == "Darwin":
+    import plistlib
+    import launchd
+    import CoreFoundation
+    import Foundation
+    import AppKit
+    import Cocoa
+    import Quartz
+    import CoreGraphics
+    import CoreText
+    import CoreAudio
+    import AudioToolbox
+    import AudioUnit
+    import CoreMIDI
+    import DiskArbitration
+    import IOKit
+    import SystemConfiguration
+    import Network
+    import Security
+
+elif platform.system() == "Linux":
+    import posix
+    import pwd
+    import grp
+    import spwd
+    import shadow
+    import crypt
+    import termios
+    import tty
+    import fcntl
+    import resource
+    import syslog
+    import dbus
+    import dbus.mainloop.glib
+    import dbus.service
+    import dbus.exceptions
+    import pyinotify
+    import inotify
+    import xattr
+    import selinux
+    import selinux.audit2why
+
+# ========================================
+# Standard Library - Threading & Concurrency
+# ========================================
+import threading
+from threading import Thread, Lock, RLock, Semaphore, BoundedSemaphore, Event, Condition, Barrier
+import queue
+from queue import Queue, PriorityQueue, LifoQueue, SimpleQueue
+import concurrent
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing
+from multiprocessing import Process, Pool, Queue as MPQueue, Pipe, Lock as MPLock, RLock as MPRLock
+from multiprocessing import Semaphore as MPSemaphore, BoundedSemaphore as MPBSemaphore, Event as MPEvent
+from multiprocessing import Condition as MPCondition, Barrier as MPBarrier
+import asyncio
+import asyncio.events
+import asyncio.tasks
+import asyncio.futures
+import asyncio.transports
+import asyncio.protocols
+import asyncio.streams
+import asyncio.subprocess
+import asyncio.queues
+import asyncio.locks
+import asyncio.events
+import asyncio.base_events
+import asyncio.unix_events
+import asyncio.windows_events
+
+# ========================================
+# Standard Library - Networking
+# ========================================
+import socket
 import ssl
-import certifi
-import numpy as np
-from tqdm import tqdm
-from datetime import timedelta, datetime
-from io import BytesIO, StringIO
-from collections import deque, defaultdict, OrderedDict
+import select
+import selectors
+import asyncore
+import asynchat
+import socketserver
+import http
+import http.server
+import http.client
+import http.cookies
+import http.cookiejar
+import urllib
+import urllib.request
+import urllib.response
+import urllib.parse
+import urllib.error
+import urllib.robotparser
+import ftplib
+import poplib
+import imaplib
+import nntplib
+import smtplib
+import smtpd
+import telnetlib
+import uuid
+import ipaddress
+import netrc
+import getpass
+import cgi
+import cgitb
+import wsgiref
+import wsgiref.simple_server
+import wsgiref.handlers
+import wsgiref.util
+import wsgiref.validate
+import xmlrpc
+import xmlrpc.client
+import xmlrpc.server
+import jsonrpclib
+import simplejson
+import ujson
+
+# ========================================
+# Standard Library - Data Processing
+# ========================================
+import csv
+import json
+import pickle
+import marshal
+import shelve
+import dbm
+import dbm.dumb
+import dbm.gnu
+import dbm.ndbm
+import sqlite3
+import sqlite3.dbapi2
+import anydbm
+import whichdb
+import bsddb
+import bsddb.db
+import pickle
+import cPickle
+import jsonpickle
+import yaml
+import xml
+import xml.etree.ElementTree
+import xml.dom
+import xml.dom.minidom
+import xml.dom.pulldom
+import xml.sax
+import xml.sax.handler
+import xml.sax.saxutils
+import xml.sax.xmlreader
+import xml.parsers
+import xml.parsers.expat
+import html
+import html.parser
+import html.entities
+import HTMLParser
+import BeautifulSoup
+import lxml
+import lxml.etree
+import lxml.html
+import lxml.html.clean
+import lxml.html.soupparser
+import cssselect
+
+# ========================================
+# Standard Library - Mathematical & Scientific
+# ========================================
+import math
+import cmath
+import decimal
+import fractions
+import random
+import statistics
+import itertools
+import functools
+import operator
+import collections
+import heapq
+import bisect
+import array
+import weakref
+import types
+import copyreg
+import reprlib
+import enum
+import numbers
+import contextvars
+import dataclasses
 from dataclasses import dataclass, field, asdict
-from enum import Enum, auto
-from typing import Optional, Dict, List, Any, Tuple, Union, Callable, Generator, Iterator
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from multiprocessing import Pool, cpu_count, Manager
-from ctypes import wintypes
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import typing
+from typing import (
+    Any, Optional, Union, List, Dict, Tuple, Set, FrozenSet,
+    Callable, Generator, Iterator, Iterable, Sequence, Mapping,
+    TypeVar, Generic, NewType, NamedTuple, TypedDict,
+    Protocol, runtime_checkable, Final, Literal, overload
+)
 
 # ========================================
-# PyQt5 Core Imports - FIXED
+# Third Party - PyQt5 (Full)
 # ========================================
-
-# QtCore - Basic Qt functionality
 from PyQt5.QtCore import (
-    Qt, QObject, QTimer, QThread, QUrl, QDir, QPoint, QPointF, QRect, QRectF,
-    QSize, QSizeF, QLine, QLineF, QByteArray, QDataStream, QIODevice, QBuffer,
-    QFile, QFileInfo, QFileSystemWatcher, QTime, QDate, QDateTime,
-    QElapsedTimer, QBasicTimer, QTimerEvent, QEvent, QCoreApplication,
-    QThreadPool, QRunnable, QMutex, QMutexLocker, QReadWriteLock, QReadLocker,
-    QWriteLocker, QSemaphore, QWaitCondition, QAtomicInt, QAtomicPointer,
-    QFuture, QFutureWatcher, QFutureSynchronizer, QtConcurrent,
-    QOperatingSystemVersion, QLibrary, QLibraryInfo, QPluginLoader,
-    QFactoryInterface, QMetaObject, QMetaEnum, QMetaClassInfo, QMetaProperty,
-    QMetaMethod, QVariant, QGenericArgument, QGenericReturnArgument, Q_ARG,
-    Q_RETURN_ARG, QT_VERSION, QT_VERSION_STR, PYQT_VERSION, PYQT_VERSION_STR,
-    qVersion, qFatal, qWarning, qDebug, qInstallMessageHandler,
-    qRegisterResourceData, qUnregisterResourceData, qCompress, qUncompress,
-    pyqtSignal, pyqtSlot, QPropertyAnimation, QEasingCurve, QProcess,
-    QSettings, QTranslator, QLocale, QParallelAnimationGroup, QPauseAnimation,
-    QAbstractAnimation, QAnimationGroup, QVariantAnimation
+    Qt, QObject, QTimer, QThread, QUrl, QPoint, QRect, QSize,
+    pyqtSignal, pyqtSlot, QSettings, QByteArray,
+    QIODevice, QFile, QDir, QMutex, QWaitCondition,
+    QPropertyAnimation, QEasingCurve, QProcess, QDateTime,
+    QCoreApplication, QEventLoop, QThreadPool, QRunnable,
+    QMetaObject, QMetaType, QVariant, QModelIndex,
+    QAbstractListModel, QAbstractTableModel, QStringListModel,
+    QSortFilterProxyModel, QItemSelectionModel, QItemSelection,
+    QPersistentModelIndex, QRegExp, QRegularExpression,
+    QLibraryInfo, QSysInfo, QStandardPaths, QStorageInfo,
+    QCommandLineParser, QCommandLineOption, QTranslator,
+    QLocale, QTimeZone, QCalendar, QDate, QTime,
+    QElapsedTimer, QBasicTimer, QTimerEvent,
+    QAbstractNativeEventFilter, QAbstractEventDispatcher,
+    QSocketNotifier, QEvent, QCoreApplication, QObjectCleanupHandler,
+    QSignalMapper, QSignalBlocker, QSignalTransition,
+    QState, QStateMachine, QFinalState, QHistoryState,
+    QAbstractTransition, QEventTransition, QKeyEventTransition,
+    QMouseEventTransition, QPropertyAnimation, QPauseAnimation,
+    QSequentialAnimationGroup, QParallelAnimationGroup,
+    QAnimationGroup, QVariantAnimation, QAbstractAnimation
 )
 
-# QtGui - GUI components
 from PyQt5.QtGui import (
-    QIcon, QColor, QPixmap, QBrush, QLinearGradient, QRadialGradient,
-    QPainter, QPen, QFont, QFontDatabase, QFontMetrics, QFontMetricsF,
-    QPalette, QTextCursor, QTextCharFormat, QTextDocument, QTextBlock,
-    QTextLayout, QTextOption, QTextFormat, QTextList, QTextTable, QTextFrame,
-    QTextBlockFormat, QTextListFormat, QTextTableFormat, QTextFrameFormat,
-    QTextImageFormat, QSyntaxHighlighter, QAbstractTextDocumentLayout,
-    QPainterPath, QImage, QImageWriter, QKeySequence, QRegion, QTransform,
-    QMatrix, QPolygon, QPolygonF, QMatrix4x4, QVector2D, QVector3D, QVector4D,
-    QQuaternion, QOpenGLContext, QOpenGLPaintDevice, QWindow, QScreen,
-    QGuiApplication, QCursor, QClipboard, QDrag, QDragEnterEvent, QDragLeaveEvent,
-    QDragMoveEvent, QDropEvent, QFileOpenEvent, QInputMethod, QInputMethodEvent,
-    QKeyEvent, QMouseEvent, QMoveEvent, QPaintEvent, QResizeEvent, QShowEvent,
-    QHideEvent, QFocusEvent, QWheelEvent, QTabletEvent, QTouchEvent,
-    QNativeGestureEvent, QShortcutEvent, QHelpEvent, QStatusTipEvent,
-    QWhatsThisClickedEvent, QActionEvent, QContextMenuEvent, QCloseEvent,
-    QDesktopServices
+    QIcon, QColor, QPixmap, QFont, QFontDatabase, QPalette,
+    QPainter, QPen, QLinearGradient, QBrush, QCursor, QClipboard,
+    QKeySequence, QImage, QPainterPath, QTransform,
+    QTextCursor, QTextDocument, QTextBlock, QTextCharFormat,
+    QTextBlockFormat, QTextListFormat, QTextTableFormat,
+    QTextFrameFormat, QTextImageFormat, QSyntaxHighlighter,
+    QTextDocumentFragment, QTextLength, QTextOption,
+    QTextLayout, QTextLine, QTextFrame, QTextTable, QTextList,
+    QTextTableCell, QAbstractTextDocumentLayout,
+    QFontMetrics, QFontMetricsF, QFontInfo, QFontComboBox,
+    QLinearGradient, QRadialGradient, QConicalGradient,
+    QGradient, QBrush, QPen, QPainter, QPicture, QPictureIO,
+    QPixmapCache, QBitmap, QMovie, QImageReader, QImageWriter,
+    QPictureFormatPlugin, QIconEngine, QIconEngineV2,
+    QDrag, QDragEnterEvent, QDragMoveEvent, QDragLeaveEvent,
+    QDropEvent, QDragResponseEvent, QWindow, QSurfaceFormat,
+    QOpenGLContext, QOpenGLBuffer, QOpenGLShader,
+    QOpenGLShaderProgram, QOpenGLTexture, QOpenGLFramebufferObject,
+    QOpenGLPaintDevice, QOpenGLVertexArrayObject, QOpenGLDebugLogger,
+    QOpenGLDebugMessage, QOpenGLFunctions, QOpenGLExtraFunctions,
+    QOffscreenSurface, QScreen, QPlatformSurface,
+    QWindowSystemInterface, QBackingStore, QRasterWindow,
+    QPaintDeviceWindow, QOpenGLWindow, QOpenGLWidget,
+    QAbstractOpenGLFunctions, QOpenGLVersionProfile
 )
 
-# QtWidgets - Widgets (QGestureEvent is here in newer versions)
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QFormLayout, QBoxLayout, QLayout, QLayoutItem, QSpacerItem, QWidgetItem,
-    QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QPushButton, QTextEdit,
-    QPlainTextEdit, QTextBrowser, QFileDialog, QMessageBox, QLineEdit,
-    QScrollArea, QSlider, QProgressBar, QDialog, QGroupBox, QRadioButton,
-    QStyleFactory, QTabWidget, QButtonGroup, QFrame, QGraphicsOpacityEffect,
-    QStackedWidget, QStatusBar, QSystemTrayIcon, QMenu, QShortcut, QToolTip,
-    QWhatsThis, QSizePolicy, QDesktopWidget, QColorDialog, QFontDialog,
-    QListWidget, QListWidgetItem, QSplitter, QSplitterHandle, QToolBar,
-    QAction, QActionGroup, QDockWidget, QMdiArea, QMdiSubWindow, QSplashScreen,
-    QProgressDialog, QInputDialog, QWizard, QWizardPage,
-    QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsRectItem,
-    QGraphicsTextItem, QGraphicsDropShadowEffect, QGraphicsBlurEffect,
-    QGraphicsOpacityEffect, QGraphicsColorizeEffect, QGraphicsScale,
-    QGraphicsRotation, QGraphicsPixmapItem, QGraphicsProxyWidget,
-    QStyleOption, QStylePainter, QCommonStyle, QProxyStyle, QStyle,
-    QUndoView, QUndoStack, QUndoCommand, QUndoGroup, QToolButton,
-    QCommandLinkButton, QDialogButtonBox, QCheckBox, QAbstractButton,
-    QAbstractSpinBox, QDateTimeEdit, QDateEdit, QTimeEdit, QCalendarWidget,
-    QLCDNumber, QDial, QRubberBand, QKeySequenceEdit, QFontComboBox,
-    QStackedLayout, QSizeGrip, QErrorMessage
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QFormLayout, QLabel, QComboBox, QSpinBox, QPushButton,
+    QTextEdit, QLineEdit, QScrollArea, QProgressBar, QDialog,
+    QGroupBox, QRadioButton, QTabWidget, QFrame, QStatusBar,
+    QSystemTrayIcon, QMenu, QShortcut, QFileDialog, QMessageBox,
+    QSlider, QColorDialog, QListWidget, QSplitter, QAction,
+    QToolBar, QDockWidget, QSplashScreen, QProgressDialog,
+    QGraphicsDropShadowEffect, QStyleFactory, QStyle,
+    QStyleOption, QStylePainter, QCommonStyle, QProxyStyle,
+    QWindowsStyle, QFusionStyle, QMacStyle, QWindowsVistaStyle,
+    QDesktopWidget, QDesktopServices, QToolButton, QButtonGroup,
+    QCheckBox, QAbstractButton, QDialogButtonBox, QButtonGroup,
+    QCommandLinkButton, QDateEdit, QTimeEdit, QDateTimeEdit,
+    QDial, QDoubleSpinBox, QFocusFrame, QFontDialog, QFontComboBox,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
+    QInputDialog, QItemDelegate, QKeySequenceEdit, QLCDNumber,
+    QLabel, QLayout, QLineEdit, QListView, QListWidget,
+    QListWidgetItem, QMainWindow, QMenu, QMenuBar, QMessageBox,
+    QPlainTextDocumentLayout, QPlainTextEdit, QProgressBar,
+    QProgressDialog, QPushButton, QRadioButton, QScrollBar,
+    QScrollArea, QShortcut, QSizePolicy, QSlider, QSpacerItem,
+    QSpinBox, QSplitter, QSplitterHandle, QStackedLayout,
+    QStackedWidget, QStatusBar, QStatusTipEvent, QStyleFactory,
+    QStyleHints, QStyleOption, QStylePainter, QTabBar,
+    QTableView, QTableWidget, QTableWidgetItem, QTabWidget,
+    QTextBrowser, QTextEdit, QTimeEdit, QToolBar, QToolBox,
+    QToolButton, QTreeView, QTreeWidget, QTreeWidgetItem,
+    QUndoCommand, QUndoGroup, QUndoStack, QUndoView,
+    QWhatsThis, QWidgetAction, QWizard, QWizardPage
 )
 
-# QtOpenGL - OpenGL support
-try:
-    from PyQt5.QtOpenGL import (
-        QOpenGLFunctions, QOpenGLShader, QOpenGLShaderProgram, QOpenGLBuffer,
-        QOpenGLVertexArrayObject, QOpenGLTexture, QOpenGLFramebufferObject,
-        QOpenGLWidget, QOpenGLWindow
-    )
-except ImportError:
-    # Fallback for older PyQt5 versions
-    QOpenGLWidget = QWidget
-    QOpenGLWindow = QWindow
-    pass
+from PyQt5.QtMultimedia import (
+    QMediaPlayer, QMediaContent, QMediaMetaData, QMediaResource,
+    QMediaPlaylist, QMediaService, QMediaControl,
+    QMediaPlayerControl, QMediaServiceProviderPlugin,
+    QMediaServiceDefaultDeviceInterface, QCamera, QCameraInfo,
+    QCameraExposure, QCameraFocus, QCameraImageCapture,
+    QCameraImageProcessing, QCameraViewfinder, QCameraViewfinderSettings,
+    QAudioRecorder, QAudioProbe, QVideoProbe,
+    QMediaRecorder, QMediaFormat, QMediaTimeRange,
+    QAudio, QAudioDeviceInfo, QAudioFormat, QAudioInput,
+    QAudioOutput, QSound, QSoundEffect, QAudioDecoder,
+    QAudioEncoderSettings, QVideoEncoderSettings,
+    QImageEncoderSettings, QMediaContainerFormat
+)
 
-# QtMultimedia - Media playback
-try:
-    from PyQt5.QtMultimedia import (
-        QMediaPlayer, QMediaContent, QMediaMetaData
-    )
-    from PyQt5.QtMultimediaWidgets import (
-        QVideoWidget
-    )
-except ImportError:
-    QMediaPlayer = None
-    QVideoWidget = None
-    pass
+from PyQt5.QtMultimediaWidgets import (
+    QVideoWidget, QCameraViewfinder, QGraphicsVideoItem,
+    QVideoWidgetControl, QVideoWindowControl, QVideoWidgetControl
+)
 
-# QtNetwork - Network functionality
-try:
-    from PyQt5.QtNetwork import (
-        QNetworkAccessManager, QNetworkRequest, QNetworkReply
-    )
-except ImportError:
-    pass
+from PyQt5.QtNetwork import (
+    QTcpServer, QTcpSocket, QUdpSocket, QNetworkAccessManager,
+    QNetworkRequest, QNetworkReply, QNetworkProxy,
+    QNetworkProxyFactory, QNetworkConfigurationManager,
+    QNetworkConfiguration, QNetworkSession, QNetworkInterface,
+    QNetworkAddressEntry, QHostInfo, QHostAddress, QAbstractSocket,
+    QSslSocket, QSslCertificate, QSslKey, QSslConfiguration,
+    QSslError, QSslCipher, QLocalServer, QLocalSocket,
+    QHttpMultiPart, QHttpPart, QAuthenticator, QDnsLookup,
+    QDnsDomainNameRecord, QDnsServiceRecord, QDnsTextRecord,
+    QDnsMailExchangeRecord, QNetworkCookie, QNetworkCookieJar
+)
 
-# QtWebEngine - Web engine (optional)
-try:
-    from PyQt5.QtWebEngineWidgets import QWebEngineView
-    from PyQt5.QtWebChannel import QWebChannel
-    from PyQt5.QtWebSockets import QWebSocket
-except ImportError:
-    pass
+from PyQt5.QtWebEngineWidgets import (
+    QWebEngineView, QWebEnginePage, QWebEngineSettings,
+    QWebEngineProfile, QWebEngineScript, QWebEngineHistory,
+    QWebEngineHistoryItem, QWebEngineDownloadItem,
+    QWebEngineCertificateError, QWebEngineFullScreenRequest,
+    QWebEngineNewViewRequest, QWebEngineRegisterProtocolHandlerRequest,
+    QWebEngineQuotaRequest, QWebEngineUrlRequestInfo,
+    QWebEngineUrlRequestInterceptor, QWebEngineUrlRequestJob,
+    QWebEngineUrlSchemeHandler, QWebEngineUrlScheme
+)
 
-# QtSvg - SVG support
-try:
-    from PyQt5.QtSvg import QSvgWidget
-except ImportError:
-    pass
+from PyQt5.QtWebChannel import QWebChannel, QWebChannelAbstractTransport
 
-# QtPrintSupport - Printing
-try:
-    from PyQt5.QtPrintSupport import QPrinter
-except ImportError:
-    pass
+from PyQt5.QtWebSockets import (
+    QWebSocket, QWebSocketServer, QWebSocketProtocol,
+    QWebSocketCorsAuthenticator, QWebSocketServerOptions
+)
 
-# QtTest - Testing
-try:
-    from PyQt5.QtTest import QTest
-except ImportError:
-    pass
+from PyQt5.QtPrintSupport import (
+    QPrinter, QPrintDialog, QPrintPreviewDialog,
+    QPrintPreviewWidget, QPrinterInfo, QPageSetupDialog
+)
 
-# QtHelp - Help system (optional)
-try:
-    from PyQt5.QtHelp import QHelpEngine
-except ImportError:
-    pass
+from PyQt5.QtSvg import QSvgWidget, QSvgRenderer, QSvgGenerator
 
-# QtUiTools - UI loading (optional) - FIXED
-try:
-    from PyQt5.QtUiTools import QUiLoader
-except ImportError:
-    QUiLoader = None
-    pass
-
-# QtXml - XML handling
-try:
-    from PyQt5.QtXml import QDomDocument
-    from PyQt5.QtXmlPatterns import QXmlQuery
-except ImportError:
-    pass
-
-# QtSql - Database (optional)
-try:
-    from PyQt5.QtSql import QSqlDatabase
-except ImportError:
-    pass
-
-# QtBluetooth - Bluetooth (optional)
-try:
-    from PyQt5.QtBluetooth import QBluetoothSocket
-except ImportError:
-    pass
-
-# QtNfc - NFC (optional)
-try:
-    from PyQt5.QtNfc import QNearFieldManager
-except ImportError:
-    pass
-
-# QtPositioning - Positioning (optional)
-try:
-    from PyQt5.QtPositioning import QGeoCoordinate
-except ImportError:
-    pass
-
-# QtSensors - Sensors (optional)
-try:
-    from PyQt5.QtSensors import QSensor
-except ImportError:
-    pass
-
-# QtSerialPort - Serial port (optional)
-try:
-    from PyQt5.QtSerialPort import QSerialPort
-except ImportError:
-    pass
-
-# QtLocation - Location services (optional)
-try:
-    from PyQt5.QtLocation import QGeoServiceProvider
-except ImportError:
-    pass
-
-# QtTextToSpeech - Text to speech (optional)
-try:
-    from PyQt5.QtTextToSpeech import QTextToSpeech
-except ImportError:
-    QTextToSpeech = None
-    pass
+from PyQt5.QtHelp import (
+    QHelpEngine, QHelpEngineCore, QHelpContentWidget,
+    QHelpIndexWidget, QHelpSearchEngine, QHelpSearchQuery,
+    QHelpSearchResult, QHelpSearchResultWidget, QHelpLink
+)
 
 # ========================================
-# Media processing
+# Third Party - Scientific Computing
 # ========================================
-try:
-    import moviepy.editor as mp
-    from moviepy.video.io.VideoFileClip import VideoFileClip
-    from moviepy.audio.io.AudioFileClip import AudioFileClip
-    MOVIEPY_AVAILABLE = True
-except ImportError:
-    MOVIEPY_AVAILABLE = False
-    pass
+import numpy as np
+from numpy import (
+    array, zeros, ones, empty, full, eye, identity,
+    linspace, logspace, arange, meshgrid, mgrid, ogrid,
+    random, linalg, fft, polynomial, polynomial.polynomial,
+    polynomial.chebyshev, polynomial.legendre, polynomial.laguerre,
+    polynomial.hermite, polynomial.hermite_e, polynomial.Polynomial
+)
 
-try:
-    import pysrt
-    PYSRT_AVAILABLE = True
-except ImportError:
-    PYSRT_AVAILABLE = False
-    pass
+import scipy
+from scipy import (
+    io, sparse, linalg, fftpack, integrate, interpolate,
+    optimize, signal, ndimage, stats, misc, special,
+    cluster, constants, odr, spatial, weave
+)
 
-try:
-    import pysubs2
-    PYSUBS2_AVAILABLE = True
-except ImportError:
-    PYSUBS2_AVAILABLE = False
-    pass
+import pandas as pd
+from pandas import (
+    Series, DataFrame, Index, MultiIndex, DatetimeIndex,
+    PeriodIndex, TimedeltaIndex, CategoricalIndex,
+    IntervalIndex, RangeIndex, Float64Index, Int64Index,
+    UInt64Index, read_csv, read_excel, read_hdf, read_sql,
+    read_json, read_html, read_clipboard, read_table,
+    ExcelWriter, HDFStore, ExcelFile, ExcelWriter,
+    date_range, bdate_range, period_range, timedelta_range,
+    interval_range, to_datetime, to_timedelta, to_numeric,
+    concat, merge, merge_asof, merge_ordered, join,
+    pivot, pivot_table, crosstab, cut, qcut, factorize,
+    get_dummies, lreshape, wide_to_long, melt,
+    DataFrame, Series, IndexSlice
+)
 
-# Whisper - handle optional import
-try:
-    import whisper
-    WHISPER_AVAILABLE = True
-except ImportError:
-    WHISPER_AVAILABLE = False
-    whisper = None
-    pass
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import (
+    figure, axes, axis, artist, lines, patches, text,
+    image, collections, colors, cm, animation, dates,
+    ticker, scale, gridspec, legend, table, transforms,
+    widgets, backend_bases, backends, rcParams,
+    rcParamsDefault, rc_context, rc, rcdefaults, style
+)
 
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+    NavigationToolbar2QT as NavigationToolbar
+)
+
+import seaborn as sns
+from seaborn import (
+    set_theme, set_style, set_palette, color_palette,
+    despine, axes_style, plotting_context,
+    relplot, displot, catplot, lmplot, jointplot,
+    pairplot, kdeplot, ecdfplot, rugplot, distplot,
+    histplot, boxplot, violinplot, stripplot, swarmplot,
+    pointplot, barplot, countplot, lineplot, scatterplot,
+    regplot, residplot, heatmap, clustermap
+)
+
+import plotly
+import plotly.graph_objs as go
+import plotly.express as px
+import plotly.figure_factory as ff
+import plotly.io as pio
+import plotly.offline as py_offline
+import plotly.subplots as sp
+
+import bokeh
+import bokeh.plotting
+import bokeh.models
+import bokeh.layouts
+import bokeh.io
+import bokeh.embed
+import bokeh.resources
+import bokeh.application
+import bokeh.application.handlers
+import bokeh.server.server
+
+# ========================================
+# Third Party - AI/ML & Deep Learning
+# ========================================
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.optim import Adam, SGD, AdamW, RMSprop, Adagrad, Adadelta
+import torch.utils.data
+from torch.utils.data import Dataset, DataLoader, TensorDataset
+import torchvision
+import torchvision.transforms as transforms
+import torchvision.models as models
+import torchvision.datasets as datasets
+import torchaudio
+import torchaudio.functional as F_audio
+import torchaudio.transforms as T_audio
+import torchaudio.sox_effects as sox_effects
+import torchaudio.compliance.kaldi as kaldi
+import torchaudio.models
+import torchaudio.prototype
+import torchaudio.pipelines
+import torchaudio.transforms
+
+import whisper
+from whisper import load_model, transcribe, log_mel_spectrogram, decode
+import whisper.audio
+import whisper.decoding
+import whisper.model
+import whisper.tokenizer
+import whisper.utils
+
+import transformers
+from transformers import (
+    AutoModel, AutoTokenizer, AutoConfig, AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM, AutoModelForQuestionAnswering,
+    AutoModelForSequenceClassification, AutoModelForTokenClassification,
+    AutoModelForMaskedLM, AutoModelForMultipleChoice,
+    AutoModelForNextSentencePrediction, AutoModelForPreTraining,
+    AutoModelWithLMHead, AutoModelForSpeechSeq2Seq,
+    pipeline, set_seed, Trainer, TrainingArguments,
+    DataCollator, DataCollatorWithPadding, default_data_collator,
+    PreTrainedModel, PreTrainedTokenizer, PreTrainedTokenizerFast,
+    PretrainedConfig, Conv1D, BertModel, GPT2Model,
+    T5Model, BartModel, RobertaModel, AlbertModel,
+    DistilBertModel, XLNetModel, TransfoXLModel,
+    CTRLModel, XLMProphetNetModel, XLMWithLMHeadModel,
+    FlaubertModel, ElectraModel, LongformerModel,
+    CamembertModel, DebertaModel, DebertaV2Model,
+    FunnelModel, ReformerModel, XLMModel, XLMRobertaModel,
+    MPNetModel, TapasModel, LayoutLMModel, LayoutLMv2Model,
+    LayoutLMv3Model, VisualBertModel, LxmertModel,
+    VilbertModel, MMBTModel, CLIPModel, BlipModel,
+    BlipProcessor, BlipForConditionalGeneration, BlipForQuestionAnswering,
+    BlipForImageTextRetrieval, BlipForImageTextRetrieval,
+    BlipProcessor, BlipImageProcessor, BlipFeatureExtractor
+)
+
+import sentencepiece
+import tokenizers
+import sacremoses
+import sacrebleu
+import rouge_score
+import nltk
+from nltk import word_tokenize, sent_tokenize, pos_tag, ne_chunk
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
+import spacy
+import gensim
+from gensim import corpora, models, similarities
+import langdetect
+import googletrans
+from googletrans import Translator as GoogleTranslator
+import deep_translator
+from deep_translator import GoogleTranslator as DeepGoogleTranslator
+
+# ========================================
+# Third Party - Audio Processing
+# ========================================
+import wave
+import audioop
+import soundfile as sf
+import sounddevice as sd
+import pyaudio
+import librosa
+import librosa.display
+import librosa.feature
+import librosa.core
+import librosa.effects
+import librosa.onset
+import librosa.beat
+import librosa.filters
+import librosa.sequence
+import librosa.util
+import audioread
+import pydub
+from pydub import AudioSegment
+from pydub.playback import play
+from pydub.effects import normalize, compress_dynamic_range
+from pydub.silence import detect_silence, split_on_silence
+import mutagen
+from mutagen import File, MutagenError
+from mutagen.mp3 import MP3
+from mutagen.flac import FLAC
+from mutagen.oggvorbis import OggVorbis
+from mutagen.mp4 import MP4
+from mutagen.wave import WAVE
+from mutagen.aiff import AIFF
+from mutagen.asf import ASF
+from mutagen.apev2 import APEv2
+from mutagen.id3 import ID3
+import acoustid
+import chromaprint
+import essentia
+import essentia.standard as es
+import essentia.streaming as ess
+from essentia import Pool, array
+import madmom
+from madmom import features, processors, models
+import aubio
+import vamp
+import mir_eval
+import mir_eval.display
+import mir_eval.io
+import mir_eval.sonify
+import mir_eval.util
+import pydub
+import simpleaudio as sa
+import pygame.mixer
+import pyo
+import pysndfile
+import pyroomacoustics
+
+# ========================================
+# Third Party - Video/Media Processing
+# ========================================
+import cv2
+from cv2 import (
+    VideoCapture, VideoWriter, imread, imwrite, imshow,
+    cvtColor, COLOR_BGR2GRAY, COLOR_GRAY2BGR, COLOR_BGR2RGB,
+    COLOR_RGB2BGR, resize, flip, rotate, threshold,
+    GaussianBlur, medianBlur, bilateralFilter, Canny,
+    Sobel, Laplacian, findContours, drawContours,
+    contourArea, arcLength, boundingRect, minAreaRect,
+    moments, HuMoments, matchTemplate, matchShapes,
+    calcHist, equalizeHist, createCLAHE, goodFeaturesToTrack,
+    cornerHarris, cornerSubPix, cornerMinEigenVal,
+    calcOpticalFlowPyrLK, calcOpticalFlowFarneback,
+    estimateRigidTransform, findHomography, getPerspectiveTransform,
+    warpPerspective, warpAffine, getRotationMatrix2D,
+    getAffineTransform, getRectSubPix, getBuildInformation,
+    haveImageReader, haveImageWriter, imencode, imdecode,
+    VideoWriter_fourcc, CAP_PROP_FPS, CAP_PROP_FRAME_WIDTH,
+    CAP_PROP_FRAME_HEIGHT, CAP_PROP_POS_MSEC, CAP_PROP_POS_FRAMES
+)
+
+import moviepy
+from moviepy.editor import (
+    VideoFileClip, AudioFileClip, ImageClip, TextClip,
+    CompositeVideoClip, CompositeAudioClip, concatenate_videoclips,
+    concatenate_audioclips, clips_array, vfx, afx, transfx,
+    VideoClip, AudioClip, ColorClip, MaskClip, Clip,
+    VideoClip, AudioClip, CompositeVideoClip, CompositeAudioClip,
+    concatenate_videoclips, concatenate_audioclips, clips_array,
+    vfx, afx, transfx, VideoClip, AudioClip, ColorClip,
+    MaskClip, Clip, VideoFileClip, AudioFileClip, ImageClip,
+    TextClip, CompositeVideoClip, CompositeAudioClip,
+    concatenate_videoclips, concatenate_audioclips, clips_array,
+    vfx, afx, transfx
+)
+
+import ffmpeg
+import imageio
+import imageio_ffmpeg
+import PIL
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+import skimage
+from skimage import io, filters, measure, morphology, segmentation, exposure
+
+# ========================================
+# Third Party - Subtitles Processing
+# ========================================
+import pysrt
+from pysrt import SubRipFile, SubRipItem, SubRipTime
+import pysubs2
+from pysubs2 import SSAFile, SSAEvent, SSAStyle
+import chardet
+import ffmpeg
+import ass
+import webvtt
+import pycaption
+from pycaption import SRTReader, SRTWriter, WebVTTReader, WebVTTWriter
+import subtitleedit
+import subed
+
+# ========================================
+# Third Party - Cloud Services & APIs
 # ========================================
 # Google APIs
-# ========================================
 try:
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
-    GOOGLE_API_AVAILABLE = True
+    from googleapiclient.errors import HttpError
+    import google.auth
+    import google.oauth2
+    import google.auth.transport.requests
+    import google.auth.exceptions
+    import google.oauth2.credentials
+    import google.oauth2.service_account
+    import googleapiclient
+    import googleapiclient.discovery
+    import googleapiclient.errors
+    import googleapiclient.http
+    import googleapiclient.model
+    import googleapiclient.schema
+    import googleapiclient.channel
 except ImportError:
-    GOOGLE_API_AVAILABLE = False
+    pass
+
+# AWS
+try:
+    import boto3
+    from boto3 import Session, client, resource
+    import botocore
+    from botocore import exceptions, config
+    import s3fs
+except ImportError:
+    pass
+
+# Azure
+try:
+    from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+    from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
+except ImportError:
     pass
 
 # ========================================
-# Audio processing - FIXED (added except clauses)
+# Third Party - Hardware Monitoring
 # ========================================
-try:
-    from spleeter.separator import Separator
-    SPLEETER_AVAILABLE = True
-except ImportError:
-    SPLEETER_AVAILABLE = False
-    pass
+import psutil
+from psutil import (
+    cpu_percent, cpu_count, cpu_freq, cpu_stats, cpu_times,
+    virtual_memory, swap_memory, disk_usage, disk_io_counters,
+    net_io_counters, net_connections, net_if_addrs, net_if_stats,
+    sensors_temperatures, sensors_fans, sensors_battery,
+    boot_time, users, pids, process_iter, Process, Popen,
+    NoSuchProcess, AccessDenied, ZombieProcess, TimeoutExpired
+)
 
-try:
-    import librosa
-    LIBROSA_AVAILABLE = True
-except ImportError:
-    LIBROSA_AVAILABLE = False
-    pass
+import GPUtil
+from GPUtil import getGPUs, GPU, getAvailable, showUtilization
 
-try:
-    import soundfile as sf
-    SOUNDFILE_AVAILABLE = True
-except ImportError:
-    SOUNDFILE_AVAILABLE = False
-    pass
+import pynvml
+from pynvml import (
+    nvmlInit, nvmlDeviceGetCount, nvmlDeviceGetHandleByIndex,
+    nvmlDeviceGetName, nvmlDeviceGetSerial, nvmlDeviceGetUUID,
+    nvmlDeviceGetMemoryInfo, nvmlDeviceGetUtilizationRates,
+    nvmlDeviceGetTemperature, nvmlDeviceGetPowerUsage,
+    nvmlDeviceGetEnforcedPowerLimit, nvmlDeviceGetClockInfo,
+    nvmlDeviceGetMaxClockInfo, nvmlDeviceGetFanSpeed,
+    nvmlDeviceGetComputeRunningProcesses, nvmlDeviceGetGraphicsRunningProcesses,
+    nvmlSystemGetDriverVersion, nvmlSystemGetNVMLVersion,
+    nvmlSystemGetCudaDriverVersion, nvmlSystemGetProcessName,
+    NVML_TEMPERATURE_GPU, NVML_CLOCK_GRAPHICS, NVML_CLOCK_MEM,
+    NVML_CLOCK_SM, NVML_CLOCK_VIDEO, NVML_POWER_SCOPE_BOARD,
+    NVML_POWER_SCOPE_MODULE, NVML_POWER_SCOPE_CARD,
+    NVML_PERF_LEVEL_MAX, NVML_PERF_LEVEL_MIN
+)
 
-try:
-    import audioread
-    AUDIOREAD_AVAILABLE = True
-except ImportError:
-    AUDIOREAD_AVAILABLE = False
-    pass
-
-try:
-    import pydub
-    from pydub import AudioSegment
-    from pydub.effects import normalize
-    PYDUB_AVAILABLE = True
-except ImportError:
-    PYDUB_AVAILABLE = False
-    pass
-
-try:
-    import noisereduce as nr
-    NOISEREDUCE_AVAILABLE = True
-except ImportError:
-    NOISEREDUCE_AVAILABLE = False
-    pass
-
-try:
-    import pyloudnorm as pyln
-    PYLN_AVAILABLE = True
-except ImportError:
-    PYLN_AVAILABLE = False
-    pass
-
-try:
-    import pyrubberband as pyrb
-    PYRUBBERBAND_AVAILABLE = True
-except ImportError:
-    PYRUBBERBAND_AVAILABLE = False
-    pass
-
-try:
-    import pedalboard
-    PEDALBOARD_AVAILABLE = True
-except ImportError:
-    PEDALBOARD_AVAILABLE = False
-    pass
-
-try:
-    import resampy
-    RESAMPY_AVAILABLE = True
-except ImportError:
-    RESAMPY_AVAILABLE = False
-    pass
-
-try:
-    import sox
-    SOX_AVAILABLE = True
-except ImportError:
-    SOX_AVAILABLE = False
-    pass
-
-import wave
-import contextlib
-
-# ========================================
-# Hardware detection and monitoring - FIXED
-# ========================================
-try:
-    import GPUtil
-    GPUTIL_AVAILABLE = True
-except ImportError:
-    GPUTIL_AVAILABLE = False
-    pass
-
-try:
-    import psutil
-    PSUTIL_AVAILABLE = True
-except ImportError:
-    PSUTIL_AVAILABLE = False
-    pass
-
-try:
-    import cpuinfo
-    CPUINFO_AVAILABLE = True
-except ImportError:
-    CPUINFO_AVAILABLE = False
-    pass
-
-try:
-    import pynvml
-    NVML_AVAILABLE = True
-except ImportError:
-    NVML_AVAILABLE = False
-    pass
-
+# AMD GPU
 try:
     import pyamdgpuinfo
-    AMDGPU_AVAILABLE = True
 except ImportError:
-    AMDGPU_AVAILABLE = False
-    pass
+    pyamdgpuinfo = None
 
-try:
-    import pyadl
-    ADL_AVAILABLE = True
-except ImportError:
-    ADL_AVAILABLE = False
-    pass
-
-try:
-    import OpenGL
-    OPENGL_AVAILABLE = True
-except ImportError:
-    OPENGL_AVAILABLE = False
-    pass
-
+# OpenCL
 try:
     import pyopencl as cl
-    OPENCL_AVAILABLE = True
+    from pyopencl import (
+        create_some_context, CommandQueue, Context, Device,
+        Platform, Program, Kernel, Buffer, Image, Event,
+        mem_flags, map_flags, command_queue_properties,
+        device_type, platform_properties, device_properties,
+        SVM, SVMPointer, SVMAllocator
+    )
 except ImportError:
-    OPENCL_AVAILABLE = False
-    pass
+    cl = None
 
+# Vulkan
 try:
     import vulkan as vk
-    VULKAN_AVAILABLE = True
+    from vulkan import (
+        VkApplicationInfo, VkInstanceCreateInfo, VkPhysicalDevice,
+        VkDeviceCreateInfo, VkDeviceQueueCreateInfo, VkQueue,
+        VkCommandPoolCreateInfo, VkCommandBufferAllocateInfo,
+        VkCommandBuffer, VkFence, VkSemaphore, VkEvent,
+        VkQueryPool, VkBuffer, VkImage, VkDeviceMemory,
+        VkRenderPass, VkFramebuffer, VkPipeline, VkPipelineLayout,
+        VkShaderModule, VkDescriptorSetLayout, VkDescriptorPool,
+        VkDescriptorSet, VkSampler, VkSwapchainKHR,
+        vkCreateInstance, vkEnumeratePhysicalDevices,
+        vkGetPhysicalDeviceProperties, vkGetPhysicalDeviceMemoryProperties,
+        vkGetPhysicalDeviceQueueFamilyProperties, vkCreateDevice,
+        vkGetDeviceQueue, vkDestroyInstance, vkDestroyDevice,
+        vkEnumerateInstanceVersion, VK_API_VERSION_1_0, VK_API_VERSION_1_1,
+        VK_API_VERSION_1_2, VK_API_VERSION_1_3
+    )
 except ImportError:
-    VULKAN_AVAILABLE = False
-    pass
-
-try:
-    import dxgi
-    DXGI_AVAILABLE = True
-except ImportError:
-    DXGI_AVAILABLE = False
-    pass
-
-try:
-    import wmi
-    WMI_AVAILABLE = True
-except ImportError:
-    WMI_AVAILABLE = False
-    pass
-
-# Windows-specific imports with fallbacks
-if platform.system() == "Windows":
-    try:
-        import pythoncom
-        import comtypes
-        WIN32COM_AVAILABLE = True
-    except ImportError:
-        WIN32COM_AVAILABLE = False
-        pass
-
-    try:
-        import win32api
-        import win32con
-        import win32gui
-        WIN32_AVAILABLE = True
-    except ImportError:
-        WIN32_AVAILABLE = False
-        pass
-
-    try:
-        import winreg
-        WINREG_AVAILABLE = True
-    except ImportError:
-        WINREG_AVAILABLE = False
-        pass
+    vk = None
 
 # ========================================
-# Visualization and graphics - FIXED
+# Third Party - Audio Enhancement
 # ========================================
-try:
-    import matplotlib
-    matplotlib.use('Qt5Agg')
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    pass
+import spleeter
+from spleeter.separator import Separator
+from spleeter.audio.adapter import AudioAdapter
+from spleeter.model import model_loader
+from spleeter.model.provider import ModelProvider
+from spleeter.utils.configuration import load_configuration
+from spleeter.utils.logging import logger as spleeter_logger
+from spleeter.utils.tensor import transfer_tensor
+from spleeter.utils.tf import set_memory_growth
 
-try:
-    import pandas as pd
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
-    pass
+import demucs
+from demucs import apply, pretrained, separate, utils
+from demucs.api import Separator as DemucsSeparator
+from demucs.apply import apply_model
+from demucs.pretrained import get_model, DEFAULT_MODEL
+from demucs.utils import center_trim, load_audio, save_audio
 
-try:
-    import seaborn as sns
-    SEABORN_AVAILABLE = True
-except ImportError:
-    SEABORN_AVAILABLE = False
-    pass
-
-try:
-    import plotly.graph_objects as go
-    PLOTLY_AVAILABLE = True
-except ImportError:
-    PLOTLY_AVAILABLE = False
-    pass
-
-try:
-    import pyqtgraph as pg
-    PYQTGRAPH_AVAILABLE = True
-except ImportError:
-    PYQTGRAPH_AVAILABLE = False
-    pass
-
-try:
-    import vispy
-    VISPY_AVAILABLE = True
-except ImportError:
-    VISPY_AVAILABLE = False
-    pass
-
-try:
-    import vtk
-    VTK_AVAILABLE = True
-except ImportError:
-    VTK_AVAILABLE = False
-    pass
-
-try:
-    from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-    QVTK_AVAILABLE = True
-except ImportError:
-    QVTK_AVAILABLE = False
-    pass
-
-try:
-    import mayavi.mlab as mlab
-    MAYAVI_AVAILABLE = True
-except ImportError:
-    MAYAVI_AVAILABLE = False
-    pass
+import noisereduce
+import pyloudnorm as pyln
+import pydub.effects
+import pydub.scipy_effects
+import pydub.silence
+import pydub.generators
+import pydub.playback
+import pydub.audio_segment
 
 # ========================================
-# Machine Learning and AI - FIXED
+# Third Party - Cryptography & Security
 # ========================================
-try:
-    import torch
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    pass
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.asymmetric import rsa, dsa, ec, padding
+from cryptography.hazmat.primitives.serialization import (
+    load_pem_private_key, load_der_private_key,
+    load_pem_public_key, load_der_public_key,
+    Encoding, PrivateFormat, PublicFormat, NoEncryption,
+    BestAvailableEncryption
+)
+from cryptography.hazmat.backends import default_backend
+from cryptography.x509 import (
+    Name, NameAttribute, CertificateBuilder, CertificateSigningRequestBuilder,
+    random_serial_number, load_pem_x509_certificate, load_der_x509_certificate
+)
+from cryptography.x509.oid import NameOID
 
-try:
-    import tensorflow as tf
-    TF_AVAILABLE = True
-except ImportError:
-    TF_AVAILABLE = False
-    pass
+import jwt
+from jwt import encode, decode, PyJWTError, ExpiredSignatureError, InvalidTokenError
 
-try:
-    from transformers import AutoTokenizer
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
-    pass
-
-try:
-    from sentence_transformers import SentenceTransformer
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-    pass
-
-try:
-    import langdetect
-    LANGDETECT_AVAILABLE = True
-except ImportError:
-    LANGDETECT_AVAILABLE = False
-    pass
-
-try:
-    import googletrans
-    GOOGLETRANS_AVAILABLE = True
-except ImportError:
-    GOOGLETRANS_AVAILABLE = False
-    pass
-
-try:
-    import nltk
-    NLTK_AVAILABLE = True
-except ImportError:
-    NLTK_AVAILABLE = False
-    pass
-
-try:
-    import spacy
-    SPACY_AVAILABLE = True
-except ImportError:
-    SPACY_AVAILABLE = False
-    pass
-
-try:
-    import textblob
-    TEXTBLOB_AVAILABLE = True
-except ImportError:
-    TEXTBLOB_AVAILABLE = False
-    pass
-
-try:
-    import fasttext
-    FASTTEXT_AVAILABLE = True
-except ImportError:
-    FASTTEXT_AVAILABLE = False
-    pass
-
-try:
-    import ctranslate2
-    CTRANSLATE2_AVAILABLE = True
-except ImportError:
-    CTRANSLATE2_AVAILABLE = False
-    pass
+import secrets
+import hashlib
+import hmac
+import binascii
+import codecs
+import passlib
+from passlib.hash import pbkdf2_sha256, argon2, bcrypt
+from passlib.context import CryptContext
 
 # ========================================
-# Database and storage
+# Third Party - GUI Enhancements
 # ========================================
-try:
-    import sqlite3
-    SQLITE_AVAILABLE = True
-except ImportError:
-    SQLITE_AVAILABLE = False
-    pass
+import pyqtgraph as pg
+from pyqtgraph import (
+    GraphicsLayoutWidget, PlotWidget, PlotItem, ViewBox,
+    GraphicsObject, GraphicsItem, InfiniteLine, LinearRegionItem,
+    LegendItem, LabelItem, TextItem, ImageItem, HistogramLUTItem,
+    ROI, PolyLineROI, EllipseROI, CircleROI, RectROI,
+    Point, SignalProxy, functions, exporters, parametertree
+)
 
-try:
-    import pymongo
-    MONGODB_AVAILABLE = True
-except ImportError:
-    MONGODB_AVAILABLE = False
-    pass
+import qdarkstyle
+from qdarkstyle import load_stylesheet_pyqt5
+import qdarkstyle.dark.palette as dark_palette
+import qdarkstyle.light.palette as light_palette
 
-try:
-    import redis
-    REDIS_AVAILABLE = True
-except ImportError:
-    REDIS_AVAILABLE = False
-    pass
+import qtawesome as qta
+from qtawesome import icon, set_defaults, font
+import qtmodern
+import qtmodern.styles
+import qtmodern.windows
 
-try:
-    import elasticsearch
-    ELASTICSEARCH_AVAILABLE = True
-except ImportError:
-    ELASTICSEARCH_AVAILABLE = False
-    pass
-
-try:
-    import cassandra
-    CASSANDRA_AVAILABLE = True
-except ImportError:
-    CASSANDRA_AVAILABLE = False
-    pass
-
-try:
-    import influxdb
-    INFLUXDB_AVAILABLE = True
-except ImportError:
-    INFLUXDB_AVAILABLE = False
-    pass
-
-try:
-    import duckdb
-    DUCKDB_AVAILABLE = True
-except ImportError:
-    DUCKDB_AVAILABLE = False
-    pass
-
-try:
-    import polars as pl
-    POLARS_AVAILABLE = True
-except ImportError:
-    POLARS_AVAILABLE = False
-    pass
+import pyperclip
+import screeninfo
+from screeninfo import get_monitors
+import pystray
+from pystray import Icon, Menu, MenuItem
+import notify2
+import plyer
+from plyer import notification, vibrator, battery, cpu, wifi
 
 # ========================================
-# Web and networking
+# Third Party - Progress Bars & Visualization
 # ========================================
-try:
-    import aiohttp
-    AIOHTTP_AVAILABLE = True
-except ImportError:
-    AIOHTTP_AVAILABLE = False
-    pass
+from tqdm import tqdm, trange
+from tqdm.auto import tqdm as tqdm_auto
+from tqdm.notebook import tqdm as tqdm_notebook
+from tqdm.gui import tqdm as tqdm_gui
 
-try:
-    import flask
-    FLASK_AVAILABLE = True
-except ImportError:
-    FLASK_AVAILABLE = False
-    pass
+import rich
+from rich.console import Console
+from rich.table import Table
+from rich.progress import (
+    Progress, BarColumn, TextColumn, TimeRemainingColumn,
+    SpinnerColumn, ProgressColumn, ProgressBar
+)
+from rich.panel import Panel
+from rich.layout import Layout
+from rich.live import Live
+from rich.text import Text
+from rich.markdown import Markdown
+from rich.syntax import Syntax
+from rich.traceback import Traceback
 
-try:
-    import fastapi
-    FASTAPI_AVAILABLE = True
-except ImportError:
-    FASTAPI_AVAILABLE = False
-    pass
-
-try:
-    from bs4 import BeautifulSoup
-    BEAUTIFULSOUP_AVAILABLE = True
-except ImportError:
-    BEAUTIFULSOUP_AVAILABLE = False
-    pass
-
-try:
-    import selenium
-    SELENIUM_AVAILABLE = True
-except ImportError:
-    SELENIUM_AVAILABLE = False
-    pass
-
-try:
-    import httpx
-    HTTPX_AVAILABLE = True
-except ImportError:
-    HTTPX_AVAILABLE = False
-    pass
+import alive_progress
+from alive_progress import alive_bar, config_handler
 
 # ========================================
-# Cryptography and security
+# Third Party - Error Handling & Logging
 # ========================================
-try:
-    import jwt
-    JWT_AVAILABLE = True
-except ImportError:
-    JWT_AVAILABLE = False
-    pass
+import sentry_sdk
+from sentry_sdk import capture_exception, capture_message, set_user
+import rollbar
+import raven
+from raven import Client as RavenClient
+import bugsnag
+from bugsnag.handlers import BugsnagHandler
+import newrelic.agent
+import datadog
+from datadog import initialize, api, statsd
+import prometheus_client
+from prometheus_client import Counter, Gauge, Histogram, Summary, start_http_server
 
-try:
-    import bcrypt
-    BCRYPT_AVAILABLE = True
-except ImportError:
-    BCRYPT_AVAILABLE = False
-    pass
+# ========================================
+# Third Party - Database & Storage
+# ========================================
+import sqlalchemy
+from sqlalchemy import (
+    create_engine, MetaData, Table, Column, Integer, String,
+    Float, Boolean, DateTime, ForeignKey, Index, UniqueConstraint,
+    PrimaryKeyConstraint, CheckConstraint, text, select, insert,
+    update, delete, and_, or_, not_, asc, desc, func
+)
+from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.ext.declarative import declarative_base
+import datasets
+from datasets import load_dataset, Dataset, DatasetDict, Features, ClassLabel, Value
+import huggingface_hub
+from huggingface_hub import HfApi, HfFolder, Repository, hf_hub_url
+import h5py
+import pytables
+import blosc
+import zstandard as zstd
+import lz4
+import snappy
+import brotli
 
-try:
-    import pyotp
-    PYOTP_AVAILABLE = True
-except ImportError:
-    PYOTP_AVAILABLE = False
-    pass
+# ========================================
+# Third Party - Network & Web
+# ========================================
+import requests
+from requests import Session, get, post, put, delete, head, options, patch
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from urllib3 import PoolManager, ProxyManager, ProxyManager
+import aiohttp
+from aiohttp import ClientSession, ClientTimeout, ClientResponse, ClientError
+import httpx
+from httpx import Client, AsyncClient, Timeout, Limits, Auth
+import websocket
+from websocket import WebSocketApp, create_connection
+import socketio
+from socketio import Client as SocketIOClient
+import asyncio
+import aiofiles
+import aiofiles.os
+import aiofiles.ospath
+import aiofiles.tempfile
 
-try:
-    import qrcode
-    QRCODE_AVAILABLE = True
-except ImportError:
-    QRCODE_AVAILABLE = False
-    pass
+# ========================================
+# Third Party - Date/Time Processing
+# ========================================
+import pytz
+from pytz import timezone, all_timezones, common_timezones
+import dateutil
+from dateutil import parser, rrule, tz, relativedelta
+import arrow
+from arrow import Arrow, now, get, utcnow
+import pendulum
+from pendulum import DateTime, Date, Time, Duration, Period
+import delorean
+from delorean import Delorean
 
-try:
-    import keyring
-    KEYRING_AVAILABLE = True
-except ImportError:
-    KEYRING_AVAILABLE = False
-    pass
+# ========================================
+# Third Party - System Information
+# ========================================
+import cpuinfo
+from cpuinfo import get_cpu_info
+import platform
+import distro
+from distro import name, version, codename, info, like
+import wmi
+import pyad
+import ldap3
+import pythoncom
+import win32com.client
+
+# ========================================
+# Third Party - Compression & Archiving
+# ========================================
+import zipfile
+import tarfile
+import gzip
+import bz2
+import lzma
+import zstandard as zstd
+import py7zr
+import rarfile
+import patoolib
+import pyunpack
+import patoolib
+
+# ========================================
+# Third Party - Miscellaneous Utilities
+# ========================================
+import coloredlogs
+import verboselogs
+import humanize
+from humanize import naturalsize, naturaltime, naturaldate, intcomma
+import inflect
+import jinja2
+from jinja2 import Template, Environment, FileSystemLoader
+import markdown
+from markdown import markdown
+import emoji
+from emoji import emojize, demojize
+import chardet
+import cchardet
+import ftfy
+from ftfy import fix_text, fix_encoding
+import textstat
+from textstat import textstat
+import language_tool_python
+import pycountry
+import iso639
+import langcodes
+import phonenumbers
+from phonenumbers import PhoneNumber, PhoneNumberType, PhoneMetadata
+import validate_email
+import email_validator
+import validators
+from validators import url, email, domain, ipv4, ipv6
+import jsonschema
+from jsonschema import validate, Draft7Validator, ValidationError
+import jsonpointer
+import jsonpatch
+import jsonpath_rw
+import jsonpath_ng
+import xmltodict
+import dicttoxml
+import yaml
+import ruamel.yaml
+import toml
+import pytoml
+import configobj
+
+# ========================================
+# Third Party - Data Visualization
+# ========================================
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib.patches as patches
+import matplotlib.path as path
+import matplotlib.transforms as transforms
+import seaborn as sns
+import plotly
+import plotly.graph_objects as go
+import plotly.express as px
+import plotly.figure_factory as ff
+import plotly.io as pio
+import plotly.offline as py_offline
+import plotly.subplots as sp
+import bokeh
+import bokeh.plotting
+import bokeh.models
+import bokeh.layouts
+import bokeh.io
+import bokeh.embed
+import bokeh.resources
+import bokeh.application
+import bokeh.server
+import altair
+from altair import Chart, LayeredChart, VConcatChart, HConcatChart, FacetChart
+import vega
+import vegafusion
+import holoviews as hv
+from holoviews import opts
+import geoviews as gv
+import datashader as ds
+from datashader import transfer_functions as tf
+import colorcet as cc
+import panel as pn
+import param
+
+# ========================================
+# Third Party - Animation & Effects
+# ========================================
+import pyqtgraph as pg
+import pyqtgraph.exporters
+import pyqtgraph.parametertree
+import pyqtgraph.opengl as gl
+from pyqtgraph.opengl import (
+    GLViewWidget, GLScatterPlotItem, GLLinePlotItem,
+    GLMeshItem, GLSurfacePlotItem, GLBarGraphItem,
+    GLImageItem, GLVolumeItem
+)
+import vispy
+from vispy import app, scene, color, io
+import mayavi
+from mayavi import mlab
+import fury
+from fury import window, actor, ui, utils
+import vtk
+from vtk import vtkRenderer, vtkRenderWindow, vtkRenderWindowInteractor, vtkActor
+import pyvista
+from pyvista import Plotter, PolyData, UnstructuredGrid, MultiBlock
+
+# ========================================
+# Third Party - Web Frameworks (for API)
+# ========================================
+import fastapi
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+import uvicorn
+import starlette
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+import pydantic
+from pydantic import BaseModel, Field, validator
+import sanic
+from sanic import Sanic, response
+import quart
+from quart import Quart, request, jsonify
+import aiohttp.web
+from aiohttp import web
+import flask
+from flask import Flask, request, jsonify, send_file, abort
+import flask_cors
+from flask_cors import CORS
+import django
+from django.conf import settings
+from django.core.wsgi import get_wsgi_application
+import tornado
+from tornado.web import Application, RequestHandler
+from tornado.ioloop import IOLoop
+import websockets
+from websockets import serve
+
+# ========================================
+# Third Party - Testing & Debugging
+# ========================================
+import pytest
+from pytest import approx, raises, fixture, mark
+import unittest
+from unittest import TestCase, mock, skip
+import doctest
+import coverage
+from coverage import Coverage
+import profiling
+from pyinstrument import Profiler
+import memory_profiler
+from memory_profiler import profile
+import line_profiler
+from line_profiler import LineProfiler
+import timeit
+import cProfile
+import pstats
+import snakeviz
+import pycallgraph
+from pycallgraph import PyCallGraph, Config
+from pycallgraph.output import GraphvizOutput
+
+# ========================================
+# Package Metadata and Version Control
+# ========================================
+__version__ = "2026.5.0"
+__author__ = "NotY215"
+__license__ = "Proprietary"
+__copyright__ = "Copyright © 2026 NotY215. All rights reserved."
+__credits__ = ["OpenAI (Whisper)", "Deezer (Spleeter)", "PyQt Contributors"]
+__maintainer__ = "NotY215"
+__email__ = "noty215@github.com"
+__status__ = "Production"
+
+# ========================================
+# Import Check & Fallbacks
+# ========================================
+def check_imports():
+    """Verify critical imports are available"""
+    critical_imports = {
+        'PyQt5': 'PyQt5',
+        'numpy': 'numpy',
+        'whisper': 'openai-whisper',
+        'moviepy': 'moviepy',
+        'pysrt': 'pysrt',
+        'pysubs2': 'pysubs2',
+        'psutil': 'psutil',
+        'cryptography': 'cryptography'
+    }
+    
+    missing = []
+    for module_name, pip_name in critical_imports.items():
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing.append(f"{module_name} (pip install {pip_name})")
+    
+    if missing:
+        print("Warning: The following optional modules are missing:")
+        for item in missing:
+            print(f"  - {item}")
+        print("\nSome features may be limited.")
 
 # ========================================
 # Global constants and configuration
 # ========================================
-
-# Application constants
-APP_NAME = "NotyCaption"
+APP_NAME = "NotyCaption Pro"
 APP_AUTHOR = "NotY215"
 APP_VERSION = "2026.5.0"
 APP_BUILD = datetime.now().strftime("%Y%m%d")
 APP_COPYRIGHT = f"Copyright © 2026 {APP_AUTHOR}. All rights reserved."
-# Google API scopes
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # ========================================
@@ -858,26 +1366,21 @@ def setup_logging():
     logger.info(f"Log file: {log_file}")
     return logger
 
-# Initialize logger
 logger = setup_logging()
 
-
-# Get app data directory for settings
+# ========================================
+# App data directories
+# ========================================
 if getattr(sys, 'frozen', False):
-    # Running as compiled executable
     if platform.system() == "Windows":
         APP_DATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), f"{APP_NAME.replace(' ', '')}Saves")
     else:
-        # Linux/Mac fallback
         APP_DATA_DIR = os.path.join(os.path.expanduser('~'), f".{APP_NAME.lower().replace(' ', '')}saves")
 else:
-    # Running in development
     APP_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Create app data directory if it doesn't exist
 os.makedirs(APP_DATA_DIR, exist_ok=True)
 
-# Configuration file paths
 SETTINGS_FILE = os.path.join(APP_DATA_DIR, "settings.notcapz")
 KEY_FILE = os.path.join(APP_DATA_DIR, "key.notcapz")
 SESSION_FILE = os.path.join(APP_DATA_DIR, "session.json")
@@ -896,24 +1399,22 @@ MONITORING_DIR = os.path.join(APP_DATA_DIR, "monitoring")
 GRAPHS_DIR = os.path.join(APP_DATA_DIR, "graphs")
 TEMP_DIR = os.path.join(APP_DATA_DIR, "temp")
 
-# Create all directories
 for dir_path in [LAYOUTS_DIR, PRESETS_DIR, CACHE_DIR, THEMES_DIR, PLUGINS_DIR,
                  EXPORTS_DIR, BACKUPS_DIR, PROFILES_DIR, MONITORING_DIR,
                  GRAPHS_DIR, TEMP_DIR]:
     os.makedirs(dir_path, exist_ok=True)
 
 logger.info(f"App data directory: {APP_DATA_DIR}")
-logger.info(f"All application directories created successfully")
 
 # ========================================
-# ENCRYPTION UTILS
+# Encryption utilities
 # ========================================
 def generate_key_from_password(password: str, salt: bytes = None) -> tuple:
     """Generate encryption key from password using PBKDF2"""
     if salt is None:
         salt = os.urandom(16)
     
-    kdf = PBKDF2(
+    kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
@@ -942,11 +1443,8 @@ def load_or_create_key() -> bytes:
                 logger.info("Fallback key loaded from app data")
                 return key_data
             else:
-                # Generate new key with password
                 password = APP_NAME + APP_AUTHOR + APP_VERSION
                 key, salt = generate_key_from_password(password)
-                
-                # Save salt with key
                 with open(KEY_FILE, "wb") as f:
                     f.write(salt + key)
                 logger.info("New encryption key generated")
@@ -967,14 +1465,12 @@ def load_or_create_key() -> bytes:
         f.write(salt + key)
     return key
 
-# Initialize Fernet cipher
 try:
     key = load_or_create_key()
     fernet = Fernet(key)
     logger.info("Encryption initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize encryption: {e}")
-    # Create fallback key
     key = Fernet.generate_key()
     fernet = Fernet(key)
     logger.warning("Using fallback encryption key")
@@ -982,14 +1478,9 @@ except Exception as e:
 def encrypt_data(data: Any) -> str:
     """Encrypt data with compression"""
     try:
-        # Convert to JSON and compress
         json_str = json.dumps(data, ensure_ascii=False, indent=2)
         compressed = zlib.compress(json_str.encode('utf-8'), level=9)
-        
-        # Encrypt
         encrypted = fernet.encrypt(compressed)
-        
-        # Base64 encode for storage
         return base64.b64encode(encrypted).decode('utf-8')
     except Exception as e:
         logger.error(f"Encryption failed: {e}")
@@ -998,21 +1489,13 @@ def encrypt_data(data: Any) -> str:
 def decrypt_data(encrypted_b64: str) -> Optional[Any]:
     """Decrypt and decompress data"""
     try:
-        # Base64 decode
         encrypted = base64.b64decode(encrypted_b64.encode('utf-8'))
-        
-        # Decrypt
         decrypted = fernet.decrypt(encrypted)
-        
-        # Decompress
         decompressed = zlib.decompress(decrypted)
-        
-        # Parse JSON
         return json.loads(decompressed.decode('utf-8'))
     except Exception as e:
         logger.error(f"Decryption failed: {e}")
         try:
-            # Try without compression (backward compatibility)
             encrypted = base64.b64decode(encrypted_b64.encode('utf-8'))
             decrypted = fernet.decrypt(encrypted)
             return json.loads(decrypted.decode('utf-8'))
@@ -1065,21 +1548,21 @@ def load_settings() -> dict:
         "font_family": "Segoe UI",
         "font_size": 14,
         "hardware_monitoring": True,
-        "monitoring_interval": 1000,  # ms
+        "monitoring_interval": 1000,
         "performance_graphs": True,
-        "graph_history": 300,  # seconds
+        "graph_history": 300,
         "multi_monitor": False,
         "monitor_index": 0,
         "preview_widget_enabled": True,
         "auto_save": True,
-        "auto_save_interval": 300,  # seconds
+        "auto_save_interval": 300,
         "backup_count": 10,
         "export_format": "SRT",
         "export_encoding": "utf-8",
         "export_newline": "\r\n",
         "export_bom": False,
         "timestamp_format": "HH:MM:SS,mmm",
-        "subtitle_offset": 0,  # ms
+        "subtitle_offset": 0,
         "subtitle_duration_factor": 1.0,
         "max_line_length": 42,
         "max_lines": 2,
@@ -1116,13 +1599,13 @@ def load_settings() -> dict:
         "system_tray": True,
         "start_minimized": False,
         "auto_update": True,
-        "update_check_interval": 86400,  # seconds
+        "update_check_interval": 86400,
         "beta_updates": False,
         "telemetry": False,
         "crash_reporting": True,
         "log_level": "INFO",
         "log_rotation": True,
-        "log_max_size": 10485760,  # 10 MB
+        "log_max_size": 10485760,
         "log_backup_count": 5,
         "log_compress": True,
         "debug_mode": False,
@@ -1154,7 +1637,7 @@ def load_settings() -> dict:
         "cloud_provider": "google",
         "cloud_folder": "NotyCaption",
         "cloud_auto_sync": False,
-        "cloud_sync_interval": 3600,  # seconds
+        "cloud_sync_interval": 3600,
         "encryption_enabled": True,
         "encryption_method": "fernet",
         "password_protect": False,
@@ -1200,14 +1683,12 @@ def load_settings() -> dict:
             encrypted_b64 = f.read().strip()
         loaded = decrypt_data(encrypted_b64)
         if loaded:
-            # Merge with defaults (keep defaults for missing keys)
             for key, value in loaded.items():
                 if key in defaults:
                     defaults[key] = value
                 else:
                     logger.warning(f"Unknown setting in saved config: {key}")
             
-            # Ensure all paths exist
             for path_key in ['temp_dir', 'models_dir', 'cache_dir']:
                 if path_key in defaults:
                     path = defaults[path_key]
@@ -1268,10 +1749,9 @@ def load_client_secrets() -> Optional[dict]:
     return None
 
 # ========================================
-# ENUMS AND DATA CLASSES
+# Enums and Data Classes
 # ========================================
 class ProcessingMode(Enum):
-    """Processing mode enumeration"""
     LOCAL = auto()
     ONLINE = auto()
     HYBRID = auto()
@@ -1279,14 +1759,12 @@ class ProcessingMode(Enum):
     DISTRIBUTED = auto()
 
 class Theme(Enum):
-    """Theme enumeration"""
     SYSTEM = auto()
     LIGHT = auto()
     DARK = auto()
     CUSTOM = auto()
 
 class Language(Enum):
-    """Supported languages"""
     ENGLISH = "en"
     JAPANESE = "ja"
     RUSSIAN = "ru"
@@ -1405,7 +1883,6 @@ class Language(Enum):
     CAROLINIAN = "cal"
 
 class SubtitleFormat(Enum):
-    """Subtitle format enumeration"""
     SRT = ".srt"
     ASS = ".ass"
     SSA = ".ssa"
@@ -1432,7 +1909,6 @@ class SubtitleFormat(Enum):
     XML = ".xml"
 
 class GPUType(Enum):
-    """GPU type enumeration"""
     NVIDIA_CUDA = auto()
     AMD_ROCM = auto()
     INTEL_OPENCL = auto()
@@ -1443,7 +1919,6 @@ class GPUType(Enum):
     SOFTWARE = auto()
 
 class HardwareStatus(Enum):
-    """Hardware status enumeration"""
     AVAILABLE = auto()
     UNAVAILABLE = auto()
     LIMITED = auto()
@@ -1452,11 +1927,10 @@ class HardwareStatus(Enum):
 
 @dataclass
 class GPUInfo:
-    """GPU information data class"""
     name: str
     type: GPUType
     vendor: str
-    memory_total: int  # bytes
+    memory_total: int
     memory_used: int
     memory_free: int
     temperature: float
@@ -1516,7 +1990,6 @@ class GPUInfo:
 
 @dataclass
 class CPUInfo:
-    """CPU information data class"""
     name: str
     vendor: str
     architecture: str
@@ -1552,8 +2025,7 @@ class CPUInfo:
 
 @dataclass
 class RAMInfo:
-    """RAM information data class"""
-    total: int  # bytes
+    total: int
     available: int
     used: int
     free: int
@@ -1582,7 +2054,6 @@ class RAMInfo:
 
 @dataclass
 class DiskInfo:
-    """Disk information data class"""
     device: str
     mountpoint: str
     filesystem: str
@@ -1600,7 +2071,7 @@ class DiskInfo:
     serial: Optional[str] = None
     firmware: Optional[str] = None
     interface: Optional[str] = None
-    media_type: Optional[str] = None  # SSD, HDD, NVMe
+    media_type: Optional[str] = None
     form_factor: Optional[str] = None
     temperature: Optional[float] = None
     health: Optional[str] = None
@@ -1620,7 +2091,6 @@ class DiskInfo:
 
 @dataclass
 class NetworkInfo:
-    """Network information data class"""
     interface: str
     mac_address: str
     ip_addresses: List[str]
@@ -1653,11 +2123,10 @@ class NetworkInfo:
 
 @dataclass
 class BatteryInfo:
-    """Battery information data class"""
     present: bool
     charging: bool
     percent: float
-    time_remaining: Optional[int] = None  # seconds
+    time_remaining: Optional[int] = None
     energy_full: Optional[int] = None
     energy_full_design: Optional[int] = None
     energy_now: Optional[int] = None
@@ -1674,7 +2143,6 @@ class BatteryInfo:
 
 @dataclass
 class HardwareSnapshot:
-    """Hardware snapshot for performance history"""
     timestamp: datetime
     cpu_usage: float
     cpu_temp: float
@@ -1688,8 +2156,8 @@ class HardwareSnapshot:
     ram_available: int
     swap_usage: float
     disk_usage: Dict[str, float]
-    disk_io: Dict[str, tuple]  # (read, write)
-    network_io: tuple  # (sent, received)
+    disk_io: Dict[str, tuple]
+    network_io: tuple
     battery_percent: Optional[float] = None
     process_count: int = 0
     thread_count: int = 0
@@ -1698,7 +2166,7 @@ class HardwareSnapshot:
     load_average: Optional[tuple] = None
 
 # ========================================
-# HARDWARE DETECTION AND MONITORING
+# Hardware Monitor Class
 # ========================================
 class HardwareMonitor:
     """Comprehensive hardware monitoring with all GPU support"""
@@ -1711,7 +2179,7 @@ class HardwareMonitor:
         self.networks: List[NetworkInfo] = []
         self.battery: Optional[BatteryInfo] = None
         
-        self.history: deque = deque(maxlen=3600)  # 1 hour at 1 second intervals
+        self.history: deque = deque(maxlen=3600)
         self.snapshots: List[HardwareSnapshot] = []
         
         self.monitoring = False
@@ -1730,13 +2198,11 @@ class HardwareMonitor:
         self._init_vulkan()
         self._init_wmi()
         
-        # Initial detection
         self.detect_all()
         
         logger.info("Hardware monitor initialized")
         
     def _init_nvml(self):
-        """Initialize NVIDIA NVML"""
         try:
             pynvml.nvmlInit()
             self.nvml_initialized = True
@@ -1745,7 +2211,6 @@ class HardwareMonitor:
             logger.debug(f"NVML initialization failed: {e}")
             
     def _init_amd(self):
-        """Initialize AMD GPU monitoring"""
         try:
             if pyamdgpuinfo.detect_gpus():
                 self.amd_initialized = True
@@ -1754,7 +2219,6 @@ class HardwareMonitor:
             logger.debug(f"AMD GPU monitoring initialization failed: {e}")
             
     def _init_opencl(self):
-        """Initialize OpenCL"""
         try:
             platforms = cl.get_platforms()
             if platforms:
@@ -1764,7 +2228,6 @@ class HardwareMonitor:
             logger.debug(f"OpenCL initialization failed: {e}")
             
     def _init_vulkan(self):
-        """Initialize Vulkan"""
         try:
             vk.vkEnumerateInstanceVersion()
             self.vulkan_initialized = True
@@ -1773,7 +2236,6 @@ class HardwareMonitor:
             logger.debug(f"Vulkan initialization failed: {e}")
             
     def _init_wmi(self):
-        """Initialize WMI for Windows"""
         if platform.system() == "Windows":
             try:
                 pythoncom.CoInitialize()
@@ -1783,7 +2245,6 @@ class HardwareMonitor:
                 logger.debug(f"WMI initialization failed: {e}")
                 
     def detect_gpu_nvidia(self) -> List[GPUInfo]:
-        """Detect NVIDIA GPUs using NVML"""
         gpus = []
         if not self.nvml_initialized:
             return gpus
@@ -1793,78 +2254,36 @@ class HardwareMonitor:
             for i in range(device_count):
                 handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                 
-                # Basic info
                 name = pynvml.nvmlDeviceGetName(handle)
                 uuid = pynvml.nvmlDeviceGetUUID(handle)
                 serial = pynvml.nvmlDeviceGetSerial(handle)
                 
-                # Memory info
                 memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 memory_total = memory_info.total
                 memory_used = memory_info.used
                 memory_free = memory_info.free
                 
-                # Utilization
                 utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 gpu_util = utilization.gpu
-                memory_util = utilization.memory
                 
-                # Temperature
                 temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
                 
-                # Power
                 power_usage = pynvml.nvmlDeviceGetPowerUsage(handle)
                 power_limit = pynvml.nvmlDeviceGetEnforcedPowerLimit(handle)
                 
-                # Clocks
                 clock_core = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_GRAPHICS)
                 clock_memory = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_MEM)
-                clock_sm = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_SM)
-                clock_video = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_VIDEO)
                 
-                # PCIe info
                 pcie_info = pynvml.nvmlDeviceGetMaxPcieLinkGeneration(handle)
                 pcie_width = pynvml.nvmlDeviceGetMaxPcieLinkWidth(handle)
                 
-                # Fan speed
                 try:
                     fan_speed = pynvml.nvmlDeviceGetFanSpeed(handle)
                 except:
                     fan_speed = None
                     
-                # ECC info
-                try:
-                    ecc_info = pynvml.nvmlDeviceGetMemoryErrorCounter(handle, pynvml.NVML_MEMORY_ERROR_TYPE_CORRECTED, pynvml.NVML_VOLATILE_ECC)
-                except:
-                    ecc_info = None
-                    
-                # Compute mode
-                try:
-                    compute_mode = pynvml.nvmlDeviceGetComputeMode(handle)
-                except:
-                    compute_mode = None
-                    
-                # Performance state
-                try:
-                    perf_state = pynvml.nvmlDeviceGetPerformanceState(handle)
-                except:
-                    perf_state = None
-                    
-                # Throttling reasons
-                try:
-                    throttle_reasons = pynvml.nvmlDeviceGetCurrentClocksThrottleReasons(handle)
-                except:
-                    throttle_reasons = None
-                    
-                # Driver version
                 driver_version = pynvml.nvmlSystemGetDriverVersion()
                 
-                # CUDA cores (approximate)
-                try:
-                    cuda_cores = pynvml.nvmlDeviceGetCudaComputeCapability(handle)
-                except:
-                    cuda_cores = None
-                    
                 gpu = GPUInfo(
                     name=name.decode() if isinstance(name, bytes) else name,
                     type=GPUType.NVIDIA_CUDA,
@@ -1878,17 +2297,12 @@ class HardwareMonitor:
                     clock_core=clock_core,
                     clock_memory=clock_memory,
                     driver_version=driver_version.decode() if isinstance(driver_version, bytes) else driver_version,
-                    cuda_cores=cuda_cores,
                     pcie_version=f"PCIe Gen{pcie_info}",
                     pcie_lanes=pcie_width,
                     uuid=uuid.decode() if isinstance(uuid, bytes) else uuid,
                     serial=serial.decode() if isinstance(serial, bytes) else serial,
                     fan_speed=fan_speed,
-                    power_limit=power_limit,
-                    performance_state=perf_state,
-                    throttling_reason=throttle_reasons,
-                    ecc_errors=ecc_info,
-                    compute_mode=compute_mode
+                    power_limit=power_limit
                 )
                 gpus.append(gpu)
                 logger.info(f"NVIDIA GPU detected: {gpu.name}")
@@ -1899,7 +2313,6 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_amd(self) -> List[GPUInfo]:
-        """Detect AMD GPUs using pyamdgpuinfo"""
         gpus = []
         if not self.amd_initialized:
             return gpus
@@ -1908,56 +2321,34 @@ class HardwareMonitor:
             for i in range(pyamdgpuinfo.get_gpu_count()):
                 gpu = pyamdgpuinfo.get_gpu(i)
                 
-                # Basic info
                 name = gpu.name
-                vendor = "AMD"
                 memory_total = gpu.memory_total
                 memory_used = gpu.memory_used
                 memory_free = gpu.memory_free
                 
-                # Utilization
                 gpu_util = gpu.load
-                
-                # Temperature
                 temp = gpu.temperature
-                
-                # Power
                 power_usage = gpu.power_draw
                 power_limit = gpu.power_cap
-                
-                # Clocks
                 clock_core = gpu.core_clock
                 clock_memory = gpu.memory_clock
-                
-                # Fan speed
                 fan_speed = gpu.fan_speed
-                
-                # Voltage
                 voltage = gpu.voltage
-                
-                # PCIe info
-                pcie_version = gpu.pcie_version
-                pcie_lanes = gpu.pcie_lanes
-                
-                # GPU utilization
-                utilization = gpu.utilization
                 
                 gpu_info = GPUInfo(
                     name=name,
                     type=GPUType.AMD_ROCM,
-                    vendor=vendor,
+                    vendor="AMD",
                     memory_total=memory_total,
                     memory_used=memory_used,
                     memory_free=memory_free,
                     temperature=temp,
-                    utilization=utilization,
+                    utilization=gpu_util,
                     power_usage=power_usage,
                     clock_core=clock_core,
                     clock_memory=clock_memory,
                     driver_version=gpu.driver_version,
                     rocm_cores=gpu.compute_units,
-                    pcie_version=pcie_version,
-                    pcie_lanes=pcie_lanes,
                     fan_speed=fan_speed,
                     power_limit=power_limit,
                     voltage=voltage
@@ -1971,10 +2362,8 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_intel(self) -> List[GPUInfo]:
-        """Detect Intel GPUs using OpenCL and WMI"""
         gpus = []
         
-        # Try OpenCL first
         if self.opencl_initialized:
             try:
                 platforms = cl.get_platforms()
@@ -2007,7 +2396,6 @@ class HardwareMonitor:
             except Exception as e:
                 logger.error(f"Error detecting Intel GPU via OpenCL: {e}")
                 
-        # Try WMI on Windows
         if platform.system() == "Windows" and hasattr(self, 'wmi_conn'):
             try:
                 for gpu in self.wmi_conn.Win32_VideoController():
@@ -2035,7 +2423,6 @@ class HardwareMonitor:
                             driver_version=driver_version
                         )
                         
-                        # Check if already added
                         if not any(g.name == name for g in gpus):
                             gpus.append(gpu_info)
                             logger.info(f"Intel GPU detected via WMI: {gpu_info.name}")
@@ -2045,13 +2432,11 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_apple(self) -> List[GPUInfo]:
-        """Detect Apple GPUs using Metal (macOS only)"""
         gpus = []
         if platform.system() != "Darwin":
             return gpus
             
         try:
-            # Use system_profiler to get GPU info
             result = subprocess.run(
                 ['system_profiler', 'SPDisplaysDataType', '-json'],
                 capture_output=True,
@@ -2089,13 +2474,11 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_vulkan(self) -> List[GPUInfo]:
-        """Detect GPUs using Vulkan"""
         gpus = []
         if not self.vulkan_initialized:
             return gpus
             
         try:
-            # Get Vulkan instance
             app_info = vk.VkApplicationInfo(
                 sType=vk.VK_STRUCTURE_TYPE_APPLICATION_INFO,
                 pApplicationName="NotyCaption",
@@ -2111,8 +2494,6 @@ class HardwareMonitor:
             )
             
             instance = vk.vkCreateInstance(instance_info, None)
-            
-            # Enumerate physical devices
             physical_devices = vk.vkEnumeratePhysicalDevices(instance)
             
             for device in physical_devices:
@@ -2120,13 +2501,10 @@ class HardwareMonitor:
                 memory_properties = vk.vkGetPhysicalDeviceMemoryProperties(device)
                 
                 name = properties.deviceName
-                device_type = properties.deviceType
                 vendor_id = properties.vendorID
                 device_id = properties.deviceID
                 api_version = f"{vk.VK_VERSION_MAJOR(properties.apiVersion)}.{vk.VK_VERSION_MINOR(properties.apiVersion)}.{vk.VK_VERSION_PATCH(properties.apiVersion)}"
-                driver_version = properties.driverVersion
                 
-                # Determine vendor
                 if vendor_id == 0x10DE:
                     vendor = "NVIDIA"
                     gpu_type = GPUType.NVIDIA_CUDA
@@ -2155,7 +2533,7 @@ class HardwareMonitor:
                     power_usage=0,
                     clock_core=0,
                     clock_memory=0,
-                    driver_version=str(driver_version),
+                    driver_version="",
                     vulkan_version=api_version,
                     device_id=str(device_id)
                 )
@@ -2170,13 +2548,11 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_directx(self) -> List[GPUInfo]:
-        """Detect GPUs using DirectX (Windows only)"""
         gpus = []
         if platform.system() != "Windows":
             return gpus
             
         try:
-            # Use dxgi to enumerate adapters
             factory = dxgi.CreateDXGIFactory()
             adapter_index = 0
             while True:
@@ -2187,17 +2563,7 @@ class HardwareMonitor:
                     name = desc.Description
                     vendor_id = desc.VendorId
                     device_id = desc.DeviceId
-                    subsystem_id = desc.SubSysId
-                    revision = desc.Revision
                     
-                    # Get adapter details
-                    try:
-                        output = adapter.EnumOutputs(0)
-                        output_desc = output.GetDesc()
-                    except:
-                        output_desc = None
-                        
-                    # Determine vendor
                     if vendor_id == 0x10DE:
                         vendor = "NVIDIA"
                         gpu_type = GPUType.NVIDIA_CUDA
@@ -2211,7 +2577,6 @@ class HardwareMonitor:
                         vendor = "Unknown"
                         gpu_type = GPUType.DIRECTX
                         
-                    # Get dedicated video memory
                     try:
                         memory_info = adapter.GetDesc().DedicatedVideoMemory
                     except:
@@ -2231,9 +2596,7 @@ class HardwareMonitor:
                         clock_memory=0,
                         driver_version="",
                         directx_version="12",
-                        device_id=str(device_id),
-                        subsystem_id=str(subsystem_id),
-                        revision_id=str(revision)
+                        device_id=str(device_id)
                     )
                     gpus.append(gpu_info)
                     logger.info(f"GPU detected via DirectX: {gpu_info.name}")
@@ -2249,10 +2612,8 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_gputil(self) -> List[GPUInfo]:
-        """Detect GPUs using GPUtil (NVIDIA only)"""
         gpus = []
         try:
-            import GPUtil
             gputil_gpus = GPUtil.getGPUs()
             for gpu in gputil_gpus:
                 gpu_info = GPUInfo(
@@ -2277,7 +2638,6 @@ class HardwareMonitor:
         return gpus
         
     def detect_gpu_nvidia_smi(self) -> List[GPUInfo]:
-        """Detect NVIDIA GPUs using nvidia-smi"""
         gpus = []
         try:
             result = subprocess.run(
@@ -2298,7 +2658,7 @@ class HardwareMonitor:
                             memory_free = int(float(parts[3]) * 1024 * 1024) if parts[3] else 0
                             temperature = float(parts[4]) if parts[4] else 0
                             utilization = float(parts[5]) if parts[5] else 0
-                            power_usage = float(parts[6]) * 1000 if parts[6] else 0  # Convert to mW
+                            power_usage = float(parts[6]) * 1000 if parts[6] else 0
                             clock_core = int(float(parts[7])) if parts[7] else 0
                             clock_memory = int(float(parts[8])) if parts[8] else 0
                             driver_version = parts[9] if len(parts) > 9 else ""
@@ -2325,16 +2685,13 @@ class HardwareMonitor:
         return gpus
         
     def detect_cpu(self) -> CPUInfo:
-        """Detect CPU information"""
         cpu_info = cpuinfo.get_cpu_info()
         
-        # Get CPU usage
         try:
             cpu_usage = psutil.cpu_percent(interval=1)
         except:
             cpu_usage = 0
             
-        # Get CPU frequency
         try:
             freq = psutil.cpu_freq()
             if freq:
@@ -2350,7 +2707,6 @@ class HardwareMonitor:
             max_freq = 0
             min_freq = 0
             
-        # Get CPU temperature
         temp = 0
         try:
             if hasattr(psutil, "sensors_temperatures"):
@@ -2362,7 +2718,6 @@ class HardwareMonitor:
         except:
             pass
             
-        # Get CPU power (if available)
         power = 0
         try:
             if hasattr(psutil, "sensors_battery"):
@@ -2403,7 +2758,6 @@ class HardwareMonitor:
         return cpu
         
     def detect_ram(self) -> RAMInfo:
-        """Detect RAM information"""
         mem = psutil.virtual_memory()
         swap = psutil.swap_memory()
         
@@ -2422,7 +2776,6 @@ class HardwareMonitor:
             swap_utilization=swap.percent
         )
         
-        # Get RAM details on Windows
         if platform.system() == "Windows" and hasattr(self, 'wmi_conn'):
             try:
                 for memory in self.wmi_conn.Win32_PhysicalMemory():
@@ -2441,7 +2794,6 @@ class HardwareMonitor:
         return ram
         
     def detect_disks(self) -> List[DiskInfo]:
-        """Detect disk information"""
         disks = []
         
         for partition in psutil.disk_partitions():
@@ -2463,7 +2815,6 @@ class HardwareMonitor:
                     write_latency=0
                 )
                 
-                # Get disk I/O counters
                 try:
                     io_counters = psutil.disk_io_counters(perdisk=True)
                     for disk_name, counters in io_counters.items():
@@ -2476,7 +2827,6 @@ class HardwareMonitor:
                 except:
                     pass
                     
-                # Get disk model on Windows
                 if platform.system() == "Windows" and hasattr(self, 'wmi_conn'):
                     try:
                         for disk in self.wmi_conn.Win32_DiskDrive():
@@ -2500,7 +2850,6 @@ class HardwareMonitor:
         return disks
         
     def detect_networks(self) -> List[NetworkInfo]:
-        """Detect network interfaces"""
         networks = []
         
         for interface_name, interface_addresses in psutil.net_if_addrs().items():
@@ -2546,7 +2895,6 @@ class HardwareMonitor:
         return networks
         
     def detect_battery(self) -> Optional[BatteryInfo]:
-        """Detect battery information"""
         try:
             battery = psutil.sensors_battery()
             if battery:
@@ -2564,31 +2912,17 @@ class HardwareMonitor:
         return None
         
     def detect_all(self):
-        """Detect all hardware"""
-        # Detect GPUs using all methods
         all_gpus = []
         
-        # NVIDIA methods
         all_gpus.extend(self.detect_gpu_nvidia())
         all_gpus.extend(self.detect_gpu_gputil())
         all_gpus.extend(self.detect_gpu_nvidia_smi())
-        
-        # AMD methods
         all_gpus.extend(self.detect_gpu_amd())
-        
-        # Intel methods
         all_gpus.extend(self.detect_gpu_intel())
-        
-        # Apple methods
         all_gpus.extend(self.detect_gpu_apple())
-        
-        # Vulkan method (all vendors)
         all_gpus.extend(self.detect_gpu_vulkan())
-        
-        # DirectX method (all vendors on Windows)
         all_gpus.extend(self.detect_gpu_directx())
         
-        # Remove duplicates (by name and vendor)
         seen = set()
         for gpu in all_gpus:
             key = (gpu.name, gpu.vendor)
@@ -2596,10 +2930,8 @@ class HardwareMonitor:
                 seen.add(key)
                 self.gpus.append(gpu)
                 
-        # Sort by vendor
         self.gpus.sort(key=lambda x: (x.vendor, x.name))
         
-        # Detect other components
         self.cpu = self.detect_cpu()
         self.ram = self.detect_ram()
         self.disks = self.detect_disks()
@@ -2609,7 +2941,6 @@ class HardwareMonitor:
         logger.info(f"Hardware detection complete: {len(self.gpus)} GPU(s), {len(self.disks)} disk(s), {len(self.networks)} network(s)")
         
     def start_monitoring(self, interval: int = 1000):
-        """Start hardware monitoring"""
         if self.monitoring:
             return
             
@@ -2620,7 +2951,6 @@ class HardwareMonitor:
         logger.info(f"Hardware monitoring started (interval: {interval}ms)")
         
     def stop_monitoring(self):
-        """Stop hardware monitoring"""
         self.monitoring = False
         self.stop_event.set()
         if self.monitor_thread:
@@ -2628,7 +2958,6 @@ class HardwareMonitor:
         logger.info("Hardware monitoring stopped")
         
     def _monitor_loop(self, interval: int):
-        """Monitoring loop"""
         while not self.stop_event.is_set():
             try:
                 snapshot = self.take_snapshot()
@@ -2641,22 +2970,17 @@ class HardwareMonitor:
                 logger.error(f"Monitoring error: {e}")
                 
     def take_snapshot(self) -> HardwareSnapshot:
-        """Take a hardware snapshot"""
-        # CPU info
         cpu_usage = psutil.cpu_percent()
         cpu_temp = self.cpu.temperature if self.cpu else 0
         cpu_freq = psutil.cpu_freq().current if psutil.cpu_freq() else 0
         
-        # RAM info
         mem = psutil.virtual_memory()
         ram_usage = mem.percent
         ram_available = mem.available
         
-        # Swap info
         swap = psutil.swap_memory()
         swap_usage = swap.percent
         
-        # GPU info
         gpu_usage = []
         gpu_temp = []
         gpu_memory = []
@@ -2668,29 +2992,23 @@ class HardwareMonitor:
             gpu_memory.append(gpu.memory_used)
             gpu_power.append(gpu.power_usage)
             
-        # Disk info
         disk_usage = {}
         disk_io = {}
         for disk in self.disks:
             disk_usage[disk.mountpoint] = disk.utilization
             disk_io[disk.mountpoint] = (disk.read_speed, disk.write_speed)
             
-        # Network info
         net_io = psutil.net_io_counters()
         network_io = (net_io.bytes_sent, net_io.bytes_recv)
         
-        # Battery info
         battery_percent = self.battery.percent if self.battery else None
         
-        # Process info
         process_count = len(psutil.pids())
         thread_count = sum(p.num_threads() for p in psutil.process_iter())
         handle_count = 0
         
-        # Uptime
         uptime = int(time.time() - psutil.boot_time())
         
-        # Load average
         try:
             load_avg = psutil.getloadavg()
         except:
@@ -2723,7 +3041,6 @@ class HardwareMonitor:
         return snapshot
         
     def get_gpu_summary(self) -> str:
-        """Get GPU summary text"""
         if not self.gpus:
             return "No GPU detected"
             
@@ -2739,7 +3056,6 @@ class HardwareMonitor:
         return "\n".join(lines)
         
     def get_cpu_summary(self) -> str:
-        """Get CPU summary text"""
         if not self.cpu:
             return "CPU: Unknown"
             
@@ -2750,7 +3066,6 @@ class HardwareMonitor:
                f"  Frequency: {self.cpu.current_frequency:.0f}MHz"
                
     def get_ram_summary(self) -> str:
-        """Get RAM summary text"""
         if not self.ram:
             return "RAM: Unknown"
             
@@ -2758,7 +3073,6 @@ class HardwareMonitor:
                f"Swap: {self.ram.swap_used / (1024**3):.1f}GB / {self.ram.swap_total / (1024**3):.1f}GB ({self.ram.swap_utilization:.1f}%)"
                
     def get_hardware_info(self) -> dict:
-        """Get complete hardware info dictionary"""
         return {
             'gpus': [asdict(gpu) for gpu in self.gpus],
             'cpu': asdict(self.cpu) if self.cpu else None,
@@ -2770,7 +3084,6 @@ class HardwareMonitor:
         }
         
     def save_history(self, filename: str):
-        """Save monitoring history to file"""
         try:
             with open(filename, 'wb') as f:
                 pickle.dump({
@@ -2785,7 +3098,6 @@ class HardwareMonitor:
             logger.error(f"Failed to save monitoring history: {e}")
             
     def load_history(self, filename: str):
-        """Load monitoring history from file"""
         try:
             with open(filename, 'rb') as f:
                 data = pickle.load(f)
@@ -2795,30 +3107,25 @@ class HardwareMonitor:
         except Exception as e:
             logger.error(f"Failed to load monitoring history: {e}")
 
-# Initialize hardware monitor
 hardware_monitor = HardwareMonitor()
 
 # ========================================
-# PERFORMANCE GRAPH WIDGET
+# Performance Graph Widget
 # ========================================
 class PerformanceGraphWidget(QWidget):
-    """Widget for displaying performance graphs"""
-    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.hardware_monitor = hardware_monitor
-        self.graph_type = 'cpu'  # cpu, gpu, ram, network, disk
-        self.time_range = 60  # seconds
+        self.graph_type = 'cpu'
+        self.time_range = 60
         
         self.setup_ui()
         self.setup_animation()
         
     def setup_ui(self):
-        """Setup the UI"""
         layout = QVBoxLayout()
         self.setLayout(layout)
         
-        # Controls
         controls_layout = QHBoxLayout()
         
         self.type_combo = QComboBox()
@@ -2845,20 +3152,16 @@ class PerformanceGraphWidget(QWidget):
         controls_layout.addStretch()
         layout.addLayout(controls_layout)
         
-        # Matplotlib figure
         self.figure = Figure(figsize=(8, 4), dpi=100)
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
         
-        # Navigation toolbar
         self.toolbar = NavigationToolbar(self.canvas, self)
         layout.addWidget(self.toolbar)
         
-        # Setup plot
         self.setup_plot()
         
     def setup_plot(self):
-        """Setup the matplotlib plot"""
         self.figure.clear()
         
         if self.graph_type == 'cpu':
@@ -2926,19 +3229,15 @@ class PerformanceGraphWidget(QWidget):
         self.canvas.draw()
         
     def setup_animation(self):
-        """Setup animation timer"""
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
-        self.timer.start(1000)  # Update every second
+        self.timer.start(1000)
         
     def change_graph_type(self, text: str):
-        """Change graph type"""
         self.graph_type = text.lower()
         self.setup_plot()
         
     def change_time_range(self, text: str):
-        """Change time range"""
-        # Convert text to seconds
         if text.endswith('s'):
             self.time_range = int(text[:-1])
         elif text.endswith('m'):
@@ -2947,27 +3246,22 @@ class PerformanceGraphWidget(QWidget):
             self.time_range = int(text[:-1]) * 3600
             
     def refresh_graph(self):
-        """Refresh the graph"""
         self.update_graph()
         
     def update_graph(self):
-        """Update the graph with new data"""
         if not self.hardware_monitor.history:
             return
             
-        # Get data from history
         history = list(self.hardware_monitor.history)
         if not history:
             return
             
-        # Limit to time range
         now = datetime.now()
         history = [h for h in history if (now - h.timestamp).total_seconds() <= self.time_range]
         
         if not history:
             return
             
-        # Prepare time axis
         times = [(h.timestamp - history[0].timestamp).total_seconds() for h in history]
         
         if self.graph_type == 'cpu':
@@ -3000,7 +3294,6 @@ class PerformanceGraphWidget(QWidget):
             self.ax.autoscale_view()
             
         elif self.graph_type == 'network':
-            # Calculate speeds
             sent_speeds = []
             recv_speeds = []
             prev_sent, prev_recv = None, None
@@ -3008,7 +3301,7 @@ class PerformanceGraphWidget(QWidget):
             for h in history:
                 sent, recv = h.network_io
                 if prev_sent is not None:
-                    sent_speeds.append((sent - prev_sent) / (1024 * 1024))  # MB/s
+                    sent_speeds.append((sent - prev_sent) / (1024 * 1024))
                     recv_speeds.append((recv - prev_recv) / (1024 * 1024))
                 else:
                     sent_speeds.append(0)
@@ -3022,7 +3315,6 @@ class PerformanceGraphWidget(QWidget):
             self.ax.autoscale_view()
             
         elif self.graph_type == 'disk':
-            # Calculate speeds for first disk
             if history[0].disk_io:
                 disk_name = list(history[0].disk_io.keys())[0]
                 read_speeds = []
@@ -3052,7 +3344,6 @@ class PerformanceGraphWidget(QWidget):
         self.canvas.draw_idle()
         
     def export_graph(self):
-        """Export the current graph"""
         filename, _ = QFileDialog.getSaveFileName(
             self, "Export Graph",
             os.path.join(EXPORTS_DIR, f"performance_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"),
@@ -3063,61 +3354,49 @@ class PerformanceGraphWidget(QWidget):
             QMessageBox.information(self, "Export Complete", f"Graph exported to:\n{filename}")
 
 # ========================================
-# HARDWARE MONITOR WIDGET
+# Hardware Monitor Widget
 # ========================================
 class HardwareMonitorWidget(QWidget):
-    """Widget for displaying hardware information"""
-    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.hardware_monitor = hardware_monitor
         self.setup_ui()
         
     def setup_ui(self):
-        """Setup the UI"""
         layout = QVBoxLayout()
         self.setLayout(layout)
         
-        # Tab widget
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
         
-        # CPU Tab
         self.cpu_widget = QWidget()
         self.setup_cpu_tab()
         self.tabs.addTab(self.cpu_widget, "CPU")
         
-        # GPU Tab
         self.gpu_widget = QWidget()
         self.setup_gpu_tab()
         self.tabs.addTab(self.gpu_widget, "GPU")
         
-        # RAM Tab
         self.ram_widget = QWidget()
         self.setup_ram_tab()
         self.tabs.addTab(self.ram_widget, "RAM")
         
-        # Disks Tab
         self.disks_widget = QWidget()
         self.setup_disks_tab()
         self.tabs.addTab(self.disks_widget, "Disks")
         
-        # Network Tab
         self.network_widget = QWidget()
         self.setup_network_tab()
         self.tabs.addTab(self.network_widget, "Network")
         
-        # Performance Tab
         self.performance_widget = PerformanceGraphWidget()
         self.tabs.addTab(self.performance_widget, "Performance")
         
-        # Update timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_display)
-        self.timer.start(2000)  # Update every 2 seconds
+        self.timer.start(2000)
         
     def setup_cpu_tab(self):
-        """Setup CPU tab"""
         layout = QVBoxLayout()
         self.cpu_widget.setLayout(layout)
         
@@ -3127,7 +3406,6 @@ class HardwareMonitorWidget(QWidget):
         layout.addWidget(self.cpu_info)
         
     def setup_gpu_tab(self):
-        """Setup GPU tab"""
         layout = QVBoxLayout()
         self.gpu_widget.setLayout(layout)
         
@@ -3137,7 +3415,6 @@ class HardwareMonitorWidget(QWidget):
         layout.addWidget(self.gpu_info)
         
     def setup_ram_tab(self):
-        """Setup RAM tab"""
         layout = QVBoxLayout()
         self.ram_widget.setLayout(layout)
         
@@ -3147,7 +3424,6 @@ class HardwareMonitorWidget(QWidget):
         layout.addWidget(self.ram_info)
         
     def setup_disks_tab(self):
-        """Setup Disks tab"""
         layout = QVBoxLayout()
         self.disks_widget.setLayout(layout)
         
@@ -3157,7 +3433,6 @@ class HardwareMonitorWidget(QWidget):
         layout.addWidget(self.disks_info)
         
     def setup_network_tab(self):
-        """Setup Network tab"""
         layout = QVBoxLayout()
         self.network_widget.setLayout(layout)
         
@@ -3167,7 +3442,6 @@ class HardwareMonitorWidget(QWidget):
         layout.addWidget(self.network_info)
         
     def update_display(self):
-        """Update all displays"""
         if hasattr(self, 'cpu_info'):
             self.cpu_info.setText(self.hardware_monitor.get_cpu_summary())
             
@@ -3202,17 +3476,14 @@ class HardwareMonitorWidget(QWidget):
             self.network_info.setText(network_text)
 
 # ========================================
-# MULTI-MONITOR SUPPORT
+# Monitor Manager
 # ========================================
 class MonitorManager:
-    """Manage multiple monitors"""
-    
     def __init__(self):
         self.monitors = []
         self.detect_monitors()
         
     def detect_monitors(self):
-        """Detect all available monitors"""
         app = QApplication.instance()
         screens = app.screens()
         
@@ -3262,24 +3533,20 @@ class MonitorManager:
         logger.info(f"Detected {len(self.monitors)} monitors")
         
     def get_monitor_count(self) -> int:
-        """Get number of monitors"""
         return len(self.monitors)
         
     def get_monitor(self, index: int) -> Optional[dict]:
-        """Get monitor info by index"""
         if 0 <= index < len(self.monitors):
             return self.monitors[index]
         return None
         
     def get_primary_monitor(self) -> Optional[dict]:
-        """Get primary monitor"""
         for monitor in self.monitors:
             if monitor['primary']:
                 return monitor
         return self.monitors[0] if self.monitors else None
         
     def move_window_to_monitor(self, window: QMainWindow, monitor_index: int):
-        """Move window to specified monitor"""
         monitor = self.get_monitor(monitor_index)
         if monitor:
             geometry = monitor['geometry']
@@ -3288,7 +3555,6 @@ class MonitorManager:
             logger.info(f"Moved window to monitor {monitor_index}")
             
     def create_monitor_window(self, parent: QMainWindow, monitor_index: int) -> Optional[QMainWindow]:
-        """Create a new window on specified monitor"""
         monitor = self.get_monitor(monitor_index)
         if not monitor:
             return None
@@ -3302,32 +3568,24 @@ class MonitorManager:
             monitor['geometry']['height'] // 2
         )
         
-        # Apply same theme as parent
         if hasattr(parent, 'settings'):
             window.setStyleSheet(parent.styleSheet())
             
         return window
 
 # ========================================
-# TRANSLATIONS
+# Translations
 # ========================================
 TRANSLATIONS = {
     'en': {
-        # Window Title
         'window_title': 'NotyCaption Pro - Professional AI Caption Generator',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'AI-Powered Caption Generator',
-        
-        # Menu and Status
         'ready': 'Ready',
         'processing': 'Processing...',
         'canceled': 'Canceled',
         'completed': 'Completed',
         'failed': 'Failed',
-        
-        # Buttons
         'edit_captions': '✏️ Edit Captions',
         'save_exit_edit': '💾 Save & Exit Edit',
         'settings': '⚙️ Settings',
@@ -3355,8 +3613,6 @@ TRANSLATIONS = {
         'import': '📥 Import',
         'preview': '👁️ Preview',
         'refresh': '🔄 Refresh',
-        
-        # Labels
         'ai_caption_editor': 'AI Caption Editor',
         'processing_mode': 'Mode:',
         'language': 'Language:',
@@ -3374,12 +3630,8 @@ TRANSLATIONS = {
         'waiting': 'Waiting...',
         'colab_link': 'Colab Link:',
         'click_to_open': 'Click to open in browser',
-        
-        # Modes
         'normal_mode': '🖥️ Local',
         'online_mode': '☁️ Online',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 English',
         'japanese_translate': '🇯🇵 Japanese → English',
         'chinese_transcribe': '🇨🇳 Chinese',
@@ -3399,12 +3651,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 Vietnamese',
         'thai_transcribe': '🇹🇭 Thai',
         'korean_transcribe': '🇰🇷 Korean',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'Import Complete',
         'import_success': 'Media imported successfully.',
         'enhancement_complete': 'Enhancement Complete',
@@ -3431,8 +3679,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'No result file found.',
         'network_error': 'Network Error',
         'model_load_error': 'Model Load Error',
-        
-        # Settings Dialog
         'settings_title': 'Settings - Professional',
         'general_tab': 'General',
         'paths_tab': 'Paths',
@@ -3469,8 +3715,6 @@ TRANSLATIONS = {
         'show_tooltips': 'Show tooltips',
         'ui_language': 'Language:',
         'apply_restart': 'Apply & Restart',
-        
-        # Hardware Detection
         'hardware_acceleration': 'Hardware',
         'cuda_available': 'CUDA',
         'cuda_not_available': 'No CUDA',
@@ -3485,8 +3729,6 @@ TRANSLATIONS = {
         'gpu_memory': 'GPU Memory: {:.1f}/{:.1f} GB',
         'ram_usage': 'RAM Usage: {:.1f}/{:.1f} GB ({:.0f}%)',
         'disk_usage': 'Disk Usage: {:.1f}/{:.1f} GB ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'Hardware Monitor',
         'cpu_tab': 'CPU',
         'gpu_tab': 'GPU',
@@ -3500,8 +3742,6 @@ TRANSLATIONS = {
         'import_data': 'Import Data',
         'clear_history': 'Clear History',
         'refresh_rate': 'Refresh Rate:',
-        
-        # Multi-monitor
         'monitor_manager': 'Monitor Manager',
         'detect_monitors': 'Detect Monitors',
         'move_to_monitor': 'Move to Monitor',
@@ -3511,8 +3751,6 @@ TRANSLATIONS = {
         'primary': 'Primary',
         'resolution': 'Resolution: {}x{}',
         'refresh_rate': 'Refresh Rate: {} Hz',
-        
-        # Workspace customization
         'workspace_customize': 'Customize Workspace',
         'accent_color': 'Accent Color',
         'glow_intensity': 'Glow Intensity',
@@ -3530,31 +3768,21 @@ TRANSLATIONS = {
         'apply_preset': 'Apply Preset',
         'save_preset': 'Save Preset',
         'delete_preset': 'Delete Preset',
-        
-        # Animation control
         'animation_control': 'Animation Control',
         'enable_animations': 'Enable Animations',
         'animation_speed_slow': 'Slow',
         'animation_speed_normal': 'Normal',
         'animation_speed_fast': 'Fast',
     },
-    
     'ja': {
-        # Window Title
         'window_title': 'NotyCaption Pro - プロフェッショナルAI字幕生成',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'AI搭載字幕生成',
-        
-        # Menu and Status
         'ready': '準備完了',
         'processing': '処理中...',
         'canceled': 'キャンセル',
         'completed': '完了',
         'failed': '失敗',
-        
-        # Buttons
         'edit_captions': '✏️ 字幕編集',
         'save_exit_edit': '💾 保存して終了',
         'settings': '⚙️ 設定',
@@ -3582,8 +3810,6 @@ TRANSLATIONS = {
         'import': '📥 インポート',
         'preview': '👁️ プレビュー',
         'refresh': '🔄 更新',
-        
-        # Labels
         'ai_caption_editor': 'AI字幕エディター',
         'processing_mode': 'モード：',
         'language': '言語：',
@@ -3601,12 +3827,8 @@ TRANSLATIONS = {
         'waiting': '待機中...',
         'colab_link': 'Colabリンク：',
         'click_to_open': 'クリックして開く',
-        
-        # Modes
         'normal_mode': '🖥️ ローカル',
         'online_mode': '☁️ オンライン',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 英語',
         'japanese_translate': '🇯🇵 日本語 → 英語',
         'chinese_transcribe': '🇨🇳 中国語',
@@ -3626,12 +3848,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 ベトナム語',
         'thai_transcribe': '🇹🇭 タイ語',
         'korean_transcribe': '🇰🇷 韓国語',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'インポート完了',
         'import_success': 'メディアのインポートに成功しました。',
         'enhancement_complete': '音声強調完了',
@@ -3658,8 +3876,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': '結果ファイルが見つかりません。',
         'network_error': 'ネットワークエラー',
         'model_load_error': 'モデル読み込みエラー',
-        
-        # Settings Dialog
         'settings_title': '設定 - プロフェッショナル',
         'general_tab': '一般',
         'paths_tab': 'パス',
@@ -3696,8 +3912,6 @@ TRANSLATIONS = {
         'show_tooltips': 'ツールチップを表示',
         'ui_language': '言語：',
         'apply_restart': '適用して再起動',
-        
-        # Hardware Detection
         'hardware_acceleration': 'ハードウェア',
         'cuda_available': 'CUDA利用可能',
         'cuda_not_available': 'CUDA利用不可',
@@ -3712,8 +3926,6 @@ TRANSLATIONS = {
         'gpu_memory': 'GPUメモリ：{:.1f}/{:.1f} GB',
         'ram_usage': 'RAM使用率：{:.1f}/{:.1f} GB ({:.0f}%)',
         'disk_usage': 'ディスク使用率：{:.1f}/{:.1f} GB ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'ハードウェアモニター',
         'cpu_tab': 'CPU',
         'gpu_tab': 'GPU',
@@ -3727,8 +3939,6 @@ TRANSLATIONS = {
         'import_data': 'データインポート',
         'clear_history': '履歴クリア',
         'refresh_rate': '更新間隔：',
-        
-        # Multi-monitor
         'monitor_manager': 'モニター管理',
         'detect_monitors': 'モニター検出',
         'move_to_monitor': 'モニターに移動',
@@ -3738,8 +3948,6 @@ TRANSLATIONS = {
         'primary': 'プライマリ',
         'resolution': '解像度：{}x{}',
         'refresh_rate': 'リフレッシュレート：{} Hz',
-        
-        # Workspace customization
         'workspace_customize': 'ワークスペースカスタマイズ',
         'accent_color': 'アクセントカラー',
         'glow_intensity': 'グロー強度',
@@ -3757,31 +3965,21 @@ TRANSLATIONS = {
         'apply_preset': 'プリセット適用',
         'save_preset': 'プリセット保存',
         'delete_preset': 'プリセット削除',
-        
-        # Animation control
         'animation_control': 'アニメーション制御',
         'enable_animations': 'アニメーション有効',
         'animation_speed_slow': '遅い',
         'animation_speed_normal': '普通',
         'animation_speed_fast': '速い',
     },
-    
     'ru': {
-        # Window Title
         'window_title': 'NotyCaption Pro - Профессиональный генератор субтитров с ИИ',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'Генератор субтитров с ИИ',
-        
-        # Menu and Status
         'ready': 'Готово',
         'processing': 'Обработка...',
         'canceled': 'Отменено',
         'completed': 'Завершено',
         'failed': 'Ошибка',
-        
-        # Buttons
         'edit_captions': '✏️ Редактировать',
         'save_exit_edit': '💾 Сохранить и выйти',
         'settings': '⚙️ Настройки',
@@ -3809,8 +4007,6 @@ TRANSLATIONS = {
         'import': '📥 Импорт',
         'preview': '👁️ Предпросмотр',
         'refresh': '🔄 Обновить',
-        
-        # Labels
         'ai_caption_editor': 'Редактор субтитров с ИИ',
         'processing_mode': 'Режим:',
         'language': 'Язык:',
@@ -3828,12 +4024,8 @@ TRANSLATIONS = {
         'waiting': 'Ожидание...',
         'colab_link': 'Ссылка Colab:',
         'click_to_open': 'Нажмите для открытия',
-        
-        # Modes
         'normal_mode': '🖥️ Локальный',
         'online_mode': '☁️ Онлайн',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 Английский',
         'japanese_translate': '🇯🇵 Японский → Английский',
         'chinese_transcribe': '🇨🇳 Китайский',
@@ -3853,12 +4045,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 Вьетнамский',
         'thai_transcribe': '🇹🇭 Тайский',
         'korean_transcribe': '🇰🇷 Корейский',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'Импорт завершен',
         'import_success': 'Медиа успешно импортировано.',
         'enhancement_complete': 'Улучшение завершено',
@@ -3885,8 +4073,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'Файл результата не найден.',
         'network_error': 'Ошибка сети',
         'model_load_error': 'Ошибка загрузки модели',
-        
-        # Settings Dialog
         'settings_title': 'Настройки - Профессиональные',
         'general_tab': 'Основные',
         'paths_tab': 'Пути',
@@ -3923,8 +4109,6 @@ TRANSLATIONS = {
         'show_tooltips': 'Показывать подсказки',
         'ui_language': 'Язык интерфейса:',
         'apply_restart': 'Применить и перезапустить',
-        
-        # Hardware Detection
         'hardware_acceleration': 'Аппаратное ускорение',
         'cuda_available': 'CUDA доступно',
         'cuda_not_available': 'CUDA недоступно',
@@ -3939,8 +4123,6 @@ TRANSLATIONS = {
         'gpu_memory': 'Память GPU: {:.1f}/{:.1f} ГБ',
         'ram_usage': 'Использование RAM: {:.1f}/{:.1f} ГБ ({:.0f}%)',
         'disk_usage': 'Использование диска: {:.1f}/{:.1f} ГБ ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'Монитор оборудования',
         'cpu_tab': 'ЦП',
         'gpu_tab': 'ГП',
@@ -3954,8 +4136,6 @@ TRANSLATIONS = {
         'import_data': 'Импорт данных',
         'clear_history': 'Очистить историю',
         'refresh_rate': 'Частота обновления:',
-        
-        # Multi-monitor
         'monitor_manager': 'Управление мониторами',
         'detect_monitors': 'Обнаружить мониторы',
         'move_to_monitor': 'Переместить на монитор',
@@ -3965,8 +4145,6 @@ TRANSLATIONS = {
         'primary': 'Основной',
         'resolution': 'Разрешение: {}x{}',
         'refresh_rate': 'Частота: {} Гц',
-        
-        # Workspace customization
         'workspace_customize': 'Настройка рабочего пространства',
         'accent_color': 'Акцентный цвет',
         'glow_intensity': 'Интенсивность свечения',
@@ -3984,31 +4162,21 @@ TRANSLATIONS = {
         'apply_preset': 'Применить пресет',
         'save_preset': 'Сохранить пресет',
         'delete_preset': 'Удалить пресет',
-        
-        # Animation control
         'animation_control': 'Управление анимацией',
         'enable_animations': 'Включить анимацию',
         'animation_speed_slow': 'Медленно',
         'animation_speed_normal': 'Нормально',
         'animation_speed_fast': 'Быстро',
     },
-    
     'de': {
-        # Window Title
         'window_title': 'NotyCaption Pro - Professioneller KI-Untertitelgenerator',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'KI-gestützter Untertitelgenerator',
-        
-        # Menu and Status
         'ready': 'Bereit',
         'processing': 'Verarbeitung...',
         'canceled': 'Abgebrochen',
         'completed': 'Abgeschlossen',
         'failed': 'Fehlgeschlagen',
-        
-        # Buttons
         'edit_captions': '✏️ Untertitel bearbeiten',
         'save_exit_edit': '💾 Speichern & Beenden',
         'settings': '⚙️ Einstellungen',
@@ -4036,8 +4204,6 @@ TRANSLATIONS = {
         'import': '📥 Importieren',
         'preview': '👁️ Vorschau',
         'refresh': '🔄 Aktualisieren',
-        
-        # Labels
         'ai_caption_editor': 'KI-Untertitel-Editor',
         'processing_mode': 'Modus:',
         'language': 'Sprache:',
@@ -4055,12 +4221,8 @@ TRANSLATIONS = {
         'waiting': 'Warten...',
         'colab_link': 'Colab-Link:',
         'click_to_open': 'Klicken zum Öffnen',
-        
-        # Modes
         'normal_mode': '🖥️ Lokal',
         'online_mode': '☁️ Online',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 Englisch',
         'japanese_translate': '🇯🇵 Japanisch → Englisch',
         'chinese_transcribe': '🇨🇳 Chinesisch',
@@ -4080,12 +4242,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 Vietnamesisch',
         'thai_transcribe': '🇹🇭 Thailändisch',
         'korean_transcribe': '🇰🇷 Koreanisch',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'Import abgeschlossen',
         'import_success': 'Medien erfolgreich importiert.',
         'enhancement_complete': 'Verbesserung abgeschlossen',
@@ -4112,8 +4270,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'Ergebnisdatei nicht gefunden.',
         'network_error': 'Netzwerkfehler',
         'model_load_error': 'Modell-Ladefehler',
-        
-        # Settings Dialog
         'settings_title': 'Einstellungen - Professionell',
         'general_tab': 'Allgemein',
         'paths_tab': 'Pfade',
@@ -4150,8 +4306,6 @@ TRANSLATIONS = {
         'show_tooltips': 'Tooltips anzeigen',
         'ui_language': 'Sprache:',
         'apply_restart': 'Übernehmen & Neustarten',
-        
-        # Hardware Detection
         'hardware_acceleration': 'Hardwarebeschleunigung',
         'cuda_available': 'CUDA verfügbar',
         'cuda_not_available': 'CUDA nicht verfügbar',
@@ -4166,8 +4320,6 @@ TRANSLATIONS = {
         'gpu_memory': 'GPU-Speicher: {:.1f}/{:.1f} GB',
         'ram_usage': 'RAM-Auslastung: {:.1f}/{:.1f} GB ({:.0f}%)',
         'disk_usage': 'Festplattenauslastung: {:.1f}/{:.1f} GB ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'Hardware-Monitor',
         'cpu_tab': 'CPU',
         'gpu_tab': 'GPU',
@@ -4181,8 +4333,6 @@ TRANSLATIONS = {
         'import_data': 'Daten importieren',
         'clear_history': 'Verlauf löschen',
         'refresh_rate': 'Aktualisierungsrate:',
-        
-        # Multi-monitor
         'monitor_manager': 'Monitorverwaltung',
         'detect_monitors': 'Monitore erkennen',
         'move_to_monitor': 'Auf Monitor verschieben',
@@ -4192,8 +4342,6 @@ TRANSLATIONS = {
         'primary': 'Primär',
         'resolution': 'Auflösung: {}x{}',
         'refresh_rate': 'Bildwiederholrate: {} Hz',
-        
-        # Workspace customization
         'workspace_customize': 'Arbeitsbereich anpassen',
         'accent_color': 'Akzentfarbe',
         'glow_intensity': 'Leuchtintensität',
@@ -4211,31 +4359,21 @@ TRANSLATIONS = {
         'apply_preset': 'Voreinstellung anwenden',
         'save_preset': 'Voreinstellung speichern',
         'delete_preset': 'Voreinstellung löschen',
-        
-        # Animation control
         'animation_control': 'Animationssteuerung',
         'enable_animations': 'Animationen aktivieren',
         'animation_speed_slow': 'Langsam',
         'animation_speed_normal': 'Normal',
         'animation_speed_fast': 'Schnell',
     },
-    
     'hi': {
-        # Window Title
         'window_title': 'NotyCaption Pro - पेशेवर AI कैप्शन जनरेटर',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'AI-संचालित कैप्शन जनरेटर',
-        
-        # Menu and Status
         'ready': 'तैयार',
         'processing': 'प्रक्रियाधीन...',
         'canceled': 'रद्द',
         'completed': 'पूर्ण',
         'failed': 'विफल',
-        
-        # Buttons
         'edit_captions': '✏️ कैप्शन संपादित करें',
         'save_exit_edit': '💾 सहेजें और बाहर निकलें',
         'settings': '⚙️ सेटिंग्स',
@@ -4263,8 +4401,6 @@ TRANSLATIONS = {
         'import': '📥 आयात',
         'preview': '👁️ पूर्वावलोकन',
         'refresh': '🔄 ताज़ा करें',
-        
-        # Labels
         'ai_caption_editor': 'AI कैप्शन संपादक',
         'processing_mode': 'मोड:',
         'language': 'भाषा:',
@@ -4282,12 +4418,8 @@ TRANSLATIONS = {
         'waiting': 'प्रतीक्षा कर रहा है...',
         'colab_link': 'Colab लिंक:',
         'click_to_open': 'खोलने के लिए क्लिक करें',
-        
-        # Modes
         'normal_mode': '🖥️ स्थानीय',
         'online_mode': '☁️ ऑनलाइन',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 अंग्रेजी',
         'japanese_translate': '🇯🇵 जापानी → अंग्रेजी',
         'chinese_transcribe': '🇨🇳 चीनी',
@@ -4307,12 +4439,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 वियतनामी',
         'thai_transcribe': '🇹🇭 थाई',
         'korean_transcribe': '🇰🇷 कोरियाई',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'आयात पूर्ण',
         'import_success': 'मीडिया सफलतापूर्वक आयात हुआ।',
         'enhancement_complete': 'ऑडियो सुधार पूर्ण',
@@ -4339,8 +4467,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'परिणाम फ़ाइल नहीं मिली।',
         'network_error': 'नेटवर्क त्रुटि',
         'model_load_error': 'मॉडल लोड त्रुटि',
-        
-        # Settings Dialog
         'settings_title': 'सेटिंग्स - पेशेवर',
         'general_tab': 'सामान्य',
         'paths_tab': 'पथ',
@@ -4377,8 +4503,6 @@ TRANSLATIONS = {
         'show_tooltips': 'टूलटिप दिखाएं',
         'ui_language': 'भाषा:',
         'apply_restart': 'लागू करें और पुनरारंभ करें',
-        
-        # Hardware Detection
         'hardware_acceleration': 'हार्डवेयर त्वरण',
         'cuda_available': 'CUDA उपलब्ध',
         'cuda_not_available': 'CUDA उपलब्ध नहीं',
@@ -4393,8 +4517,6 @@ TRANSLATIONS = {
         'gpu_memory': 'GPU मेमोरी: {:.1f}/{:.1f} GB',
         'ram_usage': 'RAM उपयोग: {:.1f}/{:.1f} GB ({:.0f}%)',
         'disk_usage': 'डिस्क उपयोग: {:.1f}/{:.1f} GB ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'हार्डवेयर मॉनिटर',
         'cpu_tab': 'CPU',
         'gpu_tab': 'GPU',
@@ -4408,8 +4530,6 @@ TRANSLATIONS = {
         'import_data': 'डेटा आयात',
         'clear_history': 'इतिहास साफ़ करें',
         'refresh_rate': 'रिफ्रेश दर:',
-        
-        # Multi-monitor
         'monitor_manager': 'मॉनिटर प्रबंधक',
         'detect_monitors': 'मॉनिटर खोजें',
         'move_to_monitor': 'मॉनिटर पर ले जाएं',
@@ -4419,8 +4539,6 @@ TRANSLATIONS = {
         'primary': 'प्राथमिक',
         'resolution': 'रिज़ॉल्यूशन: {}x{}',
         'refresh_rate': 'रिफ्रेश दर: {} Hz',
-        
-        # Workspace customization
         'workspace_customize': 'कार्यक्षेत्र अनुकूलित करें',
         'accent_color': 'एक्सेंट रंग',
         'glow_intensity': 'चमक तीव्रता',
@@ -4438,31 +4556,21 @@ TRANSLATIONS = {
         'apply_preset': 'प्रीसेट लागू करें',
         'save_preset': 'प्रीसेट सहेजें',
         'delete_preset': 'प्रीसेट हटाएं',
-        
-        # Animation control
         'animation_control': 'एनिमेशन नियंत्रण',
         'enable_animations': 'एनिमेशन सक्षम करें',
         'animation_speed_slow': 'धीमा',
         'animation_speed_normal': 'सामान्य',
         'animation_speed_fast': 'तेज़',
     },
-    
     'ur': {
-        # Window Title
         'window_title': 'NotyCaption Pro - پیشہ ور AI کیپشن جنریٹر',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'AI سے چلنے والا کیپشن جنریٹر',
-        
-        # Menu and Status
         'ready': 'تیار',
         'processing': 'پروسیسنگ...',
         'canceled': 'منسوخ',
         'completed': 'مکمل',
         'failed': 'ناکام',
-        
-        # Buttons
         'edit_captions': '✏️ کیپشن میں ترمیم',
         'save_exit_edit': '💾 محفوظ کریں اور باہر نکلیں',
         'settings': '⚙️ ترتیبات',
@@ -4490,8 +4598,6 @@ TRANSLATIONS = {
         'import': '📥 درآمد',
         'preview': '👁️ پیش نظارہ',
         'refresh': '🔄 تازہ کریں',
-        
-        # Labels
         'ai_caption_editor': 'AI کیپشن ایڈیٹر',
         'processing_mode': 'موڈ:',
         'language': 'زبان:',
@@ -4509,12 +4615,8 @@ TRANSLATIONS = {
         'waiting': 'انتظار...',
         'colab_link': 'Colab لنک:',
         'click_to_open': 'کھولنے کے لیے کلک کریں',
-        
-        # Modes
         'normal_mode': '🖥️ مقامی',
         'online_mode': '☁️ آن لائن',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 انگریزی',
         'japanese_translate': '🇯🇵 جاپانی → انگریزی',
         'chinese_transcribe': '🇨🇳 چینی',
@@ -4534,12 +4636,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 ویتنامی',
         'thai_transcribe': '🇹🇭 تھائی',
         'korean_transcribe': '🇰🇷 کورین',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'درآمد مکمل',
         'import_success': 'میڈیا کامیابی سے درآمد ہوا۔',
         'enhancement_complete': 'بہتری مکمل',
@@ -4566,8 +4664,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'نتیجہ فائل نہیں ملی۔',
         'network_error': 'نیٹ ورک کی خرابی',
         'model_load_error': 'ماڈل لوڈ کرنے میں خرابی',
-        
-        # Settings Dialog
         'settings_title': 'ترتیبات - پیشہ ور',
         'general_tab': 'عام',
         'paths_tab': 'راستے',
@@ -4604,8 +4700,6 @@ TRANSLATIONS = {
         'show_tooltips': 'ٹول ٹپس دکھائیں',
         'ui_language': 'زبان:',
         'apply_restart': 'لاگو کریں اور دوبارہ شروع کریں',
-        
-        # Hardware Detection
         'hardware_acceleration': 'ہارڈویئر ایکسلریشن',
         'cuda_available': 'CUDA دستیاب',
         'cuda_not_available': 'CUDA دستیاب نہیں',
@@ -4620,8 +4714,6 @@ TRANSLATIONS = {
         'gpu_memory': 'GPU میموری: {:.1f}/{:.1f} GB',
         'ram_usage': 'RAM استعمال: {:.1f}/{:.1f} GB ({:.0f}%)',
         'disk_usage': 'ڈسک استعمال: {:.1f}/{:.1f} GB ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'ہارڈویئر مانیٹر',
         'cpu_tab': 'CPU',
         'gpu_tab': 'GPU',
@@ -4635,8 +4727,6 @@ TRANSLATIONS = {
         'import_data': 'ڈیٹا درآمد کریں',
         'clear_history': 'تاریخ صاف کریں',
         'refresh_rate': 'ریفریش ریٹ:',
-        
-        # Multi-monitor
         'monitor_manager': 'مانیٹر مینیجر',
         'detect_monitors': 'مانیٹرز کا پتہ لگائیں',
         'move_to_monitor': 'مانیٹر پر منتقل کریں',
@@ -4646,8 +4736,6 @@ TRANSLATIONS = {
         'primary': 'بنیادی',
         'resolution': 'ریزولوشن: {}x{}',
         'refresh_rate': 'ریفریش ریٹ: {} Hz',
-        
-        # Workspace customization
         'workspace_customize': 'کام کی جگہ کو حسب ضرورت بنائیں',
         'accent_color': 'ایکسینٹ رنگ',
         'glow_intensity': 'چمک کی شدت',
@@ -4665,31 +4753,21 @@ TRANSLATIONS = {
         'apply_preset': 'پری سیٹ لاگو کریں',
         'save_preset': 'پری سیٹ محفوظ کریں',
         'delete_preset': 'پری سیٹ حذف کریں',
-        
-        # Animation control
         'animation_control': 'اینیمیشن کنٹرول',
         'enable_animations': 'اینیمیشن فعال کریں',
         'animation_speed_slow': 'آہستہ',
         'animation_speed_normal': 'عام',
         'animation_speed_fast': 'تیز',
     },
-    
     'ar': {
-        # Window Title
         'window_title': 'NotyCaption Pro - مولد التسميات التوضيحية بالذكاء الاصطناعي المحترف',
-        
-        # App Name
         'app_name': 'NotyCaption Pro',
         'app_subtitle': 'مولد التسميات التوضيحية بالذكاء الاصطناعي',
-        
-        # Menu and Status
         'ready': 'جاهز',
         'processing': 'جاري المعالجة...',
         'canceled': 'ملغي',
         'completed': 'مكتمل',
         'failed': 'فشل',
-        
-        # Buttons
         'edit_captions': '✏️ تحرير التسميات',
         'save_exit_edit': '💾 حفظ وخروج',
         'settings': '⚙️ الإعدادات',
@@ -4717,8 +4795,6 @@ TRANSLATIONS = {
         'import': '📥 استيراد',
         'preview': '👁️ معاينة',
         'refresh': '🔄 تحديث',
-        
-        # Labels
         'ai_caption_editor': 'محرر التسميات بالذكاء الاصطناعي',
         'processing_mode': 'الوضع:',
         'language': 'اللغة:',
@@ -4736,12 +4812,8 @@ TRANSLATIONS = {
         'waiting': 'انتظار...',
         'colab_link': 'رابط Colab:',
         'click_to_open': 'انقر للفتح',
-        
-        # Modes
         'normal_mode': '🖥️ محلي',
         'online_mode': '☁️ عبر الإنترنت',
-        
-        # Languages for transcription
         'english_transcribe': '🇺🇸 الإنجليزية',
         'japanese_translate': '🇯🇵 اليابانية → الإنجليزية',
         'chinese_transcribe': '🇨🇳 الصينية',
@@ -4761,12 +4833,8 @@ TRANSLATIONS = {
         'vietnamese_transcribe': '🇻🇳 الفيتنامية',
         'thai_transcribe': '🇹🇭 التايلاندية',
         'korean_transcribe': '🇰🇷 الكورية',
-        
-        # Formats
         'srt_format': '📄 SRT',
         'ass_format': '🎨 ASS',
-        
-        # Messages
         'import_complete': 'اكتمل الاستيراد',
         'import_success': 'تم استيراد الوسائط بنجاح.',
         'enhancement_complete': 'اكتمل التحسين',
@@ -4793,8 +4861,6 @@ TRANSLATIONS = {
         'colab_timeout_msg': 'لم يتم العثور على ملف النتيجة.',
         'network_error': 'خطأ في الشبكة',
         'model_load_error': 'خطأ في تحميل النموذج',
-        
-        # Settings Dialog
         'settings_title': 'الإعدادات - محترف',
         'general_tab': 'عام',
         'paths_tab': 'المسارات',
@@ -4831,8 +4897,6 @@ TRANSLATIONS = {
         'show_tooltips': 'إظهار التلميحات',
         'ui_language': 'اللغة:',
         'apply_restart': 'تطبيق وإعادة التشغيل',
-        
-        # Hardware Detection
         'hardware_acceleration': 'تسريع الأجهزة',
         'cuda_available': 'CUDA متاح',
         'cuda_not_available': 'CUDA غير متاح',
@@ -4847,8 +4911,6 @@ TRANSLATIONS = {
         'gpu_memory': 'ذاكرة GPU: {:.1f}/{:.1f} جيجابايت',
         'ram_usage': 'استخدام RAM: {:.1f}/{:.1f} جيجابايت ({:.0f}%)',
         'disk_usage': 'استخدام القرص: {:.1f}/{:.1f} جيجابايت ({:.0f}%)',
-        
-        # Hardware Monitor
         'hardware_monitor': 'مراقب الأجهزة',
         'cpu_tab': 'المعالج',
         'gpu_tab': 'بطاقة الرسوم',
@@ -4862,8 +4924,6 @@ TRANSLATIONS = {
         'import_data': 'استيراد البيانات',
         'clear_history': 'مسح السجل',
         'refresh_rate': 'معدل التحديث:',
-        
-        # Multi-monitor
         'monitor_manager': 'مدير الشاشات',
         'detect_monitors': 'اكتشاف الشاشات',
         'move_to_monitor': 'نقل إلى الشاشة',
@@ -4873,8 +4933,6 @@ TRANSLATIONS = {
         'primary': 'أساسي',
         'resolution': 'الدقة: {}x{}',
         'refresh_rate': 'معدل التحديث: {} هرتز',
-        
-        # Workspace customization
         'workspace_customize': 'تخصيص مساحة العمل',
         'accent_color': 'لون التمييز',
         'glow_intensity': 'شدة التوهج',
@@ -4892,8 +4950,6 @@ TRANSLATIONS = {
         'apply_preset': 'تطبيق الإعداد',
         'save_preset': 'حفظ الإعداد',
         'delete_preset': 'حذف الإعداد',
-        
-        # Animation control
         'animation_control': 'التحكم في الحركة',
         'enable_animations': 'تفعيل الحركة',
         'animation_speed_slow': 'بطيء',
@@ -4902,85 +4958,56 @@ TRANSLATIONS = {
     },
 }
 
-# ========================================
-# TRANSLATION HELPER
-# ========================================
 class Translator:
-    """Handle UI translations"""
-    
     def __init__(self, language='en'):
         self.language = language
         self.translations = TRANSLATIONS.get(language, TRANSLATIONS['en'])
         
     def tr(self, key: str) -> str:
-        """Translate a key"""
         return self.translations.get(key, TRANSLATIONS['en'].get(key, key))
         
     def set_language(self, language: str):
-        """Change language"""
         self.language = language
         self.translations = TRANSLATIONS.get(language, TRANSLATIONS['en'])
 
-# Global translator instance
 _translator = Translator()
 
 def tr(key: str) -> str:
-    """Global translate function"""
     return _translator.tr(key)
 
-# ========================================
-# RESOURCE PATH HELPER
-# ========================================
 def resource_path(relative_path: str) -> str:
-    """Get absolute path to resource, works for dev and for PyInstaller"""
     try:
         base_path = sys._MEIPASS
-        logger.info(f"Resource path using PyInstaller temp: {base_path}")
     except Exception:
         base_path = os.path.dirname(os.path.abspath(__file__))
-        logger.info(f"Resource path using dev directory: {base_path}")
     full_path = os.path.join(base_path, relative_path)
-    if not os.path.exists(full_path):
-        logger.warning(f"Resource not found: {full_path}")
     return full_path
 
 # ========================================
-# CUSTOM DARK THEME WITH GLOWING EFFECTS
+# Themes and Styles
 # ========================================
 DARK_THEME = {
-    # Base colors - Professional dark theme
-    'background_dark': '#0a0a0a',           # Almost black
-    'background_medium': '#1a1a1a',          # Dark gray
-    'background_light': '#2a2a2a',            # Medium dark gray
-    
-    # Accent colors - Glowing blue/purple gradient
-    'accent_primary': '#4a6fa5',              # Muted blue
-    'accent_secondary': '#6b4a9c',            # Purple
-    'accent_tertiary': '#3b8ea5',             # Teal blue
-    
-    # Glowing effects
-    'glow_blue': '#4a90e2',                    # Bright blue glow
-    'glow_purple': '#9b59b6',                   # Purple glow
-    'glow_cyan': '#00d4ff',                      # Cyan glow
-    
-    # Text colors
-    'text_primary': '#ffffff',                  # Pure white
-    'text_secondary': '#b0b0b0',                 # Light gray
-    'text_accent': '#4a90e2',                     # Blue accent text
-    
-    # Status colors
-    'success': '#2ecc71',                        # Green
-    'warning': '#f39c12',                         # Orange
-    'error': '#e74c3c',                            # Red
-    'info': '#3498db',                              # Blue info
-    
-    # Borders and overlays
-    'border': '#333333',                            # Dark border
-    'hover': '#3a3a3a',                              # Hover background
-    'overlay': 'rgba(10, 10, 10, 0.95)'              # Overlay background
+    'background_dark': '#0a0a0a',
+    'background_medium': '#1a1a1a',
+    'background_light': '#2a2a2a',
+    'accent_primary': '#4a6fa5',
+    'accent_secondary': '#6b4a9c',
+    'accent_tertiary': '#3b8ea5',
+    'glow_blue': '#4a90e2',
+    'glow_purple': '#9b59b6',
+    'glow_cyan': '#00d4ff',
+    'text_primary': '#ffffff',
+    'text_secondary': '#b0b0b0',
+    'text_accent': '#4a90e2',
+    'success': '#2ecc71',
+    'warning': '#f39c12',
+    'error': '#e74c3c',
+    'info': '#3498db',
+    'border': '#333333',
+    'hover': '#3a3a3a',
+    'overlay': 'rgba(10, 10, 10, 0.95)'
 }
 
-# Light theme
 LIGHT_THEME = {
     'background_dark': '#f0f0f0',
     'background_medium': '#ffffff',
@@ -5003,96 +5030,18 @@ LIGHT_THEME = {
     'overlay': 'rgba(255, 255, 255, 0.95)'
 }
 
-# Color presets
 COLOR_PRESETS = [
-    {
-        'name': 'Professional Blue',
-        'colors': {
-            'accent_primary': '#0078d4',
-            'accent_secondary': '#8661c5',
-            'glow_blue': '#0078d4',
-            'glow_purple': '#8661c5',
-            'glow_cyan': '#00b7c3'
-        }
-    },
-    {
-        'name': 'Cyber Purple',
-        'colors': {
-            'accent_primary': '#9b59b6',
-            'accent_secondary': '#3498db',
-            'glow_blue': '#9b59b6',
-            'glow_purple': '#e74c3c',
-            'glow_cyan': '#3498db'
-        }
-    },
-    {
-        'name': 'Teal Dream',
-        'colors': {
-            'accent_primary': '#1abc9c',
-            'accent_secondary': '#3498db',
-            'glow_blue': '#1abc9c',
-            'glow_purple': '#9b59b6',
-            'glow_cyan': '#3498db'
-        }
-    },
-    {
-        'name': 'Sunset Orange',
-        'colors': {
-            'accent_primary': '#e67e22',
-            'accent_secondary': '#e74c3c',
-            'glow_blue': '#e67e22',
-            'glow_purple': '#e74c3c',
-            'glow_cyan': '#f39c12'
-        }
-    },
-    {
-        'name': 'Forest Green',
-        'colors': {
-            'accent_primary': '#27ae60',
-            'accent_secondary': '#2980b9',
-            'glow_blue': '#27ae60',
-            'glow_purple': '#8e44ad',
-            'glow_cyan': '#2980b9'
-        }
-    },
-    {
-        'name': 'Ruby Red',
-        'colors': {
-            'accent_primary': '#e74c3c',
-            'accent_secondary': '#c0392b',
-            'glow_blue': '#e74c3c',
-            'glow_purple': '#8e44ad',
-            'glow_cyan': '#3498db'
-        }
-    },
-    {
-        'name': 'Amber Gold',
-        'colors': {
-            'accent_primary': '#f39c12',
-            'accent_secondary': '#e67e22',
-            'glow_blue': '#f39c12',
-            'glow_purple': '#e67e22',
-            'glow_cyan': '#27ae60'
-        }
-    },
-    {
-        'name': 'Deep Space',
-        'colors': {
-            'accent_primary': '#34495e',
-            'accent_secondary': '#2c3e50',
-            'glow_blue': '#34495e',
-            'glow_purple': '#7f8c8d',
-            'glow_cyan': '#95a5a6'
-        }
-    }
+    {'name': 'Professional Blue', 'colors': {'accent_primary': '#0078d4', 'accent_secondary': '#8661c5', 'glow_blue': '#0078d4', 'glow_purple': '#8661c5', 'glow_cyan': '#00b7c3'}},
+    {'name': 'Cyber Purple', 'colors': {'accent_primary': '#9b59b6', 'accent_secondary': '#3498db', 'glow_blue': '#9b59b6', 'glow_purple': '#e74c3c', 'glow_cyan': '#3498db'}},
+    {'name': 'Teal Dream', 'colors': {'accent_primary': '#1abc9c', 'accent_secondary': '#3498db', 'glow_blue': '#1abc9c', 'glow_purple': '#9b59b6', 'glow_cyan': '#3498db'}},
+    {'name': 'Sunset Orange', 'colors': {'accent_primary': '#e67e22', 'accent_secondary': '#e74c3c', 'glow_blue': '#e67e22', 'glow_purple': '#e74c3c', 'glow_cyan': '#f39c12'}},
+    {'name': 'Forest Green', 'colors': {'accent_primary': '#27ae60', 'accent_secondary': '#2980b9', 'glow_blue': '#27ae60', 'glow_purple': '#8e44ad', 'glow_cyan': '#2980b9'}},
+    {'name': 'Ruby Red', 'colors': {'accent_primary': '#e74c3c', 'accent_secondary': '#c0392b', 'glow_blue': '#e74c3c', 'glow_purple': '#8e44ad', 'glow_cyan': '#3498db'}},
+    {'name': 'Amber Gold', 'colors': {'accent_primary': '#f39c12', 'accent_secondary': '#e67e22', 'glow_blue': '#f39c12', 'glow_purple': '#e67e22', 'glow_cyan': '#27ae60'}},
+    {'name': 'Deep Space', 'colors': {'accent_primary': '#34495e', 'accent_secondary': '#2c3e50', 'glow_blue': '#34495e', 'glow_purple': '#7f8c8d', 'glow_cyan': '#95a5a6'}}
 ]
 
-# ========================================
-# CSS STYLESHEET WITH GLOWING EFFECTS
-# ========================================
 def get_stylesheet(theme: str, accent_color: Optional[str] = None, glow_intensity: int = 50) -> str:
-    """Generate QT-compatible stylesheet"""
-    
     if theme == 'Light':
         colors = LIGHT_THEME
     else:
@@ -5100,42 +5049,14 @@ def get_stylesheet(theme: str, accent_color: Optional[str] = None, glow_intensit
         if accent_color:
             colors['accent_primary'] = accent_color
     
-    glow_factor = glow_intensity / 50.0
-    
     return f"""
-/* Global Styles */
-QMainWindow, QDialog {{
-    background: {colors['background_dark']};
-}}
-
-QWidget {{
-    color: {colors['text_primary']};
-    font-family: 'Segoe UI', 'Arial', sans-serif;
-}}
-
-/* Glowing Labels */
-QLabel {{
-    color: {colors['text_primary']};
-    background: transparent;
-}}
-
-QLabel[glow="true"] {{
-    color: {colors['accent_primary']};
-    font-weight: bold;
-}}
-
-/* Main Title Glowing Effect */
-#appTitle {{
-    font-size: 36px;
-    font-weight: 800;
-    color: {colors['text_primary']};
-}}
-
-/* Buttons with Hover Effects */
+QMainWindow, QDialog {{ background: {colors['background_dark']}; }}
+QWidget {{ color: {colors['text_primary']}; font-family: 'Segoe UI', 'Arial', sans-serif; }}
+QLabel {{ color: {colors['text_primary']}; background: transparent; }}
+QLabel[glow="true"] {{ color: {colors['accent_primary']}; font-weight: bold; }}
+#appTitle {{ font-size: 36px; font-weight: 800; color: {colors['text_primary']}; }}
 QPushButton {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['background_light']},
-        stop:1 {colors['background_medium']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['background_light']}, stop:1 {colors['background_medium']});
     color: {colors['text_primary']};
     border: 1px solid {colors['border']};
     border-radius: 10px;
@@ -5144,87 +5065,43 @@ QPushButton {{
     font-size: 13px;
     min-height: 30px;
 }}
-
 QPushButton:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['background_light']},
-        stop:1 {colors['background_dark']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['background_light']}, stop:1 {colors['background_dark']});
     border: 2px solid {colors['accent_primary']};
 }}
-
 QPushButton:pressed {{
     background: {colors['background_dark']};
     border: 2px solid {colors['accent_secondary']};
 }}
-
 QPushButton:disabled {{
     background: {colors['background_medium']};
     color: {colors['text_secondary']};
     border-color: {colors['border']};
 }}
-
-/* Primary Action Button */
 QPushButton[type="primary"] {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     color: white;
     font-weight: bold;
     border: none;
 }}
-
 QPushButton[type="primary"]:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_secondary']},
-        stop:1 {colors['accent_primary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['accent_secondary']}, stop:1 {colors['accent_primary']});
 }}
-
-/* Success Button */
 QPushButton[type="success"] {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['success']},
-        stop:1 #27ae60);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['success']}, stop:1 #27ae60);
     color: white;
     border: none;
 }}
-
-QPushButton[type="success"]:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #27ae60,
-        stop:1 {colors['success']});
-}}
-
-/* Warning Button */
 QPushButton[type="warning"] {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['warning']},
-        stop:1 #e67e22);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['warning']}, stop:1 #e67e22);
     color: white;
     border: none;
 }}
-
-QPushButton[type="warning"]:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #e67e22,
-        stop:1 {colors['warning']});
-}}
-
-/* Danger Button */
 QPushButton[type="danger"] {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['error']},
-        stop:1 #c0392b);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['error']}, stop:1 #c0392b);
     color: white;
     border: none;
 }}
-
-QPushButton[type="danger"]:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #c0392b,
-        stop:1 {colors['error']});
-}}
-
-/* ComboBox */
 QComboBox {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
@@ -5233,16 +5110,8 @@ QComboBox {{
     padding: 6px 12px;
     min-height: 30px;
 }}
-
-QComboBox:hover {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-QComboBox::drop-down {{
-    border: none;
-    background: transparent;
-}}
-
+QComboBox:hover {{ border: 2px solid {colors['accent_primary']}; }}
+QComboBox::drop-down {{ border: none; background: transparent; }}
 QComboBox::down-arrow {{
     image: none;
     border-left: 5px solid transparent;
@@ -5250,15 +5119,12 @@ QComboBox::down-arrow {{
     border-top: 5px solid {colors['text_primary']};
     margin-right: 5px;
 }}
-
 QComboBox QAbstractItemView {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
     border: 1px solid {colors['border']};
     selection-background-color: {colors['accent_primary']};
 }}
-
-/* LineEdit, TextEdit, SpinBox */
 QLineEdit, QTextEdit, QSpinBox {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
@@ -5267,12 +5133,7 @@ QLineEdit, QTextEdit, QSpinBox {{
     padding: 6px 10px;
     selection-background-color: {colors['accent_primary']};
 }}
-
-QLineEdit:focus, QTextEdit:focus, QSpinBox:focus {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-/* Progress Bar */
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus {{ border: 2px solid {colors['accent_primary']}; }}
 QProgressBar {{
     background: {colors['background_medium']};
     border: 1px solid {colors['border']};
@@ -5282,16 +5143,10 @@ QProgressBar {{
     font-weight: bold;
     height: 25px;
 }}
-
 QProgressBar::chunk {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_primary']},
-        stop:0.5 {colors['accent_secondary']},
-        stop:1 {colors['accent_tertiary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {colors['accent_primary']}, stop:0.5 {colors['accent_secondary']}, stop:1 {colors['accent_tertiary']});
     border-radius: 7px;
 }}
-
-/* GroupBox */
 QGroupBox {{
     font-weight: bold;
     border: 2px solid {colors['border']};
@@ -5299,104 +5154,51 @@ QGroupBox {{
     margin-top: 15px;
     padding-top: 10px;
 }}
-
 QGroupBox::title {{
     subcontrol-origin: margin;
     left: 15px;
     padding: 0 5px;
     color: {colors['accent_primary']};
 }}
-
-/* ScrollArea */
-QScrollArea {{
-    border: none;
-    background: transparent;
-}}
-
+QScrollArea {{ border: none; background: transparent; }}
 QScrollBar:vertical {{
     background: {colors['background_medium']};
     width: 12px;
     border-radius: 6px;
 }}
-
 QScrollBar::handle:vertical {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     border-radius: 6px;
     min-height: 20px;
 }}
-
-QScrollBar::handle:vertical:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_secondary']},
-        stop:1 {colors['accent_primary']});
-}}
-
 QScrollBar:horizontal {{
     background: {colors['background_medium']};
     height: 12px;
     border-radius: 6px;
 }}
-
 QScrollBar::handle:horizontal {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     border-radius: 6px;
     min-width: 20px;
 }}
-
-QScrollBar::handle:horizontal:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_secondary']},
-        stop:1 {colors['accent_primary']});
-}}
-
-QScrollBar::add-line, QScrollBar::sub-line {{
-    border: none;
-    background: none;
-}}
-
-/* Slider */
 QSlider::groove:horizontal {{
     background: {colors['background_medium']};
     height: 8px;
     border-radius: 4px;
 }}
-
 QSlider::handle:horizontal {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     width: 20px;
     height: 20px;
     margin: -6px 0;
     border-radius: 10px;
     border: 2px solid {colors['text_primary']};
 }}
-
-QSlider::handle:horizontal:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_secondary']},
-        stop:1 {colors['accent_primary']});
-    transform: scale(1.2);
-}}
-
 QSlider::sub-page:horizontal {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     border-radius: 4px;
 }}
-
-/* Tab Widget */
-QTabWidget::pane {{
-    background: transparent;
-    border: 1px solid {colors['border']};
-    border-radius: 8px;
-}}
-
+QTabWidget::pane {{ background: transparent; border: 1px solid {colors['border']}; border-radius: 8px; }}
 QTabBar::tab {{
     background: {colors['background_medium']};
     color: {colors['text_secondary']};
@@ -5405,44 +5207,22 @@ QTabBar::tab {{
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
 }}
-
 QTabBar::tab:selected {{
     background: {colors['background_light']};
     color: {colors['accent_primary']};
     border-bottom: 2px solid {colors['accent_primary']};
     font-weight: bold;
 }}
-
-QTabBar::tab:hover {{
-    background: {colors['hover']};
-    color: {colors['text_primary']};
-}}
-
-/* Menu */
+QTabBar::tab:hover {{ background: {colors['hover']}; color: {colors['text_primary']}; }}
 QMenu {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
     border: 1px solid {colors['border']};
     border-radius: 6px;
 }}
-
-QMenu::item {{
-    padding: 6px 25px;
-    border-radius: 3px;
-}}
-
-QMenu::item:selected {{
-    background: {colors['accent_primary']};
-    color: white;
-}}
-
-QMenu::separator {{
-    height: 1px;
-    background: {colors['border']};
-    margin: 5px 10px;
-}}
-
-/* ToolTip */
+QMenu::item {{ padding: 6px 25px; border-radius: 3px; }}
+QMenu::item:selected {{ background: {colors['accent_primary']}; color: white; }}
+QMenu::separator {{ height: 1px; background: {colors['border']}; margin: 5px 10px; }}
 QToolTip {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
@@ -5450,37 +5230,10 @@ QToolTip {{
     border-radius: 4px;
     padding: 4px 8px;
 }}
-
-/* Status Bar */
-QStatusBar {{
-    background: {colors['background_dark']};
-    color: {colors['text_secondary']};
-    border-top: 1px solid {colors['border']};
-}}
-
-QStatusBar::item {{
-    border: none;
-}}
-
-/* Message Box */
-QMessageBox {{
-    background: {colors['background_medium']};
-}}
-
-QMessageBox QLabel {{
-    color: {colors['text_primary']};
-}}
-
-QMessageBox QPushButton {{
-    min-width: 80px;
-}}
-
-/* CheckBox */
-QCheckBox {{
-    color: {colors['text_primary']};
-    spacing: 8px;
-}}
-
+QStatusBar {{ background: {colors['background_dark']}; color: {colors['text_secondary']}; border-top: 1px solid {colors['border']}; }}
+QMessageBox {{ background: {colors['background_medium']}; }}
+QMessageBox QLabel {{ color: {colors['text_primary']}; }}
+QCheckBox {{ color: {colors['text_primary']}; spacing: 8px; }}
 QCheckBox::indicator {{
     width: 18px;
     height: 18px;
@@ -5488,24 +5241,12 @@ QCheckBox::indicator {{
     border: 1px solid {colors['border']};
     border-radius: 3px;
 }}
-
 QCheckBox::indicator:checked {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     border-color: {colors['accent_primary']};
 }}
-
-QCheckBox::indicator:hover {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-/* RadioButton */
-QRadioButton {{
-    color: {colors['text_primary']};
-    spacing: 8px;
-}}
-
+QCheckBox::indicator:hover {{ border: 2px solid {colors['accent_primary']}; }}
+QRadioButton {{ color: {colors['text_primary']}; spacing: 8px; }}
 QRadioButton::indicator {{
     width: 18px;
     height: 18px;
@@ -5513,40 +5254,13 @@ QRadioButton::indicator {{
     border: 1px solid {colors['border']};
     border-radius: 9px;
 }}
-
 QRadioButton::indicator:checked {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {colors['accent_primary']}, stop:1 {colors['accent_secondary']});
     border: 1px solid {colors['accent_primary']};
 }}
-
-QRadioButton::indicator:checked::after {{
-    content: "";
-    display: block;
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: 4px;
-    margin: 4px;
-}}
-
-QRadioButton::indicator:hover {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-/* Frame */
-QFrame {{
-    background: transparent;
-}}
-
-QFrame[frameShape="4"] {{
-    border: 1px solid {colors['border']};
-    border-radius: 8px;
-    background: {colors['background_medium']};
-}}
-
-/* List Widget */
+QRadioButton::indicator:hover {{ border: 2px solid {colors['accent_primary']}; }}
+QFrame {{ background: transparent; }}
+QFrame[frameShape="4"] {{ border: 1px solid {colors['border']}; border-radius: 8px; background: {colors['background_medium']}; }}
 QListWidget {{
     background: {colors['background_medium']};
     color: {colors['text_primary']};
@@ -5554,448 +5268,15 @@ QListWidget {{
     border-radius: 6px;
     padding: 5px;
 }}
-
-QListWidget::item {{
-    padding: 8px;
-    border-radius: 4px;
-}}
-
-QListWidget::item:selected {{
-    background: {colors['accent_primary']};
-}}
-
-QListWidget::item:hover {{
-    background: {colors['hover']};
-}}
-
-/* Table Widget */
-QTableWidget {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-    gridline-color: {colors['border']};
-}}
-
-QTableWidget::item {{
-    padding: 5px;
-}}
-
-QTableWidget::item:selected {{
-    background: {colors['accent_primary']};
-}}
-
-QHeaderView::section {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    padding: 5px;
-}}
-
-/* Tree Widget */
-QTreeWidget {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-}}
-
-QTreeWidget::item {{
-    padding: 5px;
-}}
-
-QTreeWidget::item:selected {{
-    background: {colors['accent_primary']};
-}}
-
-QTreeWidget::item:hover {{
-    background: {colors['hover']};
-}}
-
-QTreeWidget::branch {{
-    background: transparent;
-}}
-
-QTreeWidget::branch:selected {{
-    background: {colors['accent_primary']};
-}}
-
-/* Splitter */
-QSplitter::handle {{
-    background: {colors['border']};
-    height: 2px;
-}}
-
-QSplitter::handle:horizontal {{
-    width: 2px;
-}}
-
-QSplitter::handle:vertical {{
-    height: 2px;
-}}
-
-QSplitter::handle:hover {{
-    background: {colors['accent_primary']};
-}}
-
-/* Dock Widget */
-QDockWidget {{
-    titlebar-close-icon: none;
-    titlebar-normal-icon: none;
-}}
-
-QDockWidget::title {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    padding: 5px;
-}}
-
-QDockWidget::close-button, QDockWidget::float-button {{
-    background: transparent;
-    border: none;
-}}
-
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {{
-    background: {colors['hover']};
-}}
-
-/* Toolbar */
-QToolBar {{
-    background: {colors['background_light']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-    spacing: 5px;
-}}
-
-QToolBar QToolButton {{
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    padding: 5px;
-}}
-
-QToolBar QToolButton:hover {{
-    background: {colors['hover']};
-}}
-
-QToolBar QToolButton:pressed {{
-    background: {colors['accent_primary']};
-}}
-
-/* Menu Bar */
-QMenuBar {{
-    background: {colors['background_dark']};
-    color: {colors['text_primary']};
-    border-bottom: 1px solid {colors['border']};
-}}
-
-QMenuBar::item {{
-    padding: 5px 10px;
-    border-radius: 4px;
-}}
-
-QMenuBar::item:selected {{
-    background: {colors['hover']};
-}}
-
-QMenuBar::item:pressed {{
-    background: {colors['accent_primary']};
-}}
-
-/* Scroll Area */
-QScrollArea {{
-    border: none;
-    background: transparent;
-}}
-
-/* Graphics View */
-QGraphicsView {{
-    background: {colors['background_dark']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-}}
-
-/* Calendar */
-QCalendarWidget QWidget {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-}}
-
-QCalendarWidget QTableView {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-}}
-
-QCalendarWidget QTableView::item:selected {{
-    background: {colors['accent_primary']};
-}}
-
-QCalendarWidget QAbstractItemView:enabled {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-}}
-
-/* Spin Box */
-QSpinBox {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-    padding: 4px;
-}}
-
-QSpinBox:hover {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-QSpinBox::up-button, QSpinBox::down-button {{
-    background: {colors['background_light']};
-    border: 1px solid {colors['border']};
-    border-radius: 3px;
-    width: 16px;
-}}
-
-QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
-    background: {colors['hover']};
-}}
-
-QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{
-    background: {colors['accent_primary']};
-}}
-
-/* DateTime Edit */
-QDateTimeEdit {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-    padding: 4px;
-}}
-
-QDateTimeEdit:hover {{
-    border: 2px solid {colors['accent_primary']};
-}}
-
-QDateTimeEdit::up-button, QDateTimeEdit::down-button {{
-    background: {colors['background_light']};
-    border: 1px solid {colors['border']};
-    border-radius: 3px;
-    width: 16px;
-}}
-
-QDateTimeEdit::up-button:hover, QDateTimeEdit::down-button:hover {{
-    background: {colors['hover']};
-}}
-
-QDateTimeEdit::up-button:pressed, QDateTimeEdit::down-button:pressed {{
-    background: {colors['accent_primary']};
-}}
-
-/* Dial */
-QDial {{
-    background: {colors['background_medium']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 50%;
-}}
-
-QDial::handle {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_primary']},
-        stop:1 {colors['accent_secondary']});
-    width: 20px;
-    height: 20px;
-    border-radius: 10px;
-    border: 2px solid {colors['text_primary']};
-}}
-
-QDial::handle:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 {colors['accent_secondary']},
-        stop:1 {colors['accent_primary']});
-}}
-
-/* LCD Number */
-QLCDNumber {{
-    color: {colors['accent_primary']};
-    background: {colors['background_dark']};
-    border: 1px solid {colors['border']};
-    border-radius: 6px;
-}}
-
-/* Rubber Band */
-QRubberBand {{
-    border: 2px solid {colors['accent_primary']};
-    background: rgba(74, 144, 226, 0.2);
-}}
-
-/* Print Dialog */
-QPrintDialog {{
-    background: {colors['background_medium']};
-}}
-
-QPrintDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* Wizard */
-QWizard {{
-    background: {colors['background_dark']};
-}}
-
-QWizard QWizardPage {{
-    background: {colors['background_medium']};
-}}
-
-QWizard QPushButton {{
-    min-width: 80px;
-}}
-
-/* Error Message */
-QErrorMessage {{
-    background: {colors['background_medium']};
-}}
-
-QErrorMessage QTextEdit {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['error']};
-    border-radius: 4px;
-}}
-
-/* Progress Dialog */
-QProgressDialog {{
-    background: {colors['background_medium']};
-}}
-
-QProgressDialog QLabel {{
-    color: {colors['text_primary']};
-}}
-
-QProgressDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* Input Dialog */
-QInputDialog {{
-    background: {colors['background_medium']};
-}}
-
-QInputDialog QLabel {{
-    color: {colors['text_primary']};
-}}
-
-QInputDialog QLineEdit {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 4px;
-    padding: 4px;
-}}
-
-QInputDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* Font Dialog */
-QFontDialog {{
-    background: {colors['background_medium']};
-}}
-
-QFontDialog QListView {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 4px;
-}}
-
-QFontDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* Color Dialog */
-QColorDialog {{
-    background: {colors['background_medium']};
-}}
-
-QColorDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* File Dialog */
-QFileDialog {{
-    background: {colors['background_medium']};
-}}
-
-QFileDialog QListView {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 4px;
-}}
-
-QFileDialog QTreeView {{
-    background: {colors['background_light']};
-    color: {colors['text_primary']};
-    border: 1px solid {colors['border']};
-    border-radius: 4px;
-}}
-
-QFileDialog QPushButton {{
-    min-width: 80px;
-}}
-
-/* Animation for widgets */
-QPushButton, QComboBox, QSpinBox, QCheckBox, QRadioButton {{
-    transition: all 0.2s ease-in-out;
-}}
-
-QPushButton:hover, QComboBox:hover, QSpinBox:hover {{
-    transform: scale(1.02);
-}}
-
-QPushButton:pressed {{
-    transform: scale(0.98);
-}}
-
-/* Custom scrollbar for all widgets */
-QWidget {{
-    scrollbar-width: thin;
-    scrollbar-color: {colors['accent_primary']} {colors['background_medium']};
-}}
-
-QWidget::-webkit-scrollbar {{
-    width: 8px;
-    height: 8px;
-}}
-
-QWidget::-webkit-scrollbar-track {{
-    background: {colors['background_medium']};
-    border-radius: 4px;
-}}
-
-QWidget::-webkit-scrollbar-thumb {{
-    background: {colors['accent_primary']};
-    border-radius: 4px;
-}}
-
-QWidget::-webkit-scrollbar-thumb:hover {{
-    background: {colors['accent_secondary']};
-}}
-
-QWidget::-webkit-scrollbar-corner {{
-    background: {colors['background_dark']};
-}}
+QListWidget::item {{ padding: 8px; border-radius: 4px; }}
+QListWidget::item:selected {{ background: {colors['accent_primary']}; }}
+QListWidget::item:hover {{ background: {colors['hover']}; }}
 """
 
 # ========================================
-# ANIMATED BUTTON CLASS
+# Animated Button
 # ========================================
 class GlowButton(QPushButton):
-    """Custom animated button with glow effects"""
-    
     def __init__(self, text: str = "", parent=None):
         super().__init__(text, parent)
         self._animation = QPropertyAnimation(self, b"geometry")
@@ -6015,7 +5296,6 @@ class GlowButton(QPushButton):
         
         self.installEventFilter(self)
         
-        # Shadow effect
         self.shadow = QGraphicsDropShadowEffect()
         self.shadow.setBlurRadius(10)
         self.shadow.setColor(QColor(0, 0, 0, 80))
@@ -6037,7 +5317,6 @@ class GlowButton(QPushButton):
         return super().eventFilter(obj, event)
     
     def animate_hover(self, entering: bool):
-        """Animate button on hover"""
         if entering:
             geom = self.geometry()
             self._animation.setStartValue(geom)
@@ -6050,7 +5329,6 @@ class GlowButton(QPushButton):
             self._animation.start()
             
     def animate_press(self):
-        """Animate button on press"""
         geom = self.geometry()
         self._scale_animation.setStartValue(geom)
         self._scale_animation.setEndValue(geom.adjusted(4, 4, -4, -4))
@@ -6060,12 +5338,7 @@ class GlowButton(QPushButton):
         self.animate_press()
         super().mousePressEvent(event)
 
-# ========================================
-# GLOWING LABEL CLASS
-# ========================================
 class GlowLabel(QLabel):
-    """Label with glowing text effect using painter"""
-    
     def __init__(self, text: str = "", parent=None, glow_color: Optional[str] = None):
         super().__init__(text, parent)
         self.glow_color = glow_color or DARK_THEME['accent_primary']
@@ -6077,7 +5350,6 @@ class GlowLabel(QLabel):
         self._glow_animation.setKeyValueAt(1, 1.0)
         self._glow_animation.setLoopCount(-1)
         
-        # Shadow effect
         self.shadow = QGraphicsDropShadowEffect()
         self.shadow.setBlurRadius(10)
         self.shadow.setColor(QColor(self.glow_color))
@@ -6085,13 +5357,11 @@ class GlowLabel(QLabel):
         self.setGraphicsEffect(self.shadow)
         
     def setGlowIntensity(self, intensity: int):
-        """Set glow intensity (0-100)"""
         self.glow_intensity = intensity
         self.shadow.setBlurRadius(intensity / 5)
         self.update()
         
     def setGlowColor(self, color: str):
-        """Set glow color"""
         self.glow_color = color
         self.shadow.setColor(QColor(color))
         self.update()
@@ -6100,34 +5370,25 @@ class GlowLabel(QLabel):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        # Create gradient for text
         gradient = QLinearGradient(0, 0, self.width(), 0)
         gradient.setColorAt(0, QColor(DARK_THEME['accent_primary']))
         gradient.setColorAt(0.5, QColor(DARK_THEME['accent_secondary']))
         gradient.setColorAt(1, QColor(DARK_THEME['accent_tertiary']))
         
-        # Set font
         font = self.font()
         font.setPointSize(font.pointSize() + 4)
         font.setBold(True)
         painter.setFont(font)
         
-        # Draw glow effect (multiple layers for glow)
         glow_alpha = int(100 * (self.glow_intensity / 100.0))
         for i in range(3):
             painter.setPen(QPen(QColor(self.glow_color).lighter(150 - i*20), 1))
             painter.drawText(self.rect().translated(i+1, i+1), self.alignment(), self.text())
         
-        # Draw main text with gradient
         painter.setPen(QPen(gradient, 2))
         painter.drawText(self.rect(), self.alignment(), self.text())
 
-# ========================================
-# GLASS CARD WIDGET
-# ========================================
 class GlassCardWidget(QFrame):
-    """Modern glass-morphism card widget"""
-    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFrameStyle(QFrame.Box)
@@ -6146,7 +5407,6 @@ class GlassCardWidget(QFrame):
         self._hover_animation.setDuration(300)
         self._hover_animation.setEasingCurve(QEasingCurve.OutCubic)
         
-        # Shadow effect
         self.shadow = QGraphicsDropShadowEffect()
         self.shadow.setBlurRadius(20)
         self.shadow.setColor(QColor(0, 0, 0, 50))
@@ -6171,12 +5431,7 @@ class GlassCardWidget(QFrame):
         self.shadow.setColor(QColor(0, 0, 0, 50))
         super().leaveEvent(event)
 
-# ========================================
-# PREVIEW WIDGET
-# ========================================
 class PreviewWidget(QFrame):
-    """Comprehensive preview widget for media and subtitles"""
-    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumHeight(300)
@@ -6191,7 +5446,6 @@ class PreviewWidget(QFrame):
         layout = QVBoxLayout()
         self.setLayout(layout)
         
-        # Video display area
         self.video_container = QFrame()
         self.video_container.setStyleSheet("""
             QFrame {
@@ -6208,14 +5462,12 @@ class PreviewWidget(QFrame):
         self.video_label.setStyleSheet("color: #666; font-size: 16px;")
         video_layout.addWidget(self.video_label)
         
-        # Video widget (if available)
         self.video_widget = QVideoWidget()
         self.video_widget.hide()
         video_layout.addWidget(self.video_widget)
         
         layout.addWidget(self.video_container, stretch=1)
         
-        # Subtitle preview
         subtitle_frame = QFrame()
         subtitle_frame.setStyleSheet("""
             QFrame {
@@ -6255,7 +5507,6 @@ class PreviewWidget(QFrame):
         
         layout.addWidget(subtitle_frame)
         
-        # Control bar
         control_bar = QFrame()
         control_bar.setStyleSheet("""
             QFrame {
@@ -6294,7 +5545,6 @@ class PreviewWidget(QFrame):
         
         layout.addWidget(control_bar)
         
-        # Media player
         self.player = QMediaPlayer()
         self.player.setVideoOutput(self.video_widget)
         self.player.positionChanged.connect(self.update_position)
@@ -6303,14 +5553,13 @@ class PreviewWidget(QFrame):
         
         self.duration = 0
         self.muted = False
+        self.subtitles = []
         
     def set_media(self, file_path: str):
-        """Set media file for playback"""
         if os.path.exists(file_path):
             url = QUrl.fromLocalFile(file_path)
             self.player.setMedia(QMediaContent(url))
             
-            # Check if video
             if file_path.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
                 self.video_widget.show()
                 self.video_label.hide()
@@ -6322,21 +5571,17 @@ class PreviewWidget(QFrame):
             self.player.play()
             
     def set_subtitles(self, subtitles: List[dict]):
-        """Set subtitles for preview"""
         self.subtitles = subtitles
         
     def update_position(self, position: int):
-        """Update position slider and subtitle display"""
         self.position_slider.setValue(position)
         
-        # Update time label
         current = self.format_time(position)
         total = self.format_time(self.duration)
         self.time_label.setText(f"{current}/{total}")
         self.preview_timer.setText(f"{current} / {total}")
         
-        # Update subtitle display
-        if hasattr(self, 'subtitles') and self.subtitles:
+        if self.subtitles:
             sec = position / 1000.0
             for sub in self.subtitles:
                 start = sub["start"].total_seconds() if isinstance(sub["start"], timedelta) else sub["start"]
@@ -6346,36 +5591,30 @@ class PreviewWidget(QFrame):
                     break
                     
     def update_duration(self, duration: int):
-        """Update duration slider"""
         self.duration = duration
         self.position_slider.setRange(0, duration)
         
     def update_play_state(self, state):
-        """Update play button based on state"""
         if state == QMediaPlayer.PlayingState:
             self.play_btn.setText("⏸")
         else:
             self.play_btn.setText("▶")
             
     def toggle_playback(self):
-        """Toggle play/pause"""
         if self.player.state() == QMediaPlayer.PlayingState:
             self.player.pause()
         else:
             self.player.play()
             
     def seek_position(self, position: int):
-        """Seek to position"""
         self.player.setPosition(position)
         
     def toggle_mute(self):
-        """Toggle mute"""
         self.muted = not self.muted
         self.player.setMuted(self.muted)
         self.volume_btn.setText("🔇" if self.muted else "🔊")
         
     def change_volume(self, value: int):
-        """Change volume"""
         self.player.setVolume(value)
         if value == 0:
             self.volume_btn.setText("🔇")
@@ -6387,34 +5626,2051 @@ class PreviewWidget(QFrame):
             self.volume_btn.setText("🔊")
             
     def format_time(self, ms: int) -> str:
-        """Format time in milliseconds to MM:SS"""
         seconds = ms // 1000
         minutes = seconds // 60
         seconds = seconds % 60
         return f"{minutes:02d}:{seconds:02d}"
 
 # ========================================
-# MAIN APPLICATION WINDOW
+# Session Manager
+# ========================================
+class SessionManager:
+    def __init__(self):
+        self.session_file = SESSION_FILE
+        self._lock = threading.Lock()
+        logger.info(f"Session manager initialized with file: {self.session_file}")
+        
+    def save_session(self, session_data):
+        with self._lock:
+            try:
+                session_data['last_saved'] = datetime.now().isoformat()
+                session_data['app_version'] = APP_VERSION
+                
+                with open(self.session_file, 'w', encoding='utf-8') as f:
+                    json.dump(session_data, f, indent=2)
+                logger.info("Session saved successfully")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to save session: {e}")
+                return False
+                
+    def load_session(self):
+        with self._lock:
+            try:
+                if os.path.exists(self.session_file):
+                    with open(self.session_file, 'r', encoding='utf-8') as f:
+                        session_data = json.load(f)
+                    logger.info("Session loaded successfully")
+                    return session_data
+                else:
+                    logger.info("No session file found")
+                    return None
+            except Exception as e:
+                logger.error(f"Failed to load session: {e}")
+                return None
+                
+    def clear_session(self):
+        with self._lock:
+            try:
+                if os.path.exists(self.session_file):
+                    os.remove(self.session_file)
+                    logger.info("Session cleared")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to clear session: {e}")
+                return False
+                
+    def save_operation_state(self, operation_type, data):
+        session = self.load_session() or {}
+        if 'operations' not in session:
+            session['operations'] = []
+        
+        session['operations'] = [op for op in session['operations'] if op.get('type') != operation_type]
+        
+        operation = {
+            'type': operation_type,
+            'data': data,
+            'timestamp': datetime.now().isoformat()
+        }
+        session['operations'].append(operation)
+        
+        self.save_session(session)
+        
+    def get_operation_state(self, operation_type):
+        session = self.load_session()
+        if session and 'operations' in session:
+            for op in session['operations']:
+                if op.get('type') == operation_type:
+                    return op.get('data')
+        return None
+        
+    def clear_operation_state(self, operation_type):
+        session = self.load_session()
+        if session and 'operations' in session:
+            session['operations'] = [op for op in session['operations'] if op.get('type') != operation_type]
+            self.save_session(session)
+
+# ========================================
+# Layout Manager
+# ========================================
+class LayoutManager:
+    def __init__(self):
+        self.layouts_dir = LAYOUTS_DIR
+        logger.info(f"Layout manager initialized: {self.layouts_dir}")
+        
+    def save_layout(self, name, settings):
+        try:
+            layout_file = os.path.join(self.layouts_dir, f"{name}.layout")
+            with open(layout_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2)
+            logger.info(f"Layout saved: {name}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save layout: {e}")
+            return False
+            
+    def load_layout(self, name):
+        try:
+            layout_file = os.path.join(self.layouts_dir, f"{name}.layout")
+            if os.path.exists(layout_file):
+                with open(layout_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                logger.info(f"Layout loaded: {name}")
+                return settings
+        except Exception as e:
+            logger.error(f"Failed to load layout: {e}")
+        return None
+        
+    def get_layouts(self):
+        layouts = []
+        try:
+            for f in os.listdir(self.layouts_dir):
+                if f.endswith('.layout'):
+                    layouts.append(f[:-7])
+        except:
+            pass
+        return sorted(layouts)
+        
+    def delete_layout(self, name):
+        try:
+            layout_file = os.path.join(self.layouts_dir, f"{name}.layout")
+            if os.path.exists(layout_file):
+                os.remove(layout_file)
+                logger.info(f"Layout deleted: {name}")
+                return True
+        except Exception as e:
+            logger.error(f"Failed to delete layout: {e}")
+        return False
+
+# ========================================
+# Preset Manager
+# ========================================
+class PresetManager:
+    def __init__(self):
+        self.presets_dir = PRESETS_DIR
+        self.default_presets = COLOR_PRESETS
+        logger.info(f"Preset manager initialized: {self.presets_dir}")
+        
+    def get_presets(self):
+        presets = list(self.default_presets)
+        
+        try:
+            for f in os.listdir(self.presets_dir):
+                if f.endswith('.preset'):
+                    preset_file = os.path.join(self.presets_dir, f)
+                    with open(preset_file, 'r', encoding='utf-8') as pf:
+                        preset = json.load(pf)
+                        presets.append(preset)
+        except:
+            pass
+            
+        return presets
+        
+    def save_preset(self, name, colors):
+        try:
+            preset = {
+                'name': name,
+                'colors': colors
+            }
+            preset_file = os.path.join(self.presets_dir, f"{name}.preset")
+            with open(preset_file, 'w', encoding='utf-8') as f:
+                json.dump(preset, f, indent=2)
+            logger.info(f"Preset saved: {name}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save preset: {e}")
+            return False
+            
+    def delete_preset(self, name):
+        try:
+            preset_file = os.path.join(self.presets_dir, f"{name}.preset")
+            if os.path.exists(preset_file):
+                os.remove(preset_file)
+                logger.info(f"Preset deleted: {name}")
+                return True
+        except Exception as e:
+            logger.error(f"Failed to delete preset: {e}")
+        return False
+
+# ========================================
+# Animation Controller
+# ========================================
+class AnimationController:
+    def __init__(self):
+        self.enabled = True
+        self.speed = 1.0
+        self.speed_presets = {
+            'slow': 2.0,
+            'normal': 1.0,
+            'fast': 0.5
+        }
+        
+    def set_enabled(self, enabled):
+        self.enabled = enabled
+        
+    def set_speed(self, speed_name):
+        if speed_name in self.speed_presets:
+            self.speed = self.speed_presets[speed_name]
+            
+    def get_duration(self, base_duration):
+        if not self.enabled:
+            return 0
+        return int(base_duration * self.speed)
+        
+    def create_animation(self, target, property_name, start_value, end_value, duration):
+        if not self.enabled:
+            return None
+            
+        anim = QPropertyAnimation(target, property_name)
+        anim.setDuration(self.get_duration(duration))
+        anim.setStartValue(start_value)
+        anim.setEndValue(end_value)
+        anim.setEasingCurve(QEasingCurve.OutCubic)
+        return anim
+
+animation_controller = AnimationController()
+
+# ========================================
+# Workspace Customize Dialog
+# ========================================
+class WorkspaceCustomizeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr('workspace_customize'))
+        self.setMinimumSize(700, 600)
+        self.parent_window = parent
+        
+        self.current_settings = parent.settings if parent else {}
+        
+        self.setup_ui()
+        self.load_current_values()
+        
+    def setup_ui(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        
+        preview_group = QGroupBox(tr('preview'))
+        preview_layout = QVBoxLayout()
+        preview_group.setLayout(preview_layout)
+        
+        self.preview_label = QLabel("NotyCaption Pro - Preview")
+        self.preview_label.setAlignment(Qt.AlignCenter)
+        self.preview_label.setMinimumHeight(100)
+        preview_layout.addWidget(self.preview_label)
+        
+        layout.addWidget(preview_group)
+        
+        tabs = QTabWidget()
+        layout.addWidget(tabs)
+        
+        colors_tab = QWidget()
+        colors_layout = QVBoxLayout()
+        colors_tab.setLayout(colors_layout)
+        
+        color_layout = QHBoxLayout()
+        color_layout.addWidget(QLabel(tr('accent_color')))
+        self.accent_color_btn = QPushButton()
+        self.accent_color_btn.setFixedSize(50, 30)
+        self.accent_color_btn.clicked.connect(self.choose_accent_color)
+        color_layout.addWidget(self.accent_color_btn)
+        color_layout.addStretch()
+        colors_layout.addLayout(color_layout)
+        
+        presets_layout = QHBoxLayout()
+        presets_layout.addWidget(QLabel(tr('presets')))
+        self.presets_combo = QComboBox()
+        self.presets_combo.addItems([p['name'] for p in COLOR_PRESETS])
+        self.presets_combo.currentIndexChanged.connect(self.apply_preset)
+        presets_layout.addWidget(self.presets_combo)
+        
+        apply_preset_btn = QPushButton(tr('apply_preset'))
+        apply_preset_btn.clicked.connect(self.apply_selected_preset)
+        presets_layout.addWidget(apply_preset_btn)
+        
+        colors_layout.addLayout(presets_layout)
+        
+        save_preset_layout = QHBoxLayout()
+        self.preset_name_edit = QLineEdit()
+        self.preset_name_edit.setPlaceholderText(tr('preset_name'))
+        save_preset_layout.addWidget(self.preset_name_edit)
+        
+        save_preset_btn = QPushButton(tr('save_preset'))
+        save_preset_btn.clicked.connect(self.save_custom_preset)
+        save_preset_layout.addWidget(save_preset_btn)
+        
+        colors_layout.addLayout(save_preset_layout)
+        colors_layout.addStretch()
+        tabs.addTab(colors_tab, tr('presets_tab'))
+        
+        anim_tab = QWidget()
+        anim_layout = QVBoxLayout()
+        anim_tab.setLayout(anim_layout)
+        
+        self.enable_animations_cb = QCheckBox(tr('enable_animations'))
+        self.enable_animations_cb.setChecked(True)
+        anim_layout.addWidget(self.enable_animations_cb)
+        
+        speed_layout = QHBoxLayout()
+        speed_layout.addWidget(QLabel(tr('animation_speed')))
+        
+        self.speed_combo = QComboBox()
+        self.speed_combo.addItems([tr('animation_speed_slow'), tr('animation_speed_normal'), tr('animation_speed_fast')])
+        self.speed_combo.setCurrentIndex(1)
+        speed_layout.addWidget(self.speed_combo)
+        speed_layout.addStretch()
+        anim_layout.addLayout(speed_layout)
+        
+        glow_layout = QHBoxLayout()
+        glow_layout.addWidget(QLabel(tr('glow_intensity')))
+        self.glow_slider = QSlider(Qt.Horizontal)
+        self.glow_slider.setRange(0, 100)
+        self.glow_slider.setValue(50)
+        self.glow_slider.valueChanged.connect(self.update_preview)
+        glow_layout.addWidget(self.glow_slider)
+        anim_layout.addLayout(glow_layout)
+        
+        anim_layout.addStretch()
+        tabs.addTab(anim_tab, tr('animation_control'))
+        
+        appearance_tab = QWidget()
+        appearance_layout = QVBoxLayout()
+        appearance_tab.setLayout(appearance_layout)
+        
+        opacity_layout = QHBoxLayout()
+        opacity_layout.addWidget(QLabel(tr('card_opacity')))
+        self.opacity_slider = QSlider(Qt.Horizontal)
+        self.opacity_slider.setRange(30, 100)
+        self.opacity_slider.setValue(80)
+        self.opacity_slider.valueChanged.connect(self.update_preview)
+        opacity_layout.addWidget(self.opacity_slider)
+        appearance_layout.addLayout(opacity_layout)
+        
+        font_family_layout = QHBoxLayout()
+        font_family_layout.addWidget(QLabel(tr('font_family')))
+        self.font_combo = QComboBox()
+        self.font_combo.addItems(['Segoe UI', 'Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Consolas', 'Courier New'])
+        self.font_combo.currentTextChanged.connect(self.update_preview)
+        font_family_layout.addWidget(self.font_combo)
+        appearance_layout.addLayout(font_family_layout)
+        
+        font_size_layout = QHBoxLayout()
+        font_size_layout.addWidget(QLabel(tr('font_size')))
+        self.font_size_spin = QSpinBox()
+        self.font_size_spin.setRange(8, 24)
+        self.font_size_spin.setValue(14)
+        self.font_size_spin.valueChanged.connect(self.update_preview)
+        font_size_layout.addWidget(self.font_size_spin)
+        appearance_layout.addLayout(font_size_layout)
+        
+        appearance_layout.addStretch()
+        tabs.addTab(appearance_tab, tr('workspace_tab'))
+        
+        layouts_tab = QWidget()
+        layouts_layout = QVBoxLayout()
+        layouts_tab.setLayout(layouts_layout)
+        
+        save_layout_layout = QHBoxLayout()
+        save_layout_layout.addWidget(QLabel(tr('layout_name')))
+        self.layout_name_edit = QLineEdit()
+        save_layout_layout.addWidget(self.layout_name_edit)
+        
+        save_layout_btn = QPushButton(tr('save_layout'))
+        save_layout_btn.clicked.connect(self.save_layout)
+        save_layout_layout.addWidget(save_layout_btn)
+        layouts_layout.addLayout(save_layout_layout)
+        
+        load_layout_layout = QHBoxLayout()
+        load_layout_layout.addWidget(QLabel(tr('select_layout')))
+        self.layout_combo = QComboBox()
+        self.refresh_layouts()
+        load_layout_layout.addWidget(self.layout_combo)
+        
+        load_layout_btn = QPushButton(tr('load_layout'))
+        load_layout_btn.clicked.connect(self.load_selected_layout)
+        load_layout_layout.addWidget(load_layout_btn)
+        
+        delete_layout_btn = QPushButton(tr('delete_preset'))
+        delete_layout_btn.clicked.connect(self.delete_selected_layout)
+        load_layout_layout.addWidget(delete_layout_btn)
+        
+        layouts_layout.addLayout(load_layout_layout)
+        layouts_layout.addStretch()
+        tabs.addTab(layouts_tab, tr('save_layout'))
+        
+        btn_layout = QHBoxLayout()
+        
+        reset_btn = QPushButton(tr('reset_defaults'))
+        reset_btn.clicked.connect(self.reset_defaults)
+        btn_layout.addWidget(reset_btn)
+        
+        apply_btn = QPushButton(tr('apply_restart'))
+        apply_btn.setProperty('type', 'success')
+        apply_btn.clicked.connect(self.apply_settings)
+        btn_layout.addWidget(apply_btn)
+        
+        cancel_btn = QPushButton(tr('cancel'))
+        cancel_btn.setProperty('type', 'danger')
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        self.current_color = QColor(self.current_settings.get('accent_color', DARK_THEME['accent_primary']))
+        self.update_color_button()
+        
+    def load_current_values(self):
+        self.glow_slider.setValue(self.current_settings.get('glow_intensity', 50))
+        self.opacity_slider.setValue(self.current_settings.get('card_opacity', 80))
+        self.font_combo.setCurrentText(self.current_settings.get('font_family', 'Segoe UI'))
+        self.font_size_spin.setValue(self.current_settings.get('font_size', 14))
+        
+        animation_speed = self.current_settings.get('animation_speed', 'normal')
+        speed_map = {'slow': 0, 'normal': 1, 'fast': 2}
+        self.speed_combo.setCurrentIndex(speed_map.get(animation_speed, 1))
+        self.enable_animations_cb.setChecked(self.current_settings.get('enable_animations', True))
+        
+    def refresh_layouts(self):
+        self.layout_combo.clear()
+        layout_manager = LayoutManager()
+        layouts = layout_manager.get_layouts()
+        self.layout_combo.addItems(layouts)
+        
+    def choose_accent_color(self):
+        color = QColorDialog.getColor(self.current_color, self, tr('accent_color'))
+        if color.isValid():
+            self.current_color = color
+            self.update_color_button()
+            self.update_preview()
+            
+    def update_color_button(self):
+        self.accent_color_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {self.current_color.name()};
+                border: 1px solid white;
+            }}
+        """)
+        
+    def apply_preset(self, index):
+        if 0 <= index < len(COLOR_PRESETS):
+            preset = COLOR_PRESETS[index]
+            self.current_color = QColor(preset['colors']['accent_primary'])
+            self.update_color_button()
+            self.update_preview()
+            
+    def apply_selected_preset(self):
+        self.apply_preset(self.presets_combo.currentIndex())
+        
+    def save_custom_preset(self):
+        name = self.preset_name_edit.text().strip()
+        if name:
+            colors = {
+                'accent_primary': self.current_color.name()
+            }
+            preset_manager = PresetManager()
+            if preset_manager.save_preset(name, colors):
+                QMessageBox.information(self, tr('success'), f"Preset '{name}' saved!")
+                self.preset_name_edit.clear()
+            else:
+                QMessageBox.warning(self, tr('error'), "Failed to save preset")
+                
+    def save_layout(self):
+        name = self.layout_name_edit.text().strip()
+        if name:
+            settings = self.get_current_settings()
+            layout_manager = LayoutManager()
+            if layout_manager.save_layout(name, settings):
+                QMessageBox.information(self, tr('success'), f"Layout '{name}' saved!")
+                self.layout_name_edit.clear()
+                self.refresh_layouts()
+            else:
+                QMessageBox.warning(self, tr('error'), "Failed to save layout")
+                
+    def load_selected_layout(self):
+        name = self.layout_combo.currentText()
+        if name:
+            layout_manager = LayoutManager()
+            settings = layout_manager.load_layout(name)
+            if settings:
+                self.current_settings.update(settings)
+                self.load_current_values()
+                self.update_preview()
+                QMessageBox.information(self, tr('success'), f"Layout '{name}' loaded!")
+            else:
+                QMessageBox.warning(self, tr('error'), "Failed to load layout")
+                
+    def delete_selected_layout(self):
+        name = self.layout_combo.currentText()
+        if name:
+            reply = QMessageBox.question(self, tr('confirm'), 
+                                        f"Delete layout '{name}'?",
+                                        QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                layout_manager = LayoutManager()
+                if layout_manager.delete_layout(name):
+                    self.refresh_layouts()
+                    QMessageBox.information(self, tr('success'), f"Layout '{name}' deleted!")
+                else:
+                    QMessageBox.warning(self, tr('error'), "Failed to delete layout")
+                    
+    def update_preview(self):
+        glow_intensity = self.glow_slider.value()
+        opacity = self.opacity_slider.value() / 100.0
+        font_family = self.font_combo.currentText()
+        font_size = self.font_size_spin.value()
+        
+        style = f"""
+            QLabel {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(26, 26, 26, {opacity}),
+                    stop:1 rgba(42, 42, 42, {opacity}));
+                border: 2px solid {self.current_color.name()};
+                border-radius: 10px;
+                font-family: '{font_family}';
+                font-size: {font_size}px;
+                font-weight: bold;
+                color: white;
+            }}
+        """
+        self.preview_label.setStyleSheet(style)
+        
+    def get_current_settings(self):
+        speed_map = ['slow', 'normal', 'fast']
+        return {
+            'accent_color': self.current_color.name(),
+            'glow_intensity': self.glow_slider.value(),
+            'card_opacity': self.opacity_slider.value(),
+            'font_family': self.font_combo.currentText(),
+            'font_size': self.font_size_spin.value(),
+            'enable_animations': self.enable_animations_cb.isChecked(),
+            'animation_speed': speed_map[self.speed_combo.currentIndex()]
+        }
+        
+    def reset_defaults(self):
+        self.current_color = QColor(DARK_THEME['accent_primary'])
+        self.glow_slider.setValue(50)
+        self.opacity_slider.setValue(80)
+        self.font_combo.setCurrentText('Segoe UI')
+        self.font_size_spin.setValue(14)
+        self.enable_animations_cb.setChecked(True)
+        self.speed_combo.setCurrentIndex(1)
+        self.update_color_button()
+        self.update_preview()
+        
+    def apply_settings(self):
+        self.accept()
+
+# ========================================
+# Progress Whisper
+# ========================================
+class ProgressWhisper:
+    def __init__(self, progress_callback=None):
+        self.progress_callback = progress_callback
+        self._canceled = False
+        self._lock = threading.Lock()
+        
+    def cancel(self):
+        with self._lock:
+            self._canceled = True
+            
+    def is_canceled(self):
+        with self._lock:
+            return self._canceled
+            
+    def transcribe_with_progress(self, model, audio_path, **kwargs):
+        audio = whisper.load_audio(audio_path)
+        
+        if kwargs.get('language') is None:
+            mel = whisper.log_mel_spectrogram(audio).to(model.device)
+            segment, _ = model.detect_language(mel[:1])
+            kwargs['language'] = segment[0][0]
+            if self.progress_callback:
+                self.progress_callback(5, f"Detected language: {kwargs['language']}")
+                
+        result = whisper.transcribe(
+            model,
+            audio,
+            task=kwargs.get('task', 'transcribe'),
+            language=kwargs.get('language'),
+            word_timestamps=True,
+            verbose=False
+        )
+        
+        total_segments = len(result['segments'])
+        for i, segment in enumerate(result['segments']):
+            if self.is_canceled():
+                raise Exception("Transcription canceled by user")
+                
+            if self.progress_callback:
+                progress = 20 + int((i / total_segments) * 60)
+                self.progress_callback(progress, f"Processing segment {i+1}/{total_segments}")
+                
+        return result
+
+# ========================================
+# Settings Dialog
+# ========================================
+class SettingsDialog(QDialog):
+    settingsChanged = pyqtSignal(dict)
+
+    def __init__(self, current_settings, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr('settings_title'))
+        self.resize(800, 900)
+        self.setMinimumSize(700, 800)
+        self.current_settings = current_settings
+        self.parent_window = parent
+        
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinMaxButtonsHint)
+        
+        self.setStyleSheet(get_stylesheet(
+            current_settings.get('theme', 'Dark'),
+            current_settings.get('accent_color'),
+            current_settings.get('glow_intensity', 50)
+        ))
+        
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        tabs = QTabWidget()
+        main_layout.addWidget(tabs)
+
+        general_tab = QWidget()
+        general_layout = QVBoxLayout()
+        general_tab.setLayout(general_layout)
+
+        th_gb = QGroupBox(tr('visual_theme'))
+        th_lay = QVBoxLayout()
+        self.rb_win = QRadioButton(tr('system_default'))
+        self.rb_light = QRadioButton(tr('light_mode'))
+        self.rb_dark = QRadioButton(tr('dark_mode'))
+        
+        th_lay.addWidget(self.rb_win)
+        th_lay.addWidget(self.rb_light)
+        th_lay.addWidget(self.rb_dark)
+
+        th = current_settings.get("theme", "Dark")
+        if th == "Windows Default": self.rb_win.setChecked(True)
+        elif th == "Light": self.rb_light.setChecked(True)
+        else: self.rb_dark.setChecked(True)
+
+        th_gb.setLayout(th_lay)
+        general_layout.addWidget(th_gb)
+
+        sc_gb = QGroupBox(tr('ui_scaling'))
+        sc_lay = QHBoxLayout()
+        self.scale_combo = QComboBox()
+        self.scale_combo.addItems(["75%", "87%", "100%", "125%", "150%", "175%", "200%"])
+        self.scale_combo.setCurrentText(current_settings.get("ui_scale", "100%"))
+        sc_lay.addWidget(QLabel(tr('scale_factor')))
+        sc_lay.addWidget(self.scale_combo)
+        sc_lay.addStretch()
+        sc_gb.setLayout(sc_lay)
+        general_layout.addWidget(sc_gb)
+        
+        general_layout.addStretch()
+        tabs.addTab(general_tab, tr('general_tab'))
+
+        paths_tab = QWidget()
+        paths_layout = QVBoxLayout()
+        paths_tab.setLayout(paths_layout)
+
+        tmp_gb = QGroupBox(tr('temp_dir'))
+        tmp_lay = QHBoxLayout()
+        self.tmp_edit = QLineEdit(current_settings.get("temp_dir", tempfile.gettempdir()))
+        tmp_btn = QPushButton(tr('browse_folder'))
+        tmp_btn.clicked.connect(self.browse_temp)
+        tmp_lay.addWidget(self.tmp_edit)
+        tmp_lay.addWidget(tmp_btn)
+        tmp_gb.setLayout(tmp_lay)
+        paths_layout.addWidget(tmp_gb)
+
+        mod_gb = QGroupBox(tr('models_dir'))
+        mod_lay = QHBoxLayout()
+        self.mod_edit = QLineEdit(current_settings.get("models_dir", APP_DATA_DIR))
+        mod_btn = QPushButton(tr('browse_folder'))
+        mod_btn.clicked.connect(self.browse_models)
+        mod_lay.addWidget(self.mod_edit)
+        mod_lay.addWidget(mod_btn)
+        mod_gb.setLayout(mod_lay)
+        paths_layout.addWidget(mod_gb)
+
+        paths_layout.addStretch()
+        tabs.addTab(paths_tab, tr('paths_tab'))
+
+        features_tab = QWidget()
+        features_layout = QVBoxLayout()
+        features_tab.setLayout(features_layout)
+
+        auto_gb = QGroupBox(tr('auto_features'))
+        auto_lay = QVBoxLayout()
+        self.cb_auto_enhance = QRadioButton(tr('auto_enhance'))
+        self.cb_auto_enhance.setChecked(current_settings.get("auto_enhance", False))
+        auto_lay.addWidget(self.cb_auto_enhance)
+        auto_gb.setLayout(auto_lay)
+        features_layout.addWidget(auto_gb)
+
+        wpl_gb = QGroupBox(tr('default_wpl'))
+        wpl_lay = QHBoxLayout()
+        self.wpl_spin = QSpinBox()
+        self.wpl_spin.setRange(1, 20)
+        self.wpl_spin.setValue(current_settings.get("words_per_line", 5))
+        wpl_lay.addWidget(QLabel(tr('words')))
+        wpl_lay.addWidget(self.wpl_spin)
+        wpl_lay.addStretch()
+        wpl_gb.setLayout(wpl_lay)
+        features_layout.addWidget(wpl_gb)
+
+        fmt_gb = QGroupBox(tr('default_format'))
+        fmt_lay = QHBoxLayout()
+        self.fmt_combo = QComboBox()
+        self.fmt_combo.addItems([tr('srt_format'), tr('ass_format')])
+        self.fmt_combo.setCurrentText(current_settings.get("output_format", tr('srt_format')))
+        fmt_lay.addWidget(QLabel(tr('format')))
+        fmt_lay.addWidget(self.fmt_combo)
+        fmt_lay.addStretch()
+        fmt_gb.setLayout(fmt_lay)
+        features_layout.addWidget(fmt_gb)
+        
+        features_layout.addStretch()
+        tabs.addTab(features_tab, tr('features_tab'))
+
+        workspace_tab = QWidget()
+        workspace_layout = QVBoxLayout()
+        workspace_tab.setLayout(workspace_layout)
+        
+        customize_btn = QPushButton(tr('workspace_customize'))
+        customize_btn.clicked.connect(self.customize_workspace)
+        workspace_layout.addWidget(customize_btn)
+        
+        preview_gb = QGroupBox(tr('preview'))
+        preview_layout = QVBoxLayout()
+        preview_gb.setLayout(preview_layout)
+        
+        self.preview_widget = QFrame()
+        self.preview_widget.setMinimumHeight(150)
+        self.update_preview()
+        
+        preview_label = QLabel(tr('app_name'))
+        preview_label.setAlignment(Qt.AlignCenter)
+        
+        preview_inner_layout = QVBoxLayout(self.preview_widget)
+        preview_inner_layout.addWidget(preview_label)
+        preview_layout.addWidget(self.preview_widget)
+        
+        workspace_layout.addWidget(preview_gb)
+        workspace_layout.addStretch()
+        tabs.addTab(workspace_tab, tr('workspace_tab'))
+
+        advanced_tab = QWidget()
+        advanced_layout = QVBoxLayout()
+        advanced_tab.setLayout(advanced_layout)
+
+        hw_gb = QGroupBox(tr('hardware_acceleration'))
+        hw_lay = QVBoxLayout()
+        
+        accel_type, accel_info = hardware_monitor.get_acceleration_status() if hasattr(hardware_monitor, 'get_acceleration_status') else ("cpu", "Hardware info unavailable")
+        hw_lay.addWidget(QLabel(accel_info))
+        hw_lay.addWidget(QLabel(hardware_monitor.get_ram_summary()))
+        
+        hw_details_btn = QPushButton("Show Detailed Hardware Info")
+        hw_details_btn.clicked.connect(self.show_hardware_details)
+        hw_lay.addWidget(hw_details_btn)
+        
+        hw_gb.setLayout(hw_lay)
+        advanced_layout.addWidget(hw_gb)
+
+        cancel_gb = QGroupBox(tr('cancel_options'))
+        cancel_lay = QVBoxLayout()
+        self.cb_confirm_cancel = QRadioButton(tr('confirm_cancel'))
+        self.cb_confirm_cancel.setChecked(current_settings.get("confirm_cancel", True))
+        cancel_lay.addWidget(self.cb_confirm_cancel)
+        
+        timeout_lay = QHBoxLayout()
+        timeout_lay.addWidget(QLabel(tr('force_cancel_timeout')))
+        self.force_timeout_spin = QSpinBox()
+        self.force_timeout_spin.setRange(10, 120)
+        self.force_timeout_spin.setSuffix(tr('seconds'))
+        self.force_timeout_spin.setValue(current_settings.get("force_cancel_timeout", 30))
+        timeout_lay.addWidget(self.force_timeout_spin)
+        timeout_lay.addStretch()
+        cancel_lay.addLayout(timeout_lay)
+        
+        retry_lay = QHBoxLayout()
+        retry_lay.addWidget(QLabel(tr('max_retry')))
+        self.retry_spin = QSpinBox()
+        self.retry_spin.setRange(1, 20)
+        self.retry_spin.setValue(current_settings.get("max_retry_attempts", 5))
+        retry_lay.addWidget(self.retry_spin)
+        retry_lay.addStretch()
+        cancel_lay.addLayout(retry_lay)
+        
+        cancel_gb.setLayout(cancel_lay)
+        advanced_layout.addWidget(cancel_gb)
+
+        ui_gb = QGroupBox(tr('ui_options'))
+        ui_lay = QVBoxLayout()
+        self.cb_minimize_tray = QRadioButton(tr('minimize_tray'))
+        self.cb_minimize_tray.setChecked(current_settings.get("minimize_to_tray", False))
+        ui_lay.addWidget(self.cb_minimize_tray)
+        
+        self.cb_show_tooltips = QRadioButton(tr('show_tooltips'))
+        self.cb_show_tooltips.setChecked(current_settings.get("show_tooltips", True))
+        ui_lay.addWidget(self.cb_show_tooltips)
+        
+        ui_gb.setLayout(ui_lay)
+        advanced_layout.addWidget(ui_gb)
+        
+        advanced_layout.addStretch()
+        tabs.addTab(advanced_tab, tr('advanced_tab'))
+
+        btn_lay = QHBoxLayout()
+        apply_btn = QPushButton(tr('apply_restart'))
+        apply_btn.clicked.connect(self.apply_close)
+        
+        cancel_btn = QPushButton(tr('cancel'))
+        cancel_btn.clicked.connect(self.reject)
+        
+        btn_lay.addStretch()
+        btn_lay.addWidget(apply_btn)
+        btn_lay.addWidget(cancel_btn)
+        main_layout.addLayout(btn_lay)
+
+        logger.info("Settings dialog initialized")
+
+    def update_preview(self):
+        opacity = self.current_settings.get('card_opacity', 80) / 100.0
+        self.preview_widget.setStyleSheet(f"""
+            QFrame {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(26, 26, 26, {opacity}),
+                    stop:1 rgba(42, 42, 42, {opacity}));
+                border: 2px solid {self.current_settings.get('accent_color', DARK_THEME['accent_primary'])};
+                border-radius: 15px;
+            }}
+        """)
+
+    def show_hardware_details(self):
+        details = hardware_monitor.get_hardware_info() if hasattr(hardware_monitor, 'get_hardware_info') else {}
+        msg = json.dumps(details, indent=2)
+        
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(tr('hardware_acceleration'))
+        msg_box.setText(msg)
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.exec_()
+
+    def customize_workspace(self):
+        dlg = WorkspaceCustomizeDialog(self)
+        if dlg.exec_() == QDialog.Accepted:
+            settings = dlg.get_current_settings()
+            self.current_settings.update(settings)
+            self.update_preview()
+            self.setStyleSheet(get_stylesheet(
+                self.current_settings.get('theme', 'Dark'),
+                settings['accent_color'],
+                settings['glow_intensity']
+            ))
+
+    def browse_temp(self):
+        d = QFileDialog.getExistingDirectory(self, tr('temp_dir'))
+        if d:
+            self.tmp_edit.setText(d)
+            logger.info(f"Temp dir changed to: {d}")
+
+    def browse_models(self):
+        d = QFileDialog.getExistingDirectory(self, tr('models_dir'))
+        if d:
+            self.mod_edit.setText(d)
+            logger.info(f"Models dir changed to: {d}")
+
+    def apply_close(self):
+        new_settings = {
+            "ui_scale": self.scale_combo.currentText(),
+            "theme": "Windows Default" if self.rb_win.isChecked() else
+                     "Light" if self.rb_light.isChecked() else "Dark",
+            "temp_dir": self.tmp_edit.text(),
+            "models_dir": self.mod_edit.text(),
+            "auto_enhance": self.cb_auto_enhance.isChecked(),
+            "default_lang": self.current_settings.get("default_lang", tr('english_transcribe')),
+            "last_mode": self.current_settings.get("last_mode", "normal"),
+            "force_cancel_timeout": self.force_timeout_spin.value(),
+            "max_retry_attempts": self.retry_spin.value(),
+            "confirm_cancel": self.cb_confirm_cancel.isChecked(),
+            "minimize_to_tray": self.cb_minimize_tray.isChecked(),
+            "show_tooltips": self.cb_show_tooltips.isChecked(),
+            "words_per_line": self.wpl_spin.value(),
+            "output_format": self.fmt_combo.currentText(),
+            "last_input_file": self.current_settings.get("last_input_file", ""),
+            "last_output_folder": self.current_settings.get("last_output_folder", ""),
+            "window_geometry": self.current_settings.get("window_geometry"),
+            "window_state": self.current_settings.get("window_state"),
+            "language": "en",
+            "window_width": self.current_settings.get("window_width", 1024),
+            "window_height": self.current_settings.get("window_height", 768),
+            "window_maximized": self.current_settings.get("window_maximized", False),
+            "accent_color": self.current_settings.get("accent_color", DARK_THEME['accent_primary']),
+            "glow_intensity": self.current_settings.get("glow_intensity", 50),
+            "animation_speed": self.current_settings.get("animation_speed", "normal"),
+            "enable_animations": self.current_settings.get("enable_animations", True),
+            "card_opacity": self.current_settings.get("card_opacity", 80),
+            "font_family": self.current_settings.get("font_family", "Segoe UI"),
+            "font_size": self.current_settings.get("font_size", 14)
+        }
+        save_settings(new_settings)
+        
+        _translator.set_language('en')
+        
+        animation_controller.set_enabled(new_settings['enable_animations'])
+        animation_controller.set_speed(new_settings['animation_speed'])
+        
+        self.settingsChanged.emit(new_settings)
+        self.accept()
+        logger.info("Settings applied and dialog closed")
+
+# ========================================
+# Single Instance Check
+# ========================================
+class SingleInstance:
+    def __init__(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.already_exists = False
+        try:
+            self.sock.bind(('127.0.0.1', 65432))
+            self.sock.listen(1)
+            logger.info("Single instance lock acquired successfully")
+        except socket.error as bind_err:
+            self.already_exists = True
+            logger.warning(f"Single instance check failed: {bind_err} - Another instance may be running")
+
+    def is_already_running(self):
+        return self.already_exists
+
+    def __del__(self):
+        if not self.already_exists:
+            try:
+                self.sock.close()
+                logger.info("Single instance lock released")
+            except Exception as close_err:
+                logger.warning(f"Socket close failed: {close_err}")
+
+# ========================================
+# Online Handler
+# ========================================
+class OnlineHandler:
+    def __init__(self, parent_window):
+        self.parent = parent_window
+        self.service = None
+        self.poll_timer = QTimer(parent_window)
+        self.cleanup_timer = QTimer(parent_window)
+        self.retry_timer = QTimer(parent_window)
+        self.poll_audio_id = None
+        self.poll_notebook_id = None
+        self.poll_output_name = None
+        self.poll_local_out = None
+        self.poll_attempts = 0
+        self.max_poll_attempts = 180
+        self.retry_attempts = 0
+        self.max_retry_attempts = parent_window.settings.get("max_retry_attempts", 5)
+        self._canceled = False
+        self._lock = threading.Lock()
+        self._current_colab_url = None
+        self._cancel_lock = threading.Lock()
+        self._cancel_requested = False
+        self._stop_event = threading.Event()
+        self._polling_active = False
+        self._online_status = "idle"
+        self._download_start_time = None
+        self._downloaded_bytes = 0
+        self._last_progress_update = 0
+        logger.info("OnlineHandler initialized")
+        
+        self.cleanup_timer.timeout.connect(self.cleanup_old_drive_files)
+        self.cleanup_timer.start(3600000)
+        
+        self.retry_timer.timeout.connect(self.retry_polling)
+        self.retry_timer.setSingleShot(True)
+
+    def cancel_operation(self):
+        with self._cancel_lock:
+            self._cancel_requested = True
+            self._canceled = True
+            self._stop_event.set()
+            
+        logger.info("Canceling online operation")
+        self.update_status("canceled")
+        self.parent.reset_progress_bars()
+        
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
+            self._polling_active = False
+            
+        if self.retry_timer.isActive():
+            self.retry_timer.stop()
+            
+        self.cleanup_current_operation()
+        self.parent.statusBar().showMessage(tr('canceled'), 5000)
+
+    def force_cancel_operation(self):
+        with self._cancel_lock:
+            self._cancel_requested = True
+            self._canceled = True
+            self._stop_event.set()
+            
+        logger.info("Force canceling online operation")
+        self.update_status("force_canceled")
+        self.parent.reset_progress_bars()
+        
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
+            self._polling_active = False
+            
+        if self.retry_timer.isActive():
+            self.retry_timer.stop()
+            
+        self.cleanup_current_operation()
+        self.parent.update_notebook_url_display(None)
+        self.parent.statusBar().showMessage(tr('force_canceled'), 5000)
+
+    def update_status(self, status):
+        self._online_status = status
+        self.parent.update_online_status_display(status)
+
+    def cleanup_current_operation(self):
+        if not self.service:
+            return
+            
+        try:
+            if self.poll_audio_id:
+                self.service.files().delete(fileId=self.poll_audio_id).execute()
+                logger.info(f"Deleted uploaded audio: {self.poll_audio_id}")
+                self.poll_audio_id = None
+            
+            if self.poll_notebook_id:
+                self.service.files().delete(fileId=self.poll_notebook_id).execute()
+                logger.info(f"Deleted notebook: {self.poll_notebook_id}")
+                self.poll_notebook_id = None
+                
+        except Exception as cleanup_err:
+            logger.warning(f"Drive cleanup error: {cleanup_err}")
+
+    def cleanup_old_drive_files(self):
+        if not self.service:
+            return
+            
+        try:
+            uploads_id = self.get_or_create_folder(self.service, "uploads")
+            one_day_ago = (datetime.now() - timedelta(days=1)).isoformat() + 'Z'
+            
+            query = f"'{uploads_id}' in parents and createdTime < '{one_day_ago}' and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id,name)").execute()
+            for file in results.get("files", []):
+                self.service.files().delete(fileId=file["id"]).execute()
+                logger.info(f"Cleaned up old file: {file['name']}")
+                
+            query = f"name='NotyCaption_Generator.ipynb' and createdTime < '{one_day_ago}' and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id)").execute()
+            for file in results.get("files", []):
+                self.service.files().delete(fileId=file["id"]).execute()
+                logger.info(f"Cleaned up old notebook")
+                
+        except Exception as e:
+            logger.warning(f"Error during Drive cleanup: {e}")
+
+    def get_notebook_url(self):
+        return self._current_colab_url
+
+    def retry_polling(self):
+        if self._canceled or self._cancel_requested or self._stop_event.is_set():
+            return
+            
+        self.retry_attempts += 1
+        if self.retry_attempts <= self.max_retry_attempts:
+            logger.info(f"Retrying polling (attempt {self.retry_attempts}/{self.max_retry_attempts})")
+            self.parent.statusBar().showMessage(f"Network issue - retrying... ({self.retry_attempts}/{self.max_retry_attempts})", 5000)
+            self.poll_for_output()
+        else:
+            logger.warning("Max retry attempts reached")
+            self.update_status("failed")
+            self.parent.statusBar().showMessage(tr('failed'), 5000)
+            self.parent.show_force_cancel_option(True)
+
+    def handle_online(self, audio_to_use, lang_code, task, wpl, fmt, base, out_path):
+        with self._lock:
+            self._canceled = False
+            self._cancel_requested = False
+            self._stop_event.clear()
+            self.retry_attempts = 0
+            self.max_retry_attempts = self.parent.settings.get("max_retry_attempts", 5)
+            
+        if not self.service:
+            QMessageBox.warning(self.parent, tr('error'), tr('login_required'))
+            logger.warning("Online mode attempted without service")
+            return False
+
+        logger.info("Starting online mode workflow")
+        self.update_status("uploading")
+        
+        try:
+            if self._stop_event.is_set():
+                return False
+                
+            self.poll_output_name = f"{base}_captions{fmt}"
+            
+            query = f"name='{self.poll_output_name}' and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id,name)").execute()
+            files = results.get("files", [])
+            if files:
+                reply = QMessageBox.question(self.parent, tr('overwrite'), tr('overwrite_msg').format(self.poll_output_name), QMessageBox.Yes | QMessageBox.No)
+                if reply == QMessageBox.No:
+                    logger.info("User chose not to overwrite existing file")
+                    return False
+                for f in files:
+                    self.service.files().delete(fileId=f["id"]).execute()
+                    logger.info(f"Deleted existing file: {f['id']}")
+
+            if self._stop_event.is_set():
+                return False
+                
+            query = "name='NotyCaption_Generator.ipynb' and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id)").execute()
+            for f in results.get("files", []):
+                self.service.files().delete(fileId=f["id"]).execute()
+                logger.info(f"Deleted old notebook: {f['id']}")
+
+            if self._stop_event.is_set():
+                return False
+                
+            uploads_id = self.get_or_create_folder(self.service, "uploads")
+            audio_filename = os.path.basename(audio_to_use)
+            audio_id = self.upload_file(self.service, audio_to_use, audio_filename, uploads_id)
+            logger.info(f"Uploaded audio: {audio_id}")
+            self.poll_audio_id = audio_id
+
+            if self._stop_event.is_set():
+                self.cleanup_current_operation()
+                return False
+                
+            query = f"name='{audio_filename}' and '{uploads_id}' in parents and trashed=false"
+            results = self.service.files().list(q=query).execute()
+            if not results.get("files", []):
+                raise Exception("Audio upload failed - file not found in Drive.")
+
+            notebook_content = self.generate_notebook_content(
+                audio_filename, wpl, fmt, self.poll_output_name, lang_code, task
+            )
+
+            if self._stop_event.is_set():
+                self.cleanup_current_operation()
+                return False
+                
+            temp_ipynb = os.path.join(tempfile.gettempdir(), "NotyCaption_Generator.ipynb")
+            with open(temp_ipynb, "w", encoding="utf-8") as f:
+                json.dump(notebook_content, f, indent=2)
+
+            notebook_id = self.upload_file(self.service, temp_ipynb, "NotyCaption_Generator.ipynb")
+            os.remove(temp_ipynb)
+            logger.info(f"Uploaded notebook: {notebook_id}")
+            self.poll_notebook_id = notebook_id
+
+            if self._stop_event.is_set():
+                self.cleanup_current_operation()
+                return False
+                
+            colab_url = f"https://colab.research.google.com/drive/{notebook_id}"
+            self._current_colab_url = colab_url
+            
+            webbrowser.open(colab_url)
+            
+            self.parent.update_notebook_url_display(colab_url)
+            self.update_status("waiting")
+            
+            self.poll_local_out = out_path
+            self.parent.statusBar().showMessage("Online mode active – waiting for Colab...", 12000)
+
+            self.poll_timer.stop()
+            try:
+                self.poll_timer.timeout.disconnect()
+            except TypeError:
+                pass
+            self.poll_timer.timeout.connect(lambda: self.poll_for_output())
+            self.poll_timer.start(8000)
+            self._polling_active = True
+
+            logger.info("Online workflow initiated successfully")
+            return True
+
+        except Exception as online_err:
+            logger.error(f"Online mode failed: {traceback.format_exc()}")
+            self.update_status("failed")
+            self.cleanup_current_operation()
+            QMessageBox.critical(self.parent, tr('failed'), str(online_err))
+            return False
+
+    def get_or_create_folder(self, service, name):
+        query = f"name='{name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get("files", [])
+        if files:
+            folder_id = files[0]["id"]
+            logger.info(f"Found existing folder: {name}")
+            return folder_id
+
+        metadata = {"name": name, "mimeType": "application/vnd.google-apps.folder"}
+        folder = service.files().create(body=metadata, fields="id").execute()
+        folder_id = folder.get("id")
+        logger.info(f"Created new folder: {name}")
+        return folder_id
+
+    def upload_file(self, service, filepath, filename, parent_id=None):
+        metadata = {"name": filename}
+        if parent_id:
+            metadata["parents"] = [parent_id]
+
+        media = MediaFileUpload(filepath, resumable=True)
+        file = service.files().create(body=metadata, media_body=media, fields="id").execute()
+        file_id = file.get("id")
+        logger.info(f"Uploaded {filename}")
+        return file_id
+
+    def generate_notebook_content(self, audio_filename, words_per_line, fmt, output_name, lang_code='en', task='transcribe'):
+        def code_cell(lines):
+            return {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "outputs": [],
+                "source": lines
+            }
+
+        notebook = {
+            "nbformat": 4,
+            "nbformat_minor": 0,
+            "metadata": {
+                "kernelspec": {"name": "python3", "display_name": "Python 3"},
+                "language_info": {"name": "python"},
+                "accelerator": "GPU"
+            },
+            "cells": [
+                code_cell([
+                    "%%capture\n",
+                    "!apt update -qq\n",
+                    "!apt install -y ffmpeg -qq\n",
+                    "!pip install -q openai-whisper\n",
+                    "!pip install -q pysrt pysubs2\n",
+                    "import os\n",
+                    "import shutil\n",
+                    "print('Dependencies installed successfully')"
+                ]),
+                code_cell([
+                    "from google.colab import drive\n",
+                    "drive.mount('/content/drive', force_remount=True)\n",
+                    "print('Drive mounted')"
+                ]),
+                code_cell([
+                    "import whisper\n",
+                    "import pysrt\n",
+                    "import pysubs2\n",
+                    "from datetime import timedelta\n",
+                    "import os\n",
+                    "import time\n",
+                    "print('Libraries imported')"
+                ]),
+                code_cell([
+                    "model_name = 'medium'\n",
+                    "print('Loading Whisper model...')\n",
+                    "model = whisper.load_model(model_name)\n",
+                    "print('Model loaded successfully')"
+                ]),
+                code_cell([
+                    f"audio_path = '/content/drive/My Drive/uploads/{audio_filename}'\n",
+                    "if not os.path.exists(audio_path):\n",
+                    f"    raise FileNotFoundError(f'Audio file not found at {{audio_path}}. Ensure upload succeeded.')\n",
+                    "print(f'Audio file verified: {{audio_path}}')"
+                ]),
+                code_cell([
+                    f"result = model.transcribe(\n",
+                    f"    audio_path,\n",
+                    f"    language='{lang_code}',\n",
+                    f"    task='{task}',\n",
+                    "    word_timestamps=True\n",
+                    ")\n",
+                    "print('Transcription completed')"
+                ]),
+                code_cell([
+                    "subtitles = []\n",
+                    "idx = 1\n",
+                    "for seg in result['segments']:\n",
+                    "    words = seg.get('words', [])\n",
+                    "    if not words: continue\n",
+                    f"    for i in range(0, len(words), {words_per_line}):\n",
+                    f"        chunk = words[i:i+{words_per_line}]\n",
+                    "        if not chunk: continue\n",
+                    "        text = ' '.join([w['word'].strip() for w in chunk])\n",
+                    "        start = chunk[0]['start']\n",
+                    "        end = chunk[-1]['end']\n",
+                    "        subtitles.append((idx, start, end, text))\n",
+                    "        idx += 1\n",
+                    "print(f'Generated {len(subtitles)} subtitle lines')"
+                ]),
+                code_cell([
+                    f"fmt = '{fmt}'\n",
+                    f"output_path = '/content/drive/My Drive/{output_name}'\n",
+                    "if fmt == '.srt':\n",
+                    "    srt = pysrt.SubRipFile()\n",
+                    "    for idx, start, end, text in subtitles:\n",
+                    "        item = pysrt.SubRipItem(\n",
+                    "            index=idx,\n",
+                    "            start=pysrt.SubRipTime(milliseconds=int(start*1000)),\n",
+                    "            end=pysrt.SubRipTime(milliseconds=int(end*1000)),\n",
+                    "            text=text\n",
+                    "        )\n",
+                    "        srt.append(item)\n",
+                    "    srt.save(output_path, encoding='utf-8')\n",
+                    "    print(f'SRT saved: {output_path}')\n",
+                    "else:\n",
+                    "    ass = pysubs2.SSAFile()\n",
+                    "    style = pysubs2.SSAStyle()\n",
+                    "    ass.styles['Default'] = style\n",
+                    "    for idx, start, end, text in subtitles:\n",
+                    "        event = pysubs2.SSAEvent(\n",
+                    "            start=int(start*1000),\n",
+                    "            end=int(end*1000),\n",
+                    "            text=text\n",
+                    "        )\n",
+                    "        ass.events.append(event)\n",
+                    "    ass.save(output_path)\n",
+                    "    print(f'ASS saved: {output_path}')\n",
+                    "print('Processing complete - Download ready')"
+                ]),
+                code_cell([
+                    "# Cleanup - Delete temporary files\n",
+                    "print('Cleaning up temporary files...')\n",
+                    "try:\n",
+                    "    if os.path.exists(audio_path):\n",
+                    "        os.remove(audio_path)\n",
+                    "        print(f'Deleted audio file: {audio_path}')\n",
+                    "    \n",
+                    "    notebook_path = '/content/drive/My Drive/NotyCaption_Generator.ipynb'\n",
+                    "    if os.path.exists(notebook_path):\n",
+                    "        os.remove(notebook_path)\n",
+                    "        print(f'Deleted notebook: {notebook_path}')\n",
+                    "        \n",
+                    "    print('Cleanup completed successfully')\n",
+                    "except Exception as e:\n",
+                    "    print(f'Cleanup error: {e}')\n",
+                    "    pass\n",
+                    "print('All temporary files have been deleted from Google Drive')"
+                ])
+            ]
+        }
+        logger.info("Notebook content generated")
+        return notebook
+
+    def poll_for_output(self):
+        if not self.poll_output_name:
+            logger.warning("Polling without output name set")
+            return
+
+        if self._canceled or self._cancel_requested or self._stop_event.is_set():
+            self.poll_timer.stop()
+            self._polling_active = False
+            return
+
+        self.poll_attempts += 1
+        logger.debug(f"Poll attempt {self.poll_attempts}/{self.max_poll_attempts}")
+
+        if self.poll_attempts > self.max_poll_attempts:
+            self.poll_timer.stop()
+            self._polling_active = False
+            self.parent.is_generating = False
+            self.parent.freeze_ui(False)
+            self.parent.reset_progress_bars()
+            self.cleanup_current_operation()
+            self.update_status("timeout")
+            
+            link_message = (f"<b>Colab Timeout</b><br><br>"
+                           f"No result file found.<br><br>"
+                           f"<a href='{self._current_colab_url}' style='color: #4a6fa5;'>{self._current_colab_url}</a><br><br>"
+                           f"Check notebook status and try again.")
+            
+            msg_box = QMessageBox(self.parent)
+            msg_box.setWindowTitle("Colab Timeout")
+            msg_box.setTextFormat(Qt.RichText)
+            msg_box.setText(link_message)
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec_()
+            
+            logger.warning("Online polling reached max attempts")
+            return
+
+        query = f"name='{self.poll_output_name}' and trashed=false"
+        try:
+            results = self.service.files().list(q=query, fields="files(id,name)").execute()
+            files = results.get("files", [])
+            if files:
+                file_id = files[0]["id"]
+                logger.info(f"Output file found")
+                self.update_status("downloading")
+                self._download_start_time = time.time()
+                self._downloaded_bytes = 0
+                
+                try:
+                    with open(self.poll_local_out, "wb") as f:
+                        request = self.service.files().get_media(fileId=file_id)
+                        downloader = MediaIoBaseDownload(f, request)
+                        done = False
+                        while not done:
+                            if self._canceled or self._cancel_requested or self._stop_event.is_set():
+                                logger.info("Download canceled")
+                                return
+                            status, done = downloader.next_chunk()
+                            if status:
+                                progress_pct = int(status.progress() * 100)
+                                self._downloaded_bytes = status.resumable_progress
+                                
+                                if self._download_start_time:
+                                    elapsed = time.time() - self._download_start_time
+                                    if elapsed > 0 and self._downloaded_bytes > 0:
+                                        speed = self._downloaded_bytes / elapsed
+                                        remaining_bytes = status.total_size - self._downloaded_bytes
+                                        if speed > 0:
+                                            eta_seconds = remaining_bytes / speed
+                                            eta_str = str(timedelta(seconds=int(eta_seconds)))
+                                        else:
+                                            eta_str = "calculating..."
+                                    else:
+                                        eta_str = "calculating..."
+                                else:
+                                    eta_str = "calculating..."
+                                
+                                logger.info(f"Download progress: {progress_pct}%")
+                                self.parent.progress_update(progress_pct, eta_str, speed if 'speed' in locals() else 0)
+                    self.parent.load_downloaded_subtitles(self.poll_local_out)
+                    
+                    if file_id:
+                        self.service.files().delete(fileId=file_id).execute()
+                        logger.info(f"Deleted output file")
+                        
+                    self.poll_timer.stop()
+                    self._polling_active = False
+                    self.parent.is_generating = False
+                    self.parent.freeze_ui(False)
+                    self.parent.reset_progress_bars()
+                    self.parent.update_notebook_url_display(None)
+                    self.update_status("completed")
+                        
+                    QMessageBox.information(
+                        self.parent,
+                        "Success",
+                        f"Downloaded and loaded:\n{self.poll_local_out}\n\nAll temporary files have been cleaned up."
+                    )
+                    self.poll_attempts = 0
+                    logger.info("Online polling complete - success")
+                except Exception as dl_err:
+                    logger.error(f"Download failed: {dl_err}")
+                    self.update_status("failed")
+                    QMessageBox.critical(self.parent, "Download Error", str(dl_err))
+            else:
+                logger.debug(f"Poll attempt {self.poll_attempts}/{self.max_poll_attempts} — waiting...")
+                self.update_status("waiting")
+                if self.poll_attempts % 15 == 0:
+                    mins = (self.poll_attempts * 8) // 60
+                    self.parent.statusBar().showMessage(
+                        f"Waiting for Colab result... ({mins} min elapsed)", 10000
+                    )
+        except Exception as poll_err:
+            logger.warning(f"Poll network/drive error: {poll_err}")
+            self.update_status("network_error")
+            self.parent.show_error_details("Network Error", str(poll_err), "Retrying automatically...")
+            if not self.retry_timer.isActive() and not self._stop_event.is_set():
+                self.retry_timer.start(5000)
+
+    def cleanup_drive(self):
+        if not self.service:
+            logger.info("No service for Drive cleanup")
+            return
+        try:
+            uploads_id = self.get_or_create_folder(self.service, "uploads")
+            query = f"'{uploads_id}' in parents and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id)").execute()
+            for f in results.get("files", []):
+                self.service.files().delete(fileId=f["id"]).execute()
+                logger.info(f"Cleaned upload")
+
+            query = "name='NotyCaption_Generator.ipynb' and trashed=false"
+            results = self.service.files().list(q=query, fields="files(id)").execute()
+            for f in results.get("files", []):
+                self.service.files().delete(fileId=f["id"]).execute()
+                logger.info(f"Cleaned notebook")
+
+            logger.info("Drive cleanup executed successfully")
+        except Exception as cleanup_err:
+            logger.warning(f"Drive cleanup error: {cleanup_err}")
+
+# ========================================
+# Audio Enhancer Thread
+# ========================================
+class AudioEnhancerThread(QThread):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal(str, bool)
+    error = pyqtSignal(str)
+    status_changed = pyqtSignal(str)
+    speed_update = pyqtSignal(float, str)
+
+    def __init__(self, audio_file, temp_dir, parent=None):
+        super().__init__(parent)
+        self.audio_file = audio_file
+        self.temp_dir = temp_dir
+        self._lock = threading.Lock()
+        self._is_canceled = False
+        self._cancel_requested = False
+        self._stop_event = threading.Event()
+        self._output_dir = None
+        self._status = "initializing"
+        self._start_time = None
+        logger.info(f"AudioEnhancerThread initialized")
+
+    def cancel(self):
+        with self._lock:
+            self._cancel_requested = True
+            self._is_canceled = True
+            self._stop_event.set()
+        logger.info("Audio enhancement cancellation requested")
+        self.update_status("canceled")
+
+    def request_graceful_cancel(self):
+        with self._lock:
+            self._cancel_requested = True
+            self._stop_event.set()
+        logger.info("Audio enhancement graceful cancellation requested")
+        self.update_status("canceling")
+
+    def is_canceled(self):
+        with self._lock:
+            return self._is_canceled or self._cancel_requested or self._stop_event.is_set()
+
+    def update_status(self, status):
+        self._status = status
+        self.status_changed.emit(status)
+
+    def run(self):
+        try:
+            self.progress.emit(10)
+            self.update_status("starting")
+            self._start_time = time.time()
+            logger.info("Initializing Spleeter separator")
+            
+            if self.is_canceled():
+                logger.info("Enhancement canceled before start")
+                self.update_status("canceled")
+                return
+                
+            self.update_status("processing")
+            separator = Separator('spleeter:2stems')
+            base_name = os.path.splitext(os.path.basename(self.audio_file))[0]
+            self._output_dir = os.path.join(self.temp_dir, base_name)
+
+            logger.info(f"Starting separation")
+            if self.is_canceled():
+                logger.info("Enhancement canceled during initialization")
+                self.update_status("canceled")
+                return
+                
+            separator.separate_to_file(
+                self.audio_file,
+                self._output_dir,
+                synchronous=True
+            )
+            self.progress.emit(80)
+            logger.info("Separation phase complete")
+            
+            if self._start_time:
+                elapsed = time.time() - self._start_time
+                if elapsed > 0:
+                    speed = 1.0 / elapsed
+                    eta_str = "completed"
+                    self.speed_update.emit(speed, eta_str)
+            
+            if self.is_canceled():
+                logger.info("Enhancement canceled - cleaning up")
+                self.update_status("canceled")
+                if self._output_dir and os.path.exists(self._output_dir):
+                    try:
+                        shutil.rmtree(self._output_dir)
+                        logger.info(f"Cleaned up partial output")
+                    except:
+                        pass
+                return
+
+            vocals_path = os.path.join(self._output_dir, base_name, 'vocals.wav')
+            if not os.path.exists(vocals_path):
+                vocals_path = os.path.join(self._output_dir, 'vocals.wav')
+                if not os.path.exists(vocals_path):
+                    raise FileNotFoundError(f"Vocals file not generated")
+
+            self.progress.emit(95)
+            self.update_status("completed")
+            logger.info("Spleeter separation completed")
+            self.finished.emit(vocals_path, True)
+        except Exception as enhance_err:
+            error_msg = f"Spleeter error: {str(enhance_err)}"
+            logger.error(f"Spleeter thread error: {traceback.format_exc()}")
+            self.update_status("failed")
+            self.error.emit(error_msg)
+        finally:
+            self.progress.emit(100)
+            logger.info("Enhancer thread finished")
+
+# ========================================
+# Model Validation
+# ========================================
+def validate_model_file(model_path):
+    if not os.path.exists(model_path):
+        return False
+    
+    try:
+        file_size = os.path.getsize(model_path)
+        expected_size_min = 2.5 * 1024 * 1024 * 1024
+        expected_size_max = 3.0 * 1024 * 1024 * 1024
+        
+        if expected_size_min <= file_size <= expected_size_max:
+            logger.info(f"Model file validated: {file_size / (1024**3):.2f} GB")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error validating model file: {e}")
+        return False
+
+def cleanup_corrupt_models(models_dir):
+    if not os.path.exists(models_dir):
+        return False
+    
+    removed = False
+    model_files = [
+        os.path.join(models_dir, "large-v1.pt"),
+        os.path.join(models_dir, "large.pt"),
+        os.path.join(models_dir, "large-v1.pt.tmp")
+    ]
+    
+    for model_path in model_files:
+        if os.path.exists(model_path):
+            try:
+                with open(model_path, 'rb') as f:
+                    pass
+                
+                if not validate_model_file(model_path) or model_path.endswith('.tmp'):
+                    os.remove(model_path)
+                    logger.info(f"Removed corrupt/incomplete model")
+                    removed = True
+            except (IOError, OSError) as e:
+                logger.warning(f"Cannot access model file {model_path}")
+    
+    return removed
+
+# ========================================
+# Cancellable Whisper Downloader
+# ========================================
+class CancellableWhisperDownloader:
+    def __init__(self):
+        self._canceled = False
+        self._cancel_requested = False
+        self._progress_callback = None
+        self._current_download = None
+        self._downloaded = 0
+        self._total_size = 0
+        self._download_completed = False
+        self._lock = threading.Lock()
+        self._response = None
+        self._temp_path = None
+        self._stop_event = threading.Event()
+        self._status = "idle"
+        self._start_time = None
+        self._speed_history = []
+        
+    def cancel(self):
+        with self._lock:
+            self._cancel_requested = True
+            self._canceled = True
+            self._stop_event.set()
+            if self._response:
+                try:
+                    self._response.close()
+                except:
+                    pass
+        logger.info("Download cancellation requested")
+        self.update_status("canceled")
+
+    def request_graceful_cancel(self):
+        with self._lock:
+            self._cancel_requested = True
+            self._stop_event.set()
+        logger.info("Download graceful cancellation requested")
+        self.update_status("canceling")
+
+    def is_canceled(self):
+        with self._lock:
+            return self._canceled or self._cancel_requested or self._stop_event.is_set()
+        
+    def update_status(self, status):
+        self._status = status
+        
+    def calculate_speed_and_eta(self):
+        if not self._start_time or self._downloaded == 0:
+            return 0, "calculating..."
+            
+        elapsed = time.time() - self._start_time
+        if elapsed <= 0:
+            return 0, "calculating..."
+            
+        current_speed = self._downloaded / elapsed
+        self._speed_history.append(current_speed)
+        if len(self._speed_history) > 10:
+            self._speed_history.pop(0)
+        
+        avg_speed = sum(self._speed_history) / len(self._speed_history)
+        
+        if avg_speed > 0 and self._total_size > 0:
+            remaining_bytes = self._total_size - self._downloaded
+            eta_seconds = remaining_bytes / avg_speed
+            eta_str = str(timedelta(seconds=int(eta_seconds)))
+        else:
+            eta_str = "calculating..."
+            
+        return avg_speed, eta_str
+        
+    def patched_download_url_to_file(self, original_func, url, dst, *args, **kwargs):
+        if self.is_canceled():
+            raise Exception("DOWNLOAD_CANCELED_BY_USER")
+        
+        self._current_download = {'url': url, 'dst': dst}
+        self._download_completed = False
+        self._temp_path = dst + '.tmp'
+        self._start_time = time.time()
+        
+        try:
+            import urllib.request
+            
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            self._response = urllib.request.urlopen(req, timeout=30)
+            
+            if self.is_canceled():
+                self._response.close()
+                raise Exception("DOWNLOAD_CANCELED_BY_USER")
+            
+            self._total_size = int(self._response.headers.get('Content-Length', 0))
+            
+            with open(self._temp_path, 'wb') as out_file:
+                self._downloaded = 0
+                chunk_size = 8192
+                
+                while True:
+                    if self.is_canceled():
+                        logger.info("Cancellation detected")
+                        out_file.close()
+                        self._response.close()
+                        if os.path.exists(self._temp_path):
+                            os.remove(self._temp_path)
+                        raise Exception("DOWNLOAD_CANCELED_BY_USER")
+                    
+                    chunk = self._response.read(chunk_size)
+                    if not chunk:
+                        break
+                    
+                    out_file.write(chunk)
+                    self._downloaded += len(chunk)
+                    
+                    if self._progress_callback and self._total_size > 0:
+                        progress = int((self._downloaded / self._total_size) * 100)
+                        if progress < 100:
+                            speed, eta = self.calculate_speed_and_eta()
+                            self._progress_callback(progress, speed, eta)
+            
+            if self.is_canceled():
+                if os.path.exists(self._temp_path):
+                    os.remove(self._temp_path)
+                raise Exception("DOWNLOAD_CANCELED_BY_USER")
+            
+            if os.path.exists(self._temp_path):
+                file_size = os.path.getsize(self._temp_path)
+                if file_size < self._total_size * 0.99:
+                    logger.warning(f"Downloaded file size mismatch")
+                    os.remove(self._temp_path)
+                    raise Exception("DOWNLOAD_INCOMPLETE")
+            
+            if os.path.exists(dst):
+                os.remove(dst)
+            os.rename(self._temp_path, dst)
+            self._download_completed = True
+                
+        except Exception as e:
+            if hasattr(self, '_temp_path') and self._temp_path and os.path.exists(self._temp_path):
+                os.remove(self._temp_path)
+            raise e
+        finally:
+            self._current_download = None
+            self._response = None
+            self._temp_path = None
+        
+        return dst
+
+    def download_model(self, model_name, download_root, progress_callback=None):
+        with self._lock:
+            self._canceled = False
+            self._cancel_requested = False
+            self._stop_event.clear()
+            self._speed_history = []
+        self._progress_callback = progress_callback
+        self._downloaded = 0
+        self._total_size = 0
+        self._download_completed = False
+        self._response = None
+        self._temp_path = None
+        self._start_time = None
+        self.update_status("starting")
+        
+        original_download = None
+        
+        try:
+            import torch.hub
+            import whisper
+            
+            if getattr(sys, 'frozen', False):
+                tqdm.disable = True
+                sys.stderr = open(os.devnull, 'w')
+            
+            original_download = torch.hub.download_url_to_file
+            
+            def patched_func(url, dst, *args, **kwargs):
+                return self.patched_download_url_to_file(original_download, url, dst, *args, **kwargs)
+            
+            torch.hub.download_url_to_file = patched_func
+            
+            if self.is_canceled():
+                raise Exception("DOWNLOAD_CANCELED_BY_USER")
+            
+            logger.info(f"Starting download of {model_name} model")
+            self.update_status("downloading")
+            
+            model_path = os.path.join(download_root, f"{model_name}.pt")
+            cleanup_corrupt_models(download_root)
+            
+            model = whisper.load_model(
+                model_name, 
+                download_root=download_root,
+                in_memory=False
+            )
+            
+            if self.is_canceled():
+                raise Exception("DOWNLOAD_CANCELED_BY_USER")
+            
+            if not validate_model_file(model_path):
+                logger.warning("Downloaded model validation failed")
+                self.update_status("failed")
+                if os.path.exists(model_path):
+                    os.remove(model_path)
+                raise Exception("Model validation failed")
+                
+            logger.info("Model downloaded and validated successfully")
+            self.update_status("completed")
+            
+            if progress_callback:
+                progress_callback(100, 0, "completed")
+                
+            return model
+            
+        except Exception as e:
+            error_str = str(e)
+            if "DOWNLOAD_CANCELED_BY_USER" in error_str:
+                logger.info("Download was canceled by user")
+                self.update_status("canceled")
+                model_path = os.path.join(download_root, f"{model_name}.pt")
+                temp_path = model_path + '.tmp'
+                for path in [model_path, temp_path]:
+                    if os.path.exists(path):
+                        os.remove(path)
+                raise Exception("Download canceled by user")
+            else:
+                logger.error(f"Download error: {e}")
+                self.update_status("failed")
+                raise
+        finally:
+            import torch.hub
+            if original_download is not None:
+                torch.hub.download_url_to_file = original_download
+            self._response = None
+            self._temp_path = None
+
+# ========================================
+# Model Download Thread
+# ========================================
+class ModelDownloadThread(QThread):
+    progress = pyqtSignal(int, float, str)
+    finished = pyqtSignal(bool, str)
+    canceled = pyqtSignal()
+    status_changed = pyqtSignal(str)
+
+    def __init__(self, model_dir, parent=None):
+        super().__init__(parent)
+        self.model_dir = model_dir
+        self._is_canceled = False
+        self._cancel_requested = False
+        self._download_started = False
+        self._download_completed = False
+        self._lock = threading.Lock()
+        self._stop_event = threading.Event()
+        self._downloader = CancellableWhisperDownloader()
+        self.progress_info = {"downloaded": 0, "total": 0}
+        self._status = "idle"
+        logger.info(f"ModelDownloadThread initialized")
+
+    def cancel(self):
+        with self._lock:
+            if not self._is_canceled and self._download_started and not self._download_completed:
+                self._cancel_requested = True
+                self._is_canceled = True
+                self._stop_event.set()
+                self._downloader.cancel()
+                logger.info("Model download cancellation requested")
+                self.update_status("canceled")
+
+    def request_graceful_cancel(self):
+        with self._lock:
+            if not self._is_canceled and self._download_started and not self._download_completed:
+                self._cancel_requested = True
+                self._stop_event.set()
+                self._downloader.request_graceful_cancel()
+                logger.info("Model download graceful cancellation requested")
+                self.update_status("canceling")
+
+    def force_cancel(self):
+        with self._lock:
+            self._is_canceled = True
+            self._cancel_requested = True
+            self._stop_event.set()
+            self._downloader.cancel()
+        logger.info("Model download force canceled")
+        self.update_status("force_canceled")
+        if self.isRunning():
+            self.terminate()
+            self.wait(1000)
+
+    def is_downloading(self):
+        with self._lock:
+            return self._download_started and not self._download_completed and not self._is_canceled
+
+    def update_status(self, status):
+        self._status = status
+        self.status_changed.emit(status)
+
+    def run(self):
+        try:
+            cleanup_corrupt_models(self.model_dir)
+            
+            self.progress.emit(5, 0, "calculating...")
+            logger.info("Starting model download process")
+            self.update_status("starting")
+            
+            model_path_v1 = os.path.join(self.model_dir, "large-v1.pt")
+            model_path = os.path.join(self.model_dir, "large.pt")
+            
+            if validate_model_file(model_path_v1):
+                logger.info("Valid large-v1 model already exists, skipping download")
+                self.progress.emit(100, 0, "completed")
+                self.update_status("completed")
+                self.finished.emit(True, "Model already exists and is valid!")
+                return
+            elif validate_model_file(model_path):
+                logger.info("Valid large model already exists, skipping download")
+                self.progress.emit(100, 0, "completed")
+                self.update_status("completed")
+                self.finished.emit(True, "Model already exists and is valid!")
+                return
+            
+            with self._lock:
+                self._download_started = True
+                self._download_completed = False
+            
+            def progress_callback(p, speed, eta):
+                if hasattr(self._downloader, '_downloaded') and hasattr(self._downloader, '_total_size'):
+                    self.progress_info["downloaded"] = self._downloader._downloaded
+                    self.progress_info["total"] = self._downloader._total_size
+                self.progress.emit(p, speed, eta)
+            
+            self.update_status("downloading")
+            model = self._downloader.download_model(
+                "large-v1",
+                self.model_dir,
+                progress_callback=progress_callback
+            )
+            
+            with self._lock:
+                if self._cancel_requested or self._is_canceled or self._stop_event.is_set():
+                    logger.info("Download was canceled after completion check")
+                    self.update_status("canceled")
+                    self.canceled.emit()
+                    return
+                self._download_completed = True
+            
+            if validate_model_file(model_path_v1):
+                logger.info("Model downloaded and validated successfully")
+                self.progress.emit(100, 0, "completed")
+                self.update_status("completed")
+                self.finished.emit(True, "Model large-v1 downloaded and validated successfully!")
+            else:
+                raise Exception("Downloaded model validation failed")
+                
+        except Exception as dl_err:
+            error_str = str(dl_err)
+            if "canceled" in error_str.lower():
+                logger.info("Download was canceled by user")
+                with self._lock:
+                    self._download_completed = True
+                self.update_status("canceled")
+                self.canceled.emit()
+            elif not self._is_canceled and not self._cancel_requested:
+                error_msg = f"Download error: {str(dl_err)}"
+                logger.error(f"Model thread error: {traceback.format_exc()}")
+                self.update_status("failed")
+                self.finished.emit(False, error_msg)
+        finally:
+            with self._lock:
+                self._download_started = False
+
+# ========================================
+# Main Window - Part 1
 # ========================================
 class NotyCaptionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Load settings
         self.settings = load_settings()
-
-        # Set language
         _translator.set_language(self.settings.get('language', 'en'))
-
-        # Setup animation controller
         animation_controller.set_enabled(self.settings.get('enable_animations', True))
         animation_controller.set_speed(self.settings.get('animation_speed', 'normal'))
 
-        # Basic window setup
         self.setWindowTitle(tr('window_title'))
         self.setMinimumSize(1024, 768)
 
-        # Restore saved size
         saved_width = self.settings.get("window_width", 1280)
         saved_height = self.settings.get("window_height", 800)
         self.resize(saved_width, saved_height)
@@ -6422,10 +7678,8 @@ class NotyCaptionWindow(QMainWindow):
         if self.settings.get("window_maximized", False):
             self.showMaximized()
 
-        # Apply appearance
         self.apply_ui_scale()
         self.apply_theme()
-
         self.center_window()
 
         if self.settings.get("window_geometry"):
@@ -6433,87 +7687,54 @@ class NotyCaptionWindow(QMainWindow):
         if self.settings.get("window_state"):
             self.restoreState(QByteArray.fromHex(self.settings["window_state"].encode()))
 
-        # Window icon
         icon_path = resource_path('App.ico')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
             logger.info("App icon set")
 
-        # Central widget
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout()
         self.central_widget.setLayout(self.main_layout)
 
-        # Status bar
         self.statusBar().showMessage(tr('ready'))
 
-        # System tray
         self.create_tray_icon()
-
-        # Monitor manager
         self.monitor_manager = MonitorManager()
-
-        # Hardware monitor
         self.hardware_monitor = hardware_monitor
         self.hardware_monitor.start_monitoring(self.settings.get('monitoring_interval', 1000))
 
-        # Initialize state
         self.initialize_state()
-
-        # Create menu bar
         self.create_menu_bar()
-
-        # Create tool bar
         self.create_tool_bar()
-
-        # Create main splitter
         self.create_main_splitter()
-
-        # Create dock widgets
         self.create_dock_widgets()
 
-        # Online handler
         self.online_handler = OnlineHandler(self)
-
-        # Threads
         self.enhancer_thread = None
         self.model_download_thread = None
         self.progress_whisper = None
 
-        # Player timer
         self.player_timer = QTimer(self)
         self.player_timer.timeout.connect(self.update_timeline)
         self.player_timer.start(50)
 
-        # Flags
         self._closing = False
         self._cancel_lock = threading.Lock()
         self._operation_in_progress = False
         self._current_notebook_url = None
         self._monitor_windows = []
 
-        # Force cancel timer
         self._force_cancel_timer = QTimer(self)
         self._force_cancel_timer.setSingleShot(True)
         self._force_cancel_timer.timeout.connect(self.show_force_cancel_option)
 
-        # Load Google credentials
         self.load_existing_credentials()
-
-        # Keyboard shortcuts
         self.setup_shortcuts()
-
-        # Tooltips
         self.setup_tooltips()
-
-        # Overlays
         self.create_overlays()
-
-        # Restore session
         self.restore_session()
 
-        # Start auto-save timer
         if self.settings.get('auto_save', True):
             self.auto_save_timer = QTimer()
             self.auto_save_timer.timeout.connect(self.auto_save)
@@ -6522,10 +7743,7 @@ class NotyCaptionWindow(QMainWindow):
         logger.info("Main window fully initialized")
 
     def create_menu_bar(self):
-        """Create application menu bar"""
         menubar = self.menuBar()
-
-        # File menu
         file_menu = menubar.addMenu('&File')
         
         import_action = QAction('📁 &Import Media...', self)
@@ -6557,7 +7775,6 @@ class NotyCaptionWindow(QMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
-        # Edit menu
         edit_menu = menubar.addMenu('&Edit')
         
         undo_action = QAction('↩ &Undo', self)
@@ -6594,7 +7811,6 @@ class NotyCaptionWindow(QMainWindow):
         select_all_action.triggered.connect(self.select_all)
         edit_menu.addAction(select_all_action)
 
-        # View menu
         view_menu = menubar.addMenu('&View')
         
         hardware_monitor_action = QAction('🖥️ &Hardware Monitor', self)
@@ -6622,7 +7838,6 @@ class NotyCaptionWindow(QMainWindow):
         fullscreen_action.triggered.connect(self.toggle_fullscreen)
         view_menu.addAction(fullscreen_action)
 
-        # Monitor menu
         monitor_menu = menubar.addMenu('🖥️ &Monitors')
         
         for i, monitor in enumerate(self.monitor_manager.monitors):
@@ -6636,7 +7851,6 @@ class NotyCaptionWindow(QMainWindow):
         new_window_action.triggered.connect(self.create_monitor_window)
         monitor_menu.addAction(new_window_action)
 
-        # Tools menu
         tools_menu = menubar.addMenu('🛠️ &Tools')
         
         settings_action = QAction('⚙️ &Settings', self)
@@ -6660,7 +7874,6 @@ class NotyCaptionWindow(QMainWindow):
         google_login_action.triggered.connect(self.initiate_google_login)
         tools_menu.addAction(google_login_action)
 
-        # Help menu
         help_menu = menubar.addMenu('❓ &Help')
         
         documentation_action = QAction('📚 &Documentation', self)
@@ -6672,62 +7885,51 @@ class NotyCaptionWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     def create_tool_bar(self):
-        """Create main toolbar"""
         toolbar = QToolBar("Main Toolbar")
         toolbar.setIconSize(QSize(32, 32))
         self.addToolBar(toolbar)
 
-        # Import
         import_action = QAction(QIcon(resource_path('icons/import.png')), 'Import', self)
         import_action.triggered.connect(self.import_media_file)
         toolbar.addAction(import_action)
 
-        # Generate
         generate_action = QAction(QIcon(resource_path('icons/generate.png')), 'Generate', self)
         generate_action.triggered.connect(self.start_caption_generation)
         toolbar.addAction(generate_action)
 
-        # Enhance
         enhance_action = QAction(QIcon(resource_path('icons/enhance.png')), 'Enhance', self)
         enhance_action.triggered.connect(self.enhance_audio_vocals)
         toolbar.addAction(enhance_action)
 
         toolbar.addSeparator()
 
-        # Play
         play_action = QAction(QIcon(resource_path('icons/play.png')), 'Play', self)
         play_action.triggered.connect(self.toggle_media_playback)
         toolbar.addAction(play_action)
 
-        # Stop
         stop_action = QAction(QIcon(resource_path('icons/stop.png')), 'Stop', self)
         stop_action.triggered.connect(self.stop_playback)
         toolbar.addAction(stop_action)
 
         toolbar.addSeparator()
 
-        # Settings
         settings_action = QAction(QIcon(resource_path('icons/settings.png')), 'Settings', self)
         settings_action.triggered.connect(self.open_settings_dialog)
         toolbar.addAction(settings_action)
 
-        # Hardware
         hardware_action = QAction(QIcon(resource_path('icons/hardware.png')), 'Hardware', self)
         hardware_action.triggered.connect(self.toggle_hardware_monitor)
         toolbar.addAction(hardware_action)
 
     def create_main_splitter(self):
-        """Create main splitter with left and right panels"""
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_layout.addWidget(self.main_splitter)
 
-        # Left panel - Caption editor
         self.left_panel = QWidget()
         self.left_layout = QVBoxLayout()
         self.left_panel.setLayout(self.left_layout)
         self.main_splitter.addWidget(self.left_panel)
 
-        # App title
         title_container = QFrame()
         title_layout = QVBoxLayout(title_container)
         
@@ -6751,14 +7953,12 @@ class NotyCaptionWindow(QMainWindow):
         
         self.left_layout.addWidget(title_container)
 
-        # Caption editor
         self.caption_edit = QTextEdit()
         self.caption_edit.setReadOnly(True)
         self.caption_edit.setFont(QFont(self.settings.get('font_family', 'Consolas'), 12))
         self.caption_edit.setPlaceholderText("Captions will appear here after generation...")
         self.left_layout.addWidget(self.caption_edit, stretch=1)
 
-        # Button row
         btn_row = QHBoxLayout()
         
         self.edit_btn = GlowButton(tr('edit_captions'))
@@ -6784,7 +7984,6 @@ class NotyCaptionWindow(QMainWindow):
 
         self.left_layout.addLayout(btn_row)
 
-        # Right panel - Controls
         self.right_scroll = QScrollArea()
         self.right_scroll.setWidgetResizable(True)
         self.right_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
@@ -6796,13 +7995,11 @@ class NotyCaptionWindow(QMainWindow):
         self.right_panel.setLayout(self.right_layout)
         self.right_scroll.setWidget(self.right_panel)
 
-        # Google Login
         self.login_button = GlowButton(tr('login_google'))
         self.login_button.setMinimumHeight(60)
         self.login_button.clicked.connect(self.initiate_google_login)
         self.right_layout.addWidget(self.login_button)
 
-        # Processing Mode
         mode_card = GlassCardWidget()
         mode_layout = QVBoxLayout(mode_card)
         
@@ -6818,7 +8015,6 @@ class NotyCaptionWindow(QMainWindow):
         
         self.right_layout.addWidget(mode_card)
 
-        # Language Selection
         lang_card = GlassCardWidget()
         lang_layout = QVBoxLayout(lang_card)
         
@@ -6842,7 +8038,6 @@ class NotyCaptionWindow(QMainWindow):
         
         self.right_layout.addWidget(lang_card)
 
-        # Words per Line
         wpl_card = GlassCardWidget()
         wpl_layout = QVBoxLayout(wpl_card)
         
@@ -6858,13 +8053,11 @@ class NotyCaptionWindow(QMainWindow):
         
         self.right_layout.addWidget(wpl_card)
 
-        # Import Button
         self.import_btn = GlowButton(tr('import_media'))
         self.import_btn.setMinimumHeight(60)
         self.import_btn.clicked.connect(self.import_media_file)
         self.right_layout.addWidget(self.import_btn)
 
-        # Output Format
         fmt_card = GlassCardWidget()
         fmt_layout = QVBoxLayout(fmt_card)
         
@@ -6880,7 +8073,6 @@ class NotyCaptionWindow(QMainWindow):
         
         self.right_layout.addWidget(fmt_card)
 
-        # Output Folder
         folder_card = GlassCardWidget()
         folder_layout = QVBoxLayout(folder_card)
         
@@ -6902,14 +8094,12 @@ class NotyCaptionWindow(QMainWindow):
         
         self.right_layout.addWidget(folder_card)
 
-        # Enhance Button
         self.enhance_btn = GlowButton(tr('enhance_audio'))
         self.enhance_btn.setMinimumHeight(60)
         self.enhance_btn.clicked.connect(self.enhance_audio_vocals)
         self.enhance_btn.setEnabled(False)
         self.right_layout.addWidget(self.enhance_btn)
 
-        # Status display
         status_card = GlassCardWidget()
         status_layout = QVBoxLayout(status_card)
         
@@ -6931,8 +8121,6 @@ class NotyCaptionWindow(QMainWindow):
         logger.info("Main panels setup complete")
 
     def create_dock_widgets(self):
-        """Create dockable widgets"""
-        # Hardware Monitor Dock
         self.hardware_dock = QDockWidget(tr('hardware_monitor'), self)
         self.hardware_dock.setObjectName("HardwareMonitor")
         self.hardware_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
@@ -6941,7 +8129,6 @@ class NotyCaptionWindow(QMainWindow):
         self.hardware_dock.setWidget(self.hardware_monitor_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.hardware_dock)
 
-        # Performance Graph Dock
         self.performance_dock = QDockWidget(tr('performance'), self)
         self.performance_dock.setObjectName("PerformanceGraph")
         self.performance_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
@@ -6950,7 +8137,6 @@ class NotyCaptionWindow(QMainWindow):
         self.performance_dock.setWidget(self.performance_graph)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.performance_dock)
 
-        # Preview Widget Dock
         self.preview_dock = QDockWidget(tr('preview'), self)
         self.preview_dock.setObjectName("PreviewWidget")
         self.preview_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
@@ -6959,10 +8145,8 @@ class NotyCaptionWindow(QMainWindow):
         self.preview_dock.setWidget(self.preview_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.preview_dock)
 
-        # Tabify docks
         self.tabifyDockWidget(self.performance_dock, self.preview_dock)
 
-        # View menu actions
         self.hardware_dock.toggleViewAction().setText(tr('hardware_monitor'))
         self.hardware_dock.toggleViewAction().setIcon(QIcon(resource_path('icons/hardware.png')))
         self.menuBar().actions()[2].menu().addAction(self.hardware_dock.toggleViewAction())
@@ -6976,7 +8160,6 @@ class NotyCaptionWindow(QMainWindow):
         self.menuBar().actions()[2].menu().addAction(self.preview_dock.toggleViewAction())
 
     def create_tray_icon(self):
-        """Create system tray icon"""
         self.tray_icon = QSystemTrayIcon(self)
         icon_path = resource_path('App.ico')
         if os.path.exists(icon_path):
@@ -7047,8 +8230,6 @@ class NotyCaptionWindow(QMainWindow):
         self.out_folder_edit.setToolTip(tr('output_folder'))
 
     def create_overlays(self):
-        """Create overlay widgets"""
-        # Main operation overlay
         self.overlay = QFrame(self.central_widget)
         self.overlay.setStyleSheet(f"""
             QFrame {{
@@ -7098,7 +8279,6 @@ class NotyCaptionWindow(QMainWindow):
         self.operation_progress.setMaximum(100)
         prog_lay.addWidget(self.operation_progress)
 
-        # Speed and ETA labels
         speed_layout = QHBoxLayout()
         self.speed_label = QLabel(f"{tr('speed')} --")
         self.speed_label.setStyleSheet(f"color: {DARK_THEME['text_secondary']}; font-size: 13px;")
@@ -7110,7 +8290,6 @@ class NotyCaptionWindow(QMainWindow):
         speed_layout.addStretch()
         prog_lay.addLayout(speed_layout)
 
-        # Colab link display (only shown during online mode)
         self.colab_link_container = QFrame()
         colab_link_layout = QHBoxLayout(self.colab_link_container)
         colab_link_layout.setContentsMargins(0, 10, 0, 0)
@@ -7128,7 +8307,6 @@ class NotyCaptionWindow(QMainWindow):
         prog_lay.addWidget(self.colab_link_container)
         self.colab_link_container.hide()
 
-        # Cancel buttons
         self.overlay_cancel_btn = GlowButton(tr('cancel'))
         self.overlay_cancel_btn.setMinimumHeight(50)
         self.overlay_cancel_btn.setProperty('type', 'danger')
@@ -7144,7 +8322,6 @@ class NotyCaptionWindow(QMainWindow):
 
         self.overlay_layout.addWidget(self.progress_container)
 
-        # Download overlay
         self.download_overlay = QFrame(self.central_widget)
         self.download_overlay.setStyleSheet(f"""
             QFrame {{
@@ -7194,7 +8371,6 @@ class NotyCaptionWindow(QMainWindow):
         self.download_progress.setMaximum(100)
         download_lay.addWidget(self.download_progress)
 
-        # Download speed and ETA
         download_speed_layout = QHBoxLayout()
         self.download_speed_label = QLabel(f"{tr('speed')} --")
         self.download_speed_label.setStyleSheet(f"color: {DARK_THEME['text_secondary']}; font-size: 13px;")
@@ -7266,10 +8442,8 @@ class NotyCaptionWindow(QMainWindow):
         logger.info("App close event triggered")
         self._closing = True
         
-        # Stop monitoring
         self.hardware_monitor.stop_monitoring()
         
-        # Save monitoring history
         history_file = os.path.join(MONITORING_DIR, f"history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
         self.hardware_monitor.save_history(history_file)
         
@@ -7434,7 +8608,6 @@ class NotyCaptionWindow(QMainWindow):
             self.statusBar().showMessage(message, 0)
             self.show_cancel_only(True)
             
-            # Show colab link if in online mode
             if self.mode == "online" and self._current_notebook_url:
                 self.colab_link.setText(f"<a href='{self._current_notebook_url}' style='color: {self.settings.get('accent_color', DARK_THEME['accent_primary'])};'>{tr('click_to_open')}</a>")
                 self.colab_link_container.show()
@@ -7502,7 +8675,6 @@ class NotyCaptionWindow(QMainWindow):
 
     def update_notebook_url_display(self, url):
         self._current_notebook_url = url
-        # Update overlay if visible
         if self.overlay.isVisible() and url:
             self.colab_link.setText(f"<a href='{url}' style='color: {self.settings.get('accent_color', DARK_THEME['accent_primary'])};'>{tr('click_to_open')}</a>")
             self.colab_link_container.show()
@@ -7556,11 +8728,9 @@ class NotyCaptionWindow(QMainWindow):
         self.format_combo.setCurrentText(new_settings.get("output_format", tr('srt_format')))
         self.update_download_button_visibility()
         
-        # Update animation controller
         animation_controller.set_enabled(new_settings.get('enable_animations', True))
         animation_controller.set_speed(new_settings.get('animation_speed', 'normal'))
         
-        # Update language
         _translator.set_language(new_settings.get('language', 'en'))
         
         if hasattr(self, 'online_handler'):
@@ -7838,7 +9008,6 @@ class NotyCaptionWindow(QMainWindow):
         self.loaded_media = None
         self.play_btn.setEnabled(True)
         
-        # Update preview widget
         self.preview_widget.set_media(self.audio_file)
         
         logger.info(f"Audio prepared")
@@ -8256,7 +9425,6 @@ class NotyCaptionWindow(QMainWindow):
             self.save_subtitles_to_file(self.subtitles, fmt, out_path)
             self.progress_update(100)
             
-            # Update preview widget
             self.preview_widget.set_subtitles(self.subtitles)
 
             logger.info(f"Local generation saved")
@@ -8344,7 +9512,6 @@ class NotyCaptionWindow(QMainWindow):
             self.generated = True
             self.edit_btn.setEnabled(True)
             
-            # Update preview widget
             self.preview_widget.set_subtitles(self.subtitles)
             
             logger.info("Online subtitles loaded successfully")
@@ -8381,7 +9548,6 @@ class NotyCaptionWindow(QMainWindow):
 
         self.refresh_caption_preview()
         
-        # Update preview widget
         self.preview_widget.set_subtitles(self.subtitles)
         
         logger.info("Edits applied to subtitles")
@@ -8505,7 +9671,6 @@ class NotyCaptionWindow(QMainWindow):
             self.on_model_download_canceled()
 
     def export_subtitles(self):
-        """Export subtitles to file"""
         if not self.generated or not self.subtitles:
             QMessageBox.warning(self, "No Subtitles", "No subtitles to export.")
             return
@@ -8521,7 +9686,6 @@ class NotyCaptionWindow(QMainWindow):
             QMessageBox.information(self, "Export Complete", f"Subtitles exported to:\n{filename}")
 
     def save_session(self):
-        """Save current session"""
         session_data = {
             'last_input_file': self.input_file,
             'last_output_folder': self.output_folder,
@@ -8535,7 +9699,6 @@ class NotyCaptionWindow(QMainWindow):
         QMessageBox.information(self, "Session Saved", "Current session has been saved.")
 
     def load_session(self):
-        """Load saved session"""
         session_data = self.session_manager.load_session()
         if session_data:
             if session_data.get('last_input_file') and os.path.exists(session_data['last_input_file']):
@@ -8557,61 +9720,46 @@ class NotyCaptionWindow(QMainWindow):
             QMessageBox.warning(self, "Session Error", "No saved session found.")
 
     def undo(self):
-        """Undo last action"""
-        # Implement undo functionality
         pass
 
     def redo(self):
-        """Redo last undone action"""
-        # Implement redo functionality
         pass
 
     def cut(self):
-        """Cut selected text"""
         self.caption_edit.cut()
 
     def copy(self):
-        """Copy selected text"""
         self.caption_edit.copy()
 
     def paste(self):
-        """Paste text"""
         self.caption_edit.paste()
 
     def select_all(self):
-        """Select all text"""
         self.caption_edit.selectAll()
 
     def toggle_hardware_monitor(self):
-        """Toggle hardware monitor visibility"""
         self.hardware_dock.setVisible(not self.hardware_dock.isVisible())
 
     def toggle_performance_graph(self):
-        """Toggle performance graph visibility"""
         self.performance_dock.setVisible(not self.performance_dock.isVisible())
 
     def toggle_preview_widget(self):
-        """Toggle preview widget visibility"""
         self.preview_dock.setVisible(not self.preview_dock.isVisible())
 
     def toggle_fullscreen(self):
-        """Toggle fullscreen mode"""
         if self.isFullScreen():
             self.showNormal()
         else:
             self.showFullScreen()
 
     def refresh_hardware(self):
-        """Refresh hardware information"""
         self.hardware_monitor.detect_all()
         self.statusBar().showMessage("Hardware information refreshed", 3000)
 
     def move_to_monitor(self, monitor_index: int):
-        """Move window to specified monitor"""
         self.monitor_manager.move_window_to_monitor(self, monitor_index)
 
     def create_monitor_window(self):
-        """Create a new window on another monitor"""
         current_index = 0
         for i, monitor in enumerate(self.monitor_manager.monitors):
             if monitor['geometry']['x'] == self.x() and monitor['geometry']['y'] == self.y():
@@ -8625,7 +9773,6 @@ class NotyCaptionWindow(QMainWindow):
             new_window.show()
 
     def cycle_dock_widgets(self):
-        """Cycle through dock widgets"""
         docks = [self.hardware_dock, self.performance_dock, self.preview_dock]
         for dock in docks:
             if dock.isVisible():
@@ -8635,11 +9782,9 @@ class NotyCaptionWindow(QMainWindow):
                 break
 
     def open_documentation(self):
-        """Open documentation in web browser"""
         QDesktopServices.openUrl(QUrl("https://github.com/NotY215/NotyCaption"))
 
     def show_about_dialog(self):
-        """Show about dialog"""
         about_text = f"""
         <h1>{APP_NAME}</h1>
         <h3>Version {APP_VERSION}</h3>
@@ -8667,20 +9812,17 @@ class NotyCaptionWindow(QMainWindow):
         QMessageBox.about(self, "About NotyCaption Pro", about_text)
 
     def auto_save(self):
-        """Auto-save current session"""
         if self.input_file:
             self.save_session()
             logger.info("Auto-save completed")
 
     def open_workspace_dialog(self):
-        """Open workspace customization dialog"""
         dlg = WorkspaceCustomizeDialog(self)
         if dlg.exec_() == QDialog.Accepted:
             settings = dlg.get_current_settings()
             self.settings.update(settings)
             save_settings(self.settings)
             self.apply_theme()
-            # Update colab link if visible
             if hasattr(self, 'overlay') and self.overlay.isVisible():
                 self.update_colab_link_style()
             QMessageBox.information(self, "Workspace Updated", "Workspace settings have been updated.")
@@ -8690,29 +9832,25 @@ class NotyCaptionWindow(QMainWindow):
             self.colab_link.setStyleSheet(f"color: {self.settings.get('accent_color', DARK_THEME['accent_primary'])}; font-size: 12px;")
 
 # ========================================
-# MAIN ENTRY
+# Main Entry Point
 # ========================================
 if __name__ == "__main__":
-    # Check for single instance
     instance = SingleInstance()
     if instance.is_already_running():
         logger.warning("Duplicate instance detected")
         QMessageBox.warning(None, "Already Running", "NotyCaption is already open in another window.")
         sys.exit(1)
 
-    # Create application
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_AUTHOR)
     app.setStyle('Fusion')
 
-    # Set application icon
     icon_path = resource_path('App.ico')
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
         logger.info("Global app icon set")
 
-    # Show splash screen
     splash_path = resource_path('splash.png')
     splash_pixmap = QPixmap(splash_path) if os.path.exists(splash_path) else QPixmap(800, 600)
     if not os.path.exists(splash_path):
@@ -8729,10 +9867,8 @@ if __name__ == "__main__":
 
     logger.info("Launching secure NotyCaption...")
     
-    # Create and show main window
     window = NotyCaptionWindow()
     
-    # Finish splash
     splash.finish(window)
     
     window.show()
