@@ -7,7 +7,7 @@ plugins {
 apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'com.noty215'
-version = '2026.6.0'
+version = '2026.5.0'
 
 repositories {
     mavenCentral()
@@ -180,13 +180,14 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
     options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
+    options.release = 21
 }
 
 tasks.named('test') {
@@ -298,17 +299,18 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-// Task to clean all build artifacts
-task cleanAll(type: Delete) {
+// Task to clean only the build folder
+task cleanBuild(type: Delete) {
     group = 'build'
-    description = 'Cleans all build artifacts'
+    description = 'Cleans only the build folder'
     
     delete 'build'
-    delete 'dist'
-    delete '.gradle'
-    delete 'logs'
-    delete '*.log'
-    delete '*.tmp'
+    
+    doLast {
+        println "=" * 60
+        println "Build folder cleaned successfully!"
+        println "=" * 60
+    }
 }
 
 // Task to prepare for release
@@ -316,7 +318,7 @@ task prepareRelease {
     group = 'distribution'
     description = 'Prepares everything for release'
     
-    dependsOn cleanAll, test, shadowJar, javadocJar, sourcesJar, createDistribution
+    dependsOn cleanBuild, test, shadowJar, javadocJar, sourcesJar, createDistribution
     
     doLast {
         println "=" * 60
@@ -357,9 +359,9 @@ processResources {
 
 // Gradle wrapper configuration
 wrapper {
-    gradleVersion = '8.4'
+    gradleVersion = '8.5'
     distributionType = Wrapper.DistributionType.ALL
 }
 
 // Default tasks
-defaultTasks 'clean', 'shadowJar'
+defaultTasks 'cleanBuild', 'shadowJar'
