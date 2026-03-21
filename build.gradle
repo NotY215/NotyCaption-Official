@@ -1,10 +1,8 @@
 plugins {
     id 'java'
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
-
-apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'com.noty215'
 version = '2026.5.0'
@@ -15,8 +13,6 @@ repositories {
     maven { url 'https://jitpack.io' }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     maven { url 'https://repo.gradle.org/gradle/libs-releases' }
-    maven { url 'https://repo.spring.io/milestone' }
-    maven { url 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
@@ -25,7 +21,6 @@ dependencies {
     // ========================================
     implementation 'com.formdev:flatlaf:3.2.5'
     implementation 'com.formdev:flatlaf-extras:3.2.5'
-    implementation 'com.github.weisj:darklaf-core:3.0.2'
 
     // ========================================
     // Google APIs & Cloud Services
@@ -57,14 +52,11 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     implementation 'org.apache.httpcomponents:httpmime:4.5.14'
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 
     // ========================================
     // WebSocket Support
     // ========================================
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
-    implementation 'com.neovisionaries:nv-websocket-client:2.14'
 
     // ========================================
     // Cryptography & Security
@@ -79,11 +71,9 @@ dependencies {
     implementation 'com.github.oshi:oshi-core:6.4.5'
     implementation 'net.java.dev.jna:jna:5.13.0'
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
-    // jPowerShell not available, using alternative
-    implementation 'com.jcraft:jsch:0.1.55'
 
     // ========================================
-    // GPU Monitoring (NVML, OpenCL)
+    // GPU Monitoring (OpenCL)
     // ========================================
     implementation 'org.jocl:jocl:2.0.0'
 
@@ -93,7 +83,6 @@ dependencies {
     implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
     implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
     implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7-2'
-    implementation 'uk.co.caprica:vlcj:4.7.0'
 
     // ========================================
     // Video Processing (using JavaCV)
@@ -105,9 +94,7 @@ dependencies {
     // ========================================
     // Subtitle Processing
     // ========================================
-    implementation 'com.github.albfernandez:juniversalchardet:1.0.3'
-    // javass not available, using alternative
-    implementation 'net.sourceforge.javass:javass:3.0.0'
+    implementation 'com.github.albfernandez:juniversalchardet:2.4.0'
 
     // ========================================
     // Database & Storage
@@ -123,7 +110,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.13.0'
 
     // ========================================
-    // Machine Learning & AI (simplified)
+    // Machine Learning & AI
     // ========================================
     implementation 'ai.djl:api:0.24.0'
     implementation 'ai.djl.pytorch:pytorch-engine:0.24.0'
@@ -188,14 +175,13 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
     options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
-    options.release = 21
 }
 
 tasks.named('test') {
@@ -231,15 +217,17 @@ shadowJar {
     exclude 'META-INF/*.DSA'
     exclude 'META-INF/*.RSA'
 
+    // Exclude native libraries for other platforms to reduce size
+    exclude 'META-INF/native/**/windows/**'
+    exclude 'META-INF/native/**/linux/**'
+    exclude 'META-INF/native/**/macosx/**'
+
     // Don't minimize to avoid issues with reflection
     minimize() {
         exclude(dependency('ai.djl:.*'))
         exclude(dependency('org.bytedeco:.*'))
+        exclude(dependency('com.github.oshi:.*'))
     }
-
-    // Relocate packages to avoid conflicts
-    relocate 'com.google.common', 'shadow.com.google.common'
-    relocate 'org.apache.http', 'shadow.org.apache.http'
 }
 
 // Create distribution with all resources
