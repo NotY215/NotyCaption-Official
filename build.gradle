@@ -1,0 +1,518 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.noty215'
+version = '2026.5.0'
+
+repositories {
+    mavenCentral()
+    google()
+    gradlePluginPortal()
+}
+
+dependencies {
+    // ========================================
+    // GUI & UI Components
+    // ========================================
+    implementation 'com.formdev:flatlaf:3.2.5'
+    implementation 'com.formdev:flatlaf-extras:3.2.5'
+    implementation 'com.github.weisj:darklaf-core:3.0.2'
+    
+    // ========================================
+    // Google APIs & Cloud Services
+    // ========================================
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.oauth-client:google-oauth-client-jetty:1.34.1'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+    implementation 'com.google.http-client:google-http-client-gson:1.43.3'
+    
+    // ========================================
+    // JSON Processing
+    // ========================================
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'org.json:json:20230227'
+    
+    // ========================================
+    // Logging
+    // ========================================
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // ========================================
+    // HTTP Client & Networking
+    // ========================================
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.14'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    
+    // ========================================
+    // WebSocket Support
+    // ========================================
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation 'com.neovisionaries:nv-websocket-client:2.14'
+    
+    // ========================================
+    // Cryptography & Security
+    // ========================================
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    implementation 'commons-codec:commons-codec:1.16.0'
+    
+    // ========================================
+    // System Information & Hardware Monitoring
+    // ========================================
+    implementation 'com.github.oshi:oshi-core:6.4.5'
+    implementation 'net.java.dev.jna:jna:5.13.0'
+    implementation 'net.java.dev.jna:jna-platform:5.13.0'
+    implementation 'com.profesorfalken:jPowerShell:3.0.0'
+    
+    // ========================================
+    // GPU Monitoring (NVML, OpenCL)
+    // ========================================
+    implementation 'org.jocl:jocl:2.0.0'
+    implementation 'org.bytedeco:javacpp:1.5.9'
+    implementation 'org.bytedeco:cuda:11.8-8.6-1.5.9'
+    implementation 'org.bytedeco:cudnn:8.6.0-11.8-1.5.9'
+    
+    // ========================================
+    // Audio Processing
+    // ========================================
+    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
+    implementation 'com.googlecode.soundlibs:jl1.0.1:1.0.1'
+    implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7-2'
+    implementation 'com.googlecode.soundlibs:javax.sound:1.0.0'
+    implementation 'org.bytedeco:ffmpeg:6.0-1.5.9'
+    implementation 'org.bytedeco:ffmpeg-platform:6.0-1.5.9'
+    
+    // ========================================
+    // Video Processing
+    // ========================================
+    implementation 'org.bytedeco:javacv:1.5.9'
+    implementation 'org.bytedeco:javacv-platform:1.5.9'
+    implementation 'org.bytedeco:opencv:4.7.0-1.5.9'
+    implementation 'org.bytedeco:opencv-platform:4.7.0-1.5.9'
+    
+    // ========================================
+    // Subtitle Processing
+    // ========================================
+    implementation 'com.github.albfernandez:javass:1.3.0'
+    implementation 'com.github.albfernandez:juniversalchardet:1.0.3'
+    
+    // ========================================
+    // Database & Storage
+    // ========================================
+    implementation 'org.xerial:sqlite-jdbc:3.43.0.0'
+    implementation 'com.h2database:h2:2.2.224'
+    implementation 'org.postgresql:postgresql:42.6.0'
+    implementation 'com.zaxxer:HikariCP:5.0.1'
+    
+    // ========================================
+    // File System & Compression
+    // ========================================
+    implementation 'org.apache.commons:commons-compress:1.24.0'
+    implementation 'commons-io:commons-io:2.13.0'
+    implementation 'com.github.luben:zstd-jni:1.5.5-5'
+    implementation 'org.lz4:lz4-java:1.8.0'
+    implementation 'net.jpountz.lz4:lz4:1.3.0'
+    
+    // ========================================
+    // Machine Learning & AI (Java bindings)
+    // ========================================
+    implementation 'org.deeplearning4j:deeplearning4j-core:1.0.0-M2.1'
+    implementation 'org.nd4j:nd4j-native-platform:1.0.0-M2.1'
+    implementation 'org.datavec:datavec-api:1.0.0-M2.1'
+    implementation 'ai.djl:api:0.24.0'
+    implementation 'ai.djl.pytorch:pytorch-engine:0.24.0'
+    implementation 'ai.djl.pytorch:pytorch-model-zoo:0.24.0'
+    
+    // ========================================
+    // Natural Language Processing
+    // ========================================
+    implementation 'edu.stanford.nlp:stanford-corenlp:4.5.4'
+    implementation 'org.apache.opennlp:opennlp-tools:2.3.0'
+    implementation 'com.atilika.kuromoji:kuromoji:0.9.0'
+    implementation 'com.atilika.kuromoji:kuromoji-ipadic:0.9.0'
+    
+    // ========================================
+    // Web Frameworks (for API)
+    // ========================================
+    implementation 'org.eclipse.jetty:jetty-server:11.0.17'
+    implementation 'org.eclipse.jetty:jetty-servlet:11.0.17'
+    implementation 'org.eclipse.jetty.websocket:websocket-jakarta-server:11.0.17'
+    implementation 'com.sparkjava:spark-core:2.9.4'
+    implementation 'io.javalin:javalin:5.6.2'
+    
+    // ========================================
+    // Email & Messaging
+    // ========================================
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+    implementation 'javax.mail:mail:1.4.7'
+    
+    // ========================================
+    // XML Processing
+    // ========================================
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'com.sun.xml.bind:jaxb-impl:2.3.9'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.3'
+    
+    // ========================================
+    // YAML & TOML Processing
+    // ========================================
+    implementation 'org.yaml:snakeyaml:2.0'
+    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    
+    // ========================================
+    // Charting & Visualization
+    // ========================================
+    implementation 'org.jfree:jfreechart:1.5.4'
+    implementation 'org.knowm.xchart:xchart:3.8.5'
+    implementation 'com.github.wendykierp:JTransforms:3.1'
+    
+    // ========================================
+    // Testing
+    // ========================================
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+    // ========================================
+    // Development Tools
+    // ========================================
+    compileOnly 'org.projectlombok:lombok:1.18.28'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+    testCompileOnly 'org.projectlombok:lombok:1.18.28'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.28'
+}
+
+application {
+    mainClass = 'com.noty215.notycaption.Main'
+    applicationName = 'NotyCaption'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+}
+
+shadowJar {
+    archiveBaseName.set('NotyCaption')
+    archiveClassifier.set('')
+    archiveVersion.set(version)
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.noty215.notycaption.Main',
+            'Implementation-Title': 'NotyCaption Pro',
+            'Implementation-Version': version,
+            'Implementation-Vendor': 'NotY215',
+            'Build-Date': new Date().format('yyyy-MM-dd HH:mm:ss'),
+            'Build-Jdk': System.getProperty('java.version'),
+            'Build-OS': System.getProperty('os.name'),
+            'Multi-Release': 'true'
+        )
+    }
+    
+    // Merge service files
+    mergeServiceFiles()
+    
+    // Exclude unnecessary files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    
+    // Minimize JAR (optional, can cause issues with reflection)
+    minimize {
+        exclude(dependency('org.deeplearning4j:.*'))
+        exclude(dependency('org.nd4j:.*'))
+        exclude(dependency('ai.djl:.*'))
+        exclude(dependency('org.bytedeco:.*'))
+        exclude(dependency('com.google.api-client:.*'))
+        exclude(dependency('com.github.oshi:oshi-core:.*'))
+    }
+    
+    // Relocate packages to avoid conflicts
+    relocate('com.google.common', 'notycaption.shaded.com.google.common')
+    relocate('org.apache.commons', 'notycaption.shaded.org.apache.commons')
+}
+
+// Create distribution with all resources
+task createDistribution(type: Copy) {
+    dependsOn shadowJar
+    group = 'distribution'
+    description = 'Creates the distribution package'
+    
+    from 'build/libs'
+    from 'src/main/resources'
+    from 'README.md'
+    from 'LICENSE'
+    
+    into "build/distributions/NotyCaptionPro-${version}"
+    
+    doLast {
+        println "=" * 60
+        println "Distribution created in build/distributions/NotyCaptionPro-${version}"
+        println "=" * 60
+    }
+}
+
+// Package as ZIP
+task packageDistribution(type: Zip) {
+    dependsOn createDistribution
+    group = 'distribution'
+    description = 'Packages the distribution as ZIP'
+    
+    from "build/distributions/NotyCaptionPro-${version}"
+    archiveFileName = "NotyCaptionPro-${version}.zip"
+    destinationDirectory = file('build/distributions')
+}
+
+// Package as TAR.GZ
+task packageTarGz(type: Tar) {
+    dependsOn createDistribution
+    group = 'distribution'
+    description = 'Packages the distribution as TAR.GZ'
+    
+    from "build/distributions/NotyCaptionPro-${version}"
+    archiveFileName = "NotyCaptionPro-${version}.tar.gz"
+    destinationDirectory = file('build/distributions')
+    compression = Compression.GZIP
+}
+
+// Create native executable using GraalVM (optional)
+task nativeImage(type: Exec) {
+    group = 'build'
+    description = 'Builds native executable using GraalVM'
+    
+    commandLine 'native-image',
+        '-cp', shadowJar.outputs.files.singleFile.absolutePath,
+        '-H:Name=NotyCaption',
+        '-H:Class=com.noty215.notycaption.Main',
+        '-H:+ReportExceptionStackTraces',
+        '--enable-url-protocols=http,https',
+        '--enable-http',
+        '--enable-https',
+        '-H:ReflectionConfigurationFiles=src/main/resources/reflect-config.json',
+        '-H:ResourceConfigurationFiles=src/main/resources/resource-config.json',
+        '--initialize-at-build-time'
+    
+    onlyIf {
+        System.getenv('GRAALVM_HOME') != null
+    }
+}
+
+// Create Windows executable using jpackage
+task jpackageWindows(type: Exec) {
+    group = 'build'
+    description = 'Creates Windows installer using jpackage'
+    onlyIf { System.getProperty('os.name').toLowerCase().contains('windows') }
+    
+    dependsOn shadowJar
+    
+    commandLine 'jpackage',
+        '--type', 'exe',
+        '--input', 'build/libs',
+        '--name', 'NotyCaption',
+        '--main-jar', shadowJar.archiveFileName.get(),
+        '--main-class', 'com.noty215.notycaption.Main',
+        '--icon', 'src/main/resources/App.ico',
+        '--vendor', 'NotY215',
+        '--copyright', 'Copyright © 2026 NotY215',
+        '--app-version', version,
+        '--win-menu',
+        '--win-shortcut',
+        '--win-per-user-install',
+        '--win-dir-chooser',
+        '--win-menu-group', 'NotyCaption',
+        '--dest', 'build/installer',
+        '--verbose'
+}
+
+// Create macOS installer
+task jpackageMac(type: Exec) {
+    group = 'build'
+    description = 'Creates macOS installer using jpackage'
+    onlyIf { System.getProperty('os.name').toLowerCase().contains('mac') }
+    
+    dependsOn shadowJar
+    
+    commandLine 'jpackage',
+        '--type', 'dmg',
+        '--input', 'build/libs',
+        '--name', 'NotyCaption',
+        '--main-jar', shadowJar.archiveFileName.get(),
+        '--main-class', 'com.noty215.notycaption.Main',
+        '--icon', 'src/main/resources/App.icns',
+        '--vendor', 'NotY215',
+        '--copyright', 'Copyright © 2026 NotY215',
+        '--app-version', version,
+        '--mac-package-name', 'NotyCaption',
+        '--dest', 'build/installer'
+}
+
+// Create Linux installer
+task jpackageLinux(type: Exec) {
+    group = 'build'
+    description = 'Creates Linux installer using jpackage'
+    onlyIf { System.getProperty('os.name').toLowerCase().contains('linux') }
+    
+    dependsOn shadowJar
+    
+    commandLine 'jpackage',
+        '--type', 'deb',
+        '--input', 'build/libs',
+        '--name', 'notycaption',
+        '--main-jar', shadowJar.archiveFileName.get(),
+        '--main-class', 'com.noty215.notycaption.Main',
+        '--icon', 'src/main/resources/App.png',
+        '--vendor', 'NotY215',
+        '--copyright', 'Copyright © 2026 NotY215',
+        '--app-version', version,
+        '--linux-menu-group', 'NotyCaption',
+        '--linux-shortcut',
+        '--dest', 'build/installer'
+}
+
+// Task to run the application
+task runApp(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.noty215.notycaption.Main'
+    
+    jvmArgs = [
+        '-Xms512m',
+        '-Xmx4g',
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+        '--add-opens', 'java.desktop/sun.awt=ALL-UNNAMED',
+        '--add-opens', 'java.desktop/javax.swing=ALL-UNNAMED'
+    ]
+}
+
+// Task to create Javadoc
+task javadocJar(type: Jar) {
+    group = 'documentation'
+    description = 'Creates Javadoc JAR'
+    
+    dependsOn javadoc
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+// Task to create sources JAR
+task sourcesJar(type: Jar) {
+    group = 'build'
+    description = 'Creates sources JAR'
+    
+    dependsOn classes
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+// Task to clean all build artifacts
+task cleanAll(type: Delete) {
+    group = 'build'
+    description = 'Cleans all build artifacts'
+    
+    delete 'build'
+    delete 'dist'
+    delete '.gradle'
+    delete 'logs'
+    delete '*.log'
+    delete '*.tmp'
+    delete '*.pt.tmp'
+}
+
+// Task to prepare for release
+task prepareRelease {
+    group = 'distribution'
+    description = 'Prepares everything for release'
+    
+    dependsOn cleanAll, test, shadowJar, javadocJar, sourcesJar, createDistribution
+    
+    doLast {
+        println "=" * 60
+        println "Release preparation completed!"
+        println "Artifacts:"
+        println "  - JAR: build/libs/NotyCaption-${version}.jar"
+        println "  - Javadoc: build/libs/NotyCaption-${version}-javadoc.jar"
+        println "  - Sources: build/libs/NotyCaption-${version}-sources.jar"
+        println "  - Distribution: build/distributions/NotyCaptionPro-${version}/"
+        println "=" * 60
+    }
+}
+
+// Configure test task to show detailed output
+test {
+    testLogging {
+        events = ["passed", "failed", "skipped"]
+        exceptionFormat = "full"
+        showCauses = true
+        showExceptions = true
+        showStackTraces = true
+    }
+}
+
+// Ensure resources are processed correctly
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from(sourceSets.main.resources.srcDirs) {
+        include '**/*.properties'
+        include '**/*.json'
+        include '**/*.html'
+        include '**/*.ico'
+        include '**/*.png'
+        include '**/*.icns'
+        include '**/*.txt'
+        include '**/*.md'
+    }
+}
+
+// Custom task to check dependencies for security vulnerabilities
+task checkVulnerabilities {
+    group = 'verification'
+    description = 'Checks for security vulnerabilities in dependencies'
+    
+    doLast {
+        println "Checking dependencies for known vulnerabilities..."
+        // This would integrate with OWASP Dependency Check
+        // Implementation requires plugin: org.owasp.dependencycheck
+    }
+}
+
+// Gradle wrapper configuration
+wrapper {
+    gradleVersion = '8.4'
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+// Default tasks
+defaultTasks 'clean', 'shadowJar'
