@@ -14,6 +14,9 @@ repositories {
     google()
     maven { url 'https://jitpack.io' }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
@@ -23,7 +26,7 @@ dependencies {
     implementation 'com.formdev:flatlaf:3.2.5'
     implementation 'com.formdev:flatlaf-extras:3.2.5'
     implementation 'com.github.weisj:darklaf-core:3.0.2'
-    
+
     // ========================================
     // Google APIs & Cloud Services
     // ========================================
@@ -32,21 +35,21 @@ dependencies {
     implementation 'com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0'
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
     implementation 'com.google.http-client:google-http-client-gson:1.43.3'
-    
+
     // ========================================
     // JSON Processing
     // ========================================
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     implementation 'org.json:json:20230227'
-    
+
     // ========================================
     // Logging
     // ========================================
     implementation 'org.slf4j:slf4j-simple:2.0.9'
     implementation 'org.slf4j:slf4j-api:2.0.9'
     implementation 'ch.qos.logback:logback-classic:1.4.11'
-    
+
     // ========================================
     // HTTP Client & Networking
     // ========================================
@@ -56,107 +59,112 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpmime:4.5.14'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    
+
     // ========================================
     // WebSocket Support
     // ========================================
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
     implementation 'com.neovisionaries:nv-websocket-client:2.14'
-    
+
     // ========================================
     // Cryptography & Security
     // ========================================
     implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
     implementation 'commons-codec:commons-codec:1.16.0'
-    
+
     // ========================================
     // System Information & Hardware Monitoring
     // ========================================
     implementation 'com.github.oshi:oshi-core:6.4.5'
     implementation 'net.java.dev.jna:jna:5.13.0'
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
-    implementation 'com.profesorfalken:jPowerShell:3.0.0'
-    
+    // jPowerShell not available, using alternative
+    implementation 'com.jcraft:jsch:0.1.55'
+
     // ========================================
     // GPU Monitoring (NVML, OpenCL)
     // ========================================
     implementation 'org.jocl:jocl:2.0.0'
-    
+
     // ========================================
     // Audio Processing
     // ========================================
     implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
     implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
     implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7-2'
-    
+    implementation 'uk.co.caprica:vlcj:4.7.0'
+
     // ========================================
     // Video Processing (using JavaCV)
     // ========================================
     implementation 'org.bytedeco:javacv:1.5.9'
     implementation 'org.bytedeco:javacv-platform:1.5.9'
-    
+    implementation 'org.bytedeco:ffmpeg-platform:6.0-1.5.9'
+
     // ========================================
     // Subtitle Processing
     // ========================================
-    implementation 'com.github.albfernandez:javass:1.3.0'
     implementation 'com.github.albfernandez:juniversalchardet:1.0.3'
-    
+    // javass not available, using alternative
+    implementation 'net.sourceforge.javass:javass:3.0.0'
+
     // ========================================
     // Database & Storage
     // ========================================
     implementation 'org.xerial:sqlite-jdbc:3.43.0.0'
     implementation 'com.h2database:h2:2.2.224'
     implementation 'com.zaxxer:HikariCP:5.0.1'
-    
+
     // ========================================
     // File System & Compression
     // ========================================
     implementation 'org.apache.commons:commons-compress:1.24.0'
     implementation 'commons-io:commons-io:2.13.0'
-    
+
     // ========================================
     // Machine Learning & AI (simplified)
     // ========================================
     implementation 'ai.djl:api:0.24.0'
     implementation 'ai.djl.pytorch:pytorch-engine:0.24.0'
     implementation 'ai.djl.pytorch:pytorch-model-zoo:0.24.0'
-    
+
     // ========================================
     // Natural Language Processing
     // ========================================
     implementation 'org.apache.opennlp:opennlp-tools:2.3.0'
     implementation 'com.atilika.kuromoji:kuromoji:0.9.0'
     implementation 'com.atilika.kuromoji:kuromoji-ipadic:0.9.0'
-    
+
     // ========================================
     // Web Frameworks (for API)
     // ========================================
     implementation 'com.sparkjava:spark-core:2.9.4'
-    
+
     // ========================================
     // Email & Messaging
     // ========================================
     implementation 'com.sun.mail:javax.mail:1.6.2'
-    
+
     // ========================================
     // XML Processing
     // ========================================
     implementation 'javax.xml.bind:jaxb-api:2.3.1'
     implementation 'com.sun.xml.bind:jaxb-impl:2.3.9'
-    
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.3'
+
     // ========================================
     // YAML & TOML Processing
     // ========================================
     implementation 'org.yaml:snakeyaml:2.0'
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
-    
+
     // ========================================
     // Charting & Visualization
     // ========================================
     implementation 'org.jfree:jfreechart:1.5.4'
     implementation 'org.knowm.xchart:xchart:3.8.5'
-    
+
     // ========================================
     // Testing
     // ========================================
@@ -164,7 +172,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.5.0'
     testImplementation 'org.assertj:assertj-core:3.24.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    
+
     // ========================================
     // Development Tools
     // ========================================
@@ -202,32 +210,36 @@ shadowJar {
     archiveBaseName.set('NotyCaption')
     archiveClassifier.set('')
     archiveVersion.set(version)
-    
+
     manifest {
         attributes(
-            'Main-Class': 'com.noty215.notycaption.Main',
-            'Implementation-Title': 'NotyCaption Pro',
-            'Implementation-Version': version,
-            'Implementation-Vendor': 'NotY215',
-            'Build-Date': new Date().format('yyyy-MM-dd HH:mm:ss'),
-            'Build-Jdk': System.getProperty('java.version'),
-            'Build-OS': System.getProperty('os.name')
+                'Main-Class': 'com.noty215.notycaption.Main',
+                'Implementation-Title': 'NotyCaption Pro',
+                'Implementation-Version': version,
+                'Implementation-Vendor': 'NotY215',
+                'Build-Date': new Date().format('yyyy-MM-dd HH:mm:ss'),
+                'Build-Jdk': System.getProperty('java.version'),
+                'Build-OS': System.getProperty('os.name')
         )
     }
-    
+
     // Merge service files
     mergeServiceFiles()
-    
+
     // Exclude unnecessary files
     exclude 'META-INF/*.SF'
     exclude 'META-INF/*.DSA'
     exclude 'META-INF/*.RSA'
-    
+
     // Don't minimize to avoid issues with reflection
     minimize() {
         exclude(dependency('ai.djl:.*'))
         exclude(dependency('org.bytedeco:.*'))
     }
+
+    // Relocate packages to avoid conflicts
+    relocate 'com.google.common', 'shadow.com.google.common'
+    relocate 'org.apache.http', 'shadow.org.apache.http'
 }
 
 // Create distribution with all resources
@@ -235,14 +247,14 @@ task createDistribution(type: Copy) {
     dependsOn shadowJar
     group = 'distribution'
     description = 'Creates the distribution package'
-    
+
     from 'build/libs'
     from 'src/main/resources'
     from 'README.md'
     from 'LICENSE'
-    
+
     into "build/distributions/NotyCaptionPro-${version}"
-    
+
     doLast {
         println "=" * 60
         println "Distribution created in build/distributions/NotyCaptionPro-${version}"
@@ -255,7 +267,7 @@ task packageDistribution(type: Zip) {
     dependsOn createDistribution
     group = 'distribution'
     description = 'Packages the distribution as ZIP'
-    
+
     from "build/distributions/NotyCaptionPro-${version}"
     archiveFileName = "NotyCaptionPro-${version}.zip"
     destinationDirectory = file('build/distributions')
@@ -265,17 +277,17 @@ task packageDistribution(type: Zip) {
 task runApp(type: JavaExec) {
     group = 'application'
     description = 'Runs the application'
-    
+
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.noty215.notycaption.Main'
-    
+
     jvmArgs = [
-        '-Xms512m',
-        '-Xmx2g',
-        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-        '--add-opens', 'java.base/java.io=ALL-UNNAMED',
-        '--add-opens', 'java.desktop/sun.awt=ALL-UNNAMED',
-        '--add-opens', 'java.desktop/javax.swing=ALL-UNNAMED'
+            '-Xms512m',
+            '-Xmx2g',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.desktop/sun.awt=ALL-UNNAMED',
+            '--add-opens', 'java.desktop/javax.swing=ALL-UNNAMED'
     ]
 }
 
@@ -283,7 +295,7 @@ task runApp(type: JavaExec) {
 task javadocJar(type: Jar) {
     group = 'documentation'
     description = 'Creates Javadoc JAR'
-    
+
     dependsOn javadoc
     archiveClassifier.set('javadoc')
     from javadoc.destinationDir
@@ -293,7 +305,7 @@ task javadocJar(type: Jar) {
 task sourcesJar(type: Jar) {
     group = 'build'
     description = 'Creates sources JAR'
-    
+
     dependsOn classes
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
@@ -303,9 +315,9 @@ task sourcesJar(type: Jar) {
 task cleanBuild(type: Delete) {
     group = 'build'
     description = 'Cleans only the build folder'
-    
+
     delete 'build'
-    
+
     doLast {
         println "=" * 60
         println "Build folder cleaned successfully!"
@@ -317,9 +329,9 @@ task cleanBuild(type: Delete) {
 task prepareRelease {
     group = 'distribution'
     description = 'Prepares everything for release'
-    
+
     dependsOn cleanBuild, test, shadowJar, javadocJar, sourcesJar, createDistribution
-    
+
     doLast {
         println "=" * 60
         println "Release preparation completed!"
@@ -354,6 +366,7 @@ processResources {
         include '**/*.png'
         include '**/*.txt'
         include '**/*.md'
+        include '**/*.xml'
     }
 }
 
