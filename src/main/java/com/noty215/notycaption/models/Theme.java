@@ -1,5 +1,11 @@
 package com.noty215.notycaption.models;
 
+/**
+ * Theme enumeration
+ */
 public enum Theme {
-    DEFAULT
+    SYSTEM,
+    LIGHT,
+    DARK,
+    CUSTOM
 }
