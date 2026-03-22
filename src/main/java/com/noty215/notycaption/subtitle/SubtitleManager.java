@@ -13,49 +13,49 @@ public class SubtitleManager {
     private static final Logger logger = Logger.getLogger(SubtitleManager.class.getName());
     private List<SubtitleEntry> subtitles;
     private SubtitleFormat currentFormat;
-    
+
     public SubtitleManager() {
         this.subtitles = new ArrayList<>();
         this.currentFormat = SubtitleFormat.SRT;
     }
-    
+
     public List<SubtitleEntry> getSubtitles() {
         return new ArrayList<>(subtitles);
     }
-    
+
     public void setSubtitles(List<SubtitleEntry> subtitles) {
         this.subtitles = new ArrayList<>(subtitles);
     }
-    
+
     public void addSubtitle(SubtitleEntry entry) {
         subtitles.add(entry);
         reindex();
     }
-    
+
     public void removeSubtitle(int index) {
         if (index >= 0 && index < subtitles.size()) {
             subtitles.remove(index);
             reindex();
         }
     }
-    
+
     public void updateSubtitle(int index, SubtitleEntry entry) {
         if (index >= 0 && index < subtitles.size()) {
             subtitles.set(index, entry);
             reindex();
         }
     }
-    
+
     public void clear() {
         subtitles.clear();
     }
-    
+
     private void reindex() {
         for (int i = 0; i < subtitles.size(); i++) {
             subtitles.get(i).setIndex(i + 1);
         }
     }
-    
+
     public void loadFromFile(File file) throws IOException {
         String fileName = file.getName().toLowerCase();
         if (fileName.endsWith(".srt")) {
@@ -68,10 +68,10 @@ public class SubtitleManager {
         } else {
             throw new IOException("Unsupported subtitle format: " + fileName);
         }
-        
+
         logger.info("Loaded " + subtitles.size() + " subtitles from: " + file.getAbsolutePath());
     }
-    
+
     public void saveToFile(File file) throws IOException {
         String fileName = file.getName().toLowerCase();
         if (fileName.endsWith(".srt")) {
@@ -84,10 +84,10 @@ public class SubtitleManager {
         } else {
             throw new IOException("Unsupported subtitle format: " + fileName);
         }
-        
+
         logger.info("Saved " + subtitles.size() + " subtitles to: " + file.getAbsolutePath());
     }
-    
+
     public void exportToFormat(File file, SubtitleFormat format) throws IOException {
         switch (format) {
             case SRT:
@@ -101,32 +101,32 @@ public class SubtitleManager {
                 throw new IOException("Export to " + format + " not implemented");
         }
     }
-    
+
     public List<SubtitleEntry> search(String query) {
         List<SubtitleEntry> results = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
-        
+
         for (SubtitleEntry entry : subtitles) {
             if (entry.getText().toLowerCase().contains(lowerQuery)) {
                 results.add(entry);
             }
         }
-        
+
         return results;
     }
-    
+
     public void shiftAll(Duration offset) {
         for (SubtitleEntry entry : subtitles) {
             entry.shift(offset);
         }
     }
-    
+
     public void scaleAll(double factor) {
         for (SubtitleEntry entry : subtitles) {
             entry.scale(factor);
         }
     }
-    
+
     public void merge(List<SubtitleEntry> other, Duration offset) {
         List<SubtitleEntry> adjusted = new ArrayList<>();
         for (SubtitleEntry entry : other) {
@@ -136,11 +136,11 @@ public class SubtitleManager {
             copy.setText(entry.getText());
             adjusted.add(copy);
         }
-        
+
         List<SubtitleEntry> merged = SRTProcessor.mergeSubtitles(subtitles, adjusted);
         subtitles = merged;
     }
-    
+
     public SubtitleEntry getSubtitleAtTime(Duration time) {
         for (SubtitleEntry entry : subtitles) {
             if (entry.containsTime(time)) {
@@ -149,17 +149,22 @@ public class SubtitleManager {
         }
         return null;
     }
-    
+
     public List<SubtitleEntry> getSubtitlesInRange(Duration start, Duration end) {
         List<SubtitleEntry> results = new ArrayList<>();
         for (SubtitleEntry entry : subtitles) {
-            if (!entry.getEnd().isBefore(start) && !entry.getStart().isAfter(end)) {
+            long startNanos = start.toNanos();
+            long endNanos = end.toNanos();
+            long entryStart = entry.getStart().toNanos();
+            long entryEnd = entry.getEnd().toNanos();
+
+            if (entryEnd >= startNanos && entryStart <= endNanos) {
                 results.add(entry);
             }
         }
         return results;
     }
-    
+
     public String getPlainText() {
         StringBuilder sb = new StringBuilder();
         for (SubtitleEntry entry : subtitles) {
@@ -168,15 +173,15 @@ public class SubtitleManager {
         }
         return sb.toString();
     }
-    
+
     public int size() {
         return subtitles.size();
     }
-    
+
     public boolean isEmpty() {
         return subtitles.isEmpty();
     }
-    
+
     public SubtitleFormat getCurrentFormat() {
         return currentFormat;
     }

@@ -1,5 +1,6 @@
 package com.noty215.notycaption.ui;
 
+import com.noty215.notycaption.Main;
 import com.noty215.notycaption.App;
 import com.noty215.notycaption.utils.EncryptionUtils;
 import com.noty215.notycaption.utils.Translator;
@@ -18,7 +19,7 @@ public class SettingsDialog extends JDialog {
     private Map<String, Object> newSettings;
     private NotyCaptionWindow parent;
     private Translator translator;
-    
+
     // UI Components
     private JComboBox<String> themeCombo;
     private JComboBox<String> scaleCombo;
@@ -33,100 +34,86 @@ public class SettingsDialog extends JDialog {
     private JCheckBox minimizeTrayCheck;
     private JCheckBox showTooltipsCheck;
     private JComboBox<String> languageCombo;
-    
+
     public SettingsDialog(NotyCaptionWindow parent, Map<String, Object> settings) {
         super(parent, Translator.getInstance().tr("settings_title"), true);
         this.parent = parent;
         this.settings = settings;
         this.newSettings = new HashMap<>(settings);
         this.translator = Translator.getInstance();
-        
+
         setSize(800, 700);
         setMinimumSize(new Dimension(700, 600));
         setLocationRelativeTo(parent);
-        
+
         initUI();
         loadCurrentValues();
     }
-    
+
     private void initUI() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
+
         JTabbedPane tabbedPane = new JTabbedPane();
-        
-        // General tab
+
         tabbedPane.addTab(translator.tr("general_tab"), createGeneralTab());
-        
-        // Paths tab
         tabbedPane.addTab(translator.tr("paths_tab"), createPathsTab());
-        
-        // Features tab
         tabbedPane.addTab(translator.tr("features_tab"), createFeaturesTab());
-        
-        // Advanced tab
         tabbedPane.addTab(translator.tr("advanced_tab"), createAdvancedTab());
-        
-        // Workspace tab
         tabbedPane.addTab(translator.tr("workspace_tab"), createWorkspaceTab());
-        
+
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
-        
-        // Buttons
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton applyButton = new JButton(translator.tr("apply_restart"));
         JButton cancelButton = new JButton(translator.tr("cancel"));
-        
+
         applyButton.addActionListener(e -> applySettings());
         cancelButton.addActionListener(e -> dispose());
-        
+
         buttonPanel.add(applyButton);
         buttonPanel.add(cancelButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        
+
         add(mainPanel);
     }
-    
+
     private JPanel createGeneralTab() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        // Theme
+
         JPanel themePanel = createGroupPanel(translator.tr("visual_theme"));
         themeCombo = new JComboBox<>(new String[]{
-            translator.tr("system_default"),
-            translator.tr("light_mode"),
-            translator.tr("dark_mode")
+                translator.tr("system_default"),
+                translator.tr("light_mode"),
+                translator.tr("dark_mode")
         });
         themePanel.add(themeCombo);
         panel.add(themePanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // UI Scale
+
         JPanel scalePanel = createGroupPanel(translator.tr("ui_scaling"));
         scaleCombo = new JComboBox<>(new String[]{"75%", "87%", "100%", "125%", "150%", "175%", "200%"});
         scalePanel.add(new JLabel(translator.tr("scale_factor")));
         scalePanel.add(scaleCombo);
         panel.add(scalePanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // Language
+
         JPanel langPanel = createGroupPanel(translator.tr("ui_language"));
         languageCombo = new JComboBox<>(new String[]{"English", "日本語", "Русский", "Deutsch", "हिंदी", "اردو", "العربية"});
         langPanel.add(languageCombo);
         panel.add(langPanel);
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
-    
+
     private JPanel createPathsTab() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        // Temp Directory
+
         JPanel tempPanel = createGroupPanel(translator.tr("temp_dir"));
         tempDirField = new JTextField(30);
         tempPanel.add(tempDirField);
@@ -135,8 +122,7 @@ public class SettingsDialog extends JDialog {
         tempPanel.add(tempBrowse);
         panel.add(tempPanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // Models Directory
+
         JPanel modelsPanel = createGroupPanel(translator.tr("models_dir"));
         modelsDirField = new JTextField(30);
         modelsPanel.add(modelsDirField);
@@ -144,62 +130,58 @@ public class SettingsDialog extends JDialog {
         modelsBrowse.addActionListener(e -> browseFolder(modelsDirField));
         modelsPanel.add(modelsBrowse);
         panel.add(modelsPanel);
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
-    
+
     private JPanel createFeaturesTab() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        // Auto Features
+
         JPanel autoPanel = createGroupPanel(translator.tr("auto_features"));
         autoEnhanceCheck = new JCheckBox(translator.tr("auto_enhance"));
         autoPanel.add(autoEnhanceCheck);
         panel.add(autoPanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // Words Per Line
+
         JPanel wplPanel = createGroupPanel(translator.tr("default_wpl"));
         wplPanel.add(new JLabel(translator.tr("words")));
         wordsPerLineSpin = new JSpinner(new SpinnerNumberModel(5, 1, 20, 1));
         wplPanel.add(wordsPerLineSpin);
         panel.add(wplPanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // Default Format
+
         JPanel formatPanel = createGroupPanel(translator.tr("default_format"));
         formatPanel.add(new JLabel(translator.tr("format")));
         formatCombo = new JComboBox<>(new String[]{
-            translator.tr("srt_format"),
-            translator.tr("ass_format")
+                translator.tr("srt_format"),
+                translator.tr("ass_format")
         });
         formatPanel.add(formatCombo);
         panel.add(formatPanel);
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
-    
+
     private JPanel createAdvancedTab() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        // Cancel Options
+
         JPanel cancelPanel = createGroupPanel(translator.tr("cancel_options"));
         confirmCancelCheck = new JCheckBox(translator.tr("confirm_cancel"));
         cancelPanel.add(confirmCancelCheck);
-        
+
         JPanel timeoutPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         timeoutPanel.add(new JLabel(translator.tr("force_cancel_timeout")));
         forceTimeoutSpin = new JSpinner(new SpinnerNumberModel(30, 10, 120, 5));
         timeoutPanel.add(forceTimeoutSpin);
         timeoutPanel.add(new JLabel(translator.tr("seconds")));
         cancelPanel.add(timeoutPanel);
-        
+
         JPanel retryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         retryPanel.add(new JLabel(translator.tr("max_retry")));
         maxRetrySpin = new JSpinner(new SpinnerNumberModel(5, 1, 20, 1));
@@ -207,42 +189,41 @@ public class SettingsDialog extends JDialog {
         cancelPanel.add(retryPanel);
         panel.add(cancelPanel);
         panel.add(Box.createVerticalStrut(10));
-        
-        // UI Options
+
         JPanel uiPanel = createGroupPanel(translator.tr("ui_options"));
         minimizeTrayCheck = new JCheckBox(translator.tr("minimize_tray"));
         uiPanel.add(minimizeTrayCheck);
         showTooltipsCheck = new JCheckBox(translator.tr("show_tooltips"));
         uiPanel.add(showTooltipsCheck);
         panel.add(uiPanel);
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
-    
+
     private JPanel createWorkspaceTab() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
+
         JButton customizeBtn = new JButton(translator.tr("workspace_customize"));
         customizeBtn.addActionListener(e -> {
             WorkspaceCustomizeDialog dialog = new WorkspaceCustomizeDialog(parent, settings);
             dialog.setVisible(true);
         });
         panel.add(customizeBtn);
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
-    
+
     private JPanel createGroupPanel(String title) {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createTitledBorder(title));
         return panel;
     }
-    
+
     private void browseFolder(JTextField field) {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -250,13 +231,13 @@ public class SettingsDialog extends JDialog {
             field.setText(chooser.getSelectedFile().getAbsolutePath());
         }
     }
-    
+
     private void loadCurrentValues() {
         String theme = (String) settings.getOrDefault("theme", "Dark");
         if (theme.equals("System")) themeCombo.setSelectedIndex(0);
         else if (theme.equals("Light")) themeCombo.setSelectedIndex(1);
         else themeCombo.setSelectedIndex(2);
-        
+
         scaleCombo.setSelectedItem(settings.getOrDefault("ui_scale", "100%"));
         tempDirField.setText((String) settings.getOrDefault("temp_dir", System.getProperty("java.io.tmpdir")));
         modelsDirField.setText((String) settings.getOrDefault("models_dir", App.APP_DATA_DIR));
@@ -268,7 +249,7 @@ public class SettingsDialog extends JDialog {
         maxRetrySpin.setValue(settings.getOrDefault("max_retry_attempts", 5));
         minimizeTrayCheck.setSelected((boolean) settings.getOrDefault("minimize_to_tray", true));
         showTooltipsCheck.setSelected((boolean) settings.getOrDefault("show_tooltips", true));
-        
+
         String lang = (String) settings.getOrDefault("language", "en");
         if (lang.equals("en")) languageCombo.setSelectedIndex(0);
         else if (lang.equals("ja")) languageCombo.setSelectedIndex(1);
@@ -279,7 +260,7 @@ public class SettingsDialog extends JDialog {
         else if (lang.equals("ar")) languageCombo.setSelectedIndex(6);
         else languageCombo.setSelectedIndex(0);
     }
-    
+
     private void applySettings() {
         String theme;
         switch (themeCombo.getSelectedIndex()) {
@@ -287,7 +268,7 @@ public class SettingsDialog extends JDialog {
             case 1: theme = "Light"; break;
             default: theme = "Dark";
         }
-        
+
         String lang;
         switch (languageCombo.getSelectedIndex()) {
             case 0: lang = "en"; break;
@@ -299,7 +280,7 @@ public class SettingsDialog extends JDialog {
             case 6: lang = "ar"; break;
             default: lang = "en";
         }
-        
+
         newSettings.put("theme", theme);
         newSettings.put("ui_scale", scaleCombo.getSelectedItem());
         newSettings.put("temp_dir", tempDirField.getText());
@@ -313,20 +294,24 @@ public class SettingsDialog extends JDialog {
         newSettings.put("minimize_to_tray", minimizeTrayCheck.isSelected());
         newSettings.put("show_tooltips", showTooltipsCheck.isSelected());
         newSettings.put("language", lang);
-        
+
         EncryptionUtils.saveSettings(newSettings);
-        
+
         translator.setLanguage(lang);
-        parent.updateFromSettings(newSettings);
-        
+        if (parent != null) {
+            parent.updateFromSettings(newSettings);
+        }
+
         int result = JOptionPane.showConfirmDialog(this,
-            "Settings applied. Restart the application for full effect?\nSome settings require restart.",
-            "Restart Required",
-            JOptionPane.YES_NO_OPTION);
-        
+                "Settings applied. Restart the application for full effect?\nSome settings require restart.",
+                "Restart Required",
+                JOptionPane.YES_NO_OPTION);
+
         if (result == JOptionPane.YES_OPTION) {
             dispose();
-            parent.dispose();
+            if (parent != null) {
+                parent.dispose();
+            }
             try {
                 String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
                 String jarPath = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();

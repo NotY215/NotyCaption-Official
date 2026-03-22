@@ -51,9 +51,10 @@ public class SystemInfo {
 
     public static String getHostName() {
         try {
-            Process process = Runtime.getRuntime().exec("hostname");
+            ProcessBuilder pb = new ProcessBuilder("hostname");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
+                    new InputStreamReader(process.getInputStream()));
             String hostname = reader.readLine();
             process.waitFor();
             return hostname != null ? hostname.trim() : "Unknown";
@@ -75,7 +76,11 @@ public class SystemInfo {
     }
 
     public static Map<String, String> getSystemProperties() {
-        return new HashMap<>(System.getProperties());
+        Map<String, String> props = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
+            props.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+        return props;
     }
 
     public static boolean isWindows() {
@@ -88,8 +93,8 @@ public class SystemInfo {
 
     public static boolean isLinux() {
         return getOSName().toLowerCase().contains("nix") ||
-               getOSName().toLowerCase().contains("nux") ||
-               getOSName().toLowerCase().contains("aix");
+                getOSName().toLowerCase().contains("nux") ||
+                getOSName().toLowerCase().contains("aix");
     }
 
     public static boolean is64Bit() {
@@ -103,8 +108,8 @@ public class SystemInfo {
         sb.append("Java: ").append(getJavaVendor()).append(" ").append(getJavaVersion()).append("\n");
         sb.append("Processors: ").append(getAvailableProcessors()).append("\n");
         sb.append("Memory: ").append(getFreeMemory() / (1024 * 1024)).append("MB / ")
-          .append(getTotalMemory() / (1024 * 1024)).append("MB (Max: ")
-          .append(getMaxMemory() / (1024 * 1024)).append("MB)\n");
+                .append(getTotalMemory() / (1024 * 1024)).append("MB (Max: ")
+                .append(getMaxMemory() / (1024 * 1024)).append("MB)\n");
         sb.append("User: ").append(getUserName()).append("@").append(getHostName()).append("\n");
         return sb.toString();
     }
