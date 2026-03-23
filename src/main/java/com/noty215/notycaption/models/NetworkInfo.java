@@ -7,7 +7,7 @@ import java.util.List;
  * Network Information data class
  */
 public class NetworkInfo {
-    private String interface;
+    private String networkInterface;  // Changed from 'interface' to 'networkInterface'
     private String macAddress;
     private List<String> ipAddresses;
     private String gateway;
@@ -40,11 +40,11 @@ public class NetworkInfo {
     // Constructors
     public NetworkInfo() {}
 
-    public NetworkInfo(String interface, String macAddress, List<String> ipAddresses, String gateway,
+    public NetworkInfo(String networkInterface, String macAddress, List<String> ipAddresses, String gateway,
                        List<String> dnsServers, boolean dhcpEnabled, int speed, int mtu, long bytesSent,
                        long bytesReceived, long packetsSent, long packetsReceived, long errorsIn,
                        long errorsOut, long dropsIn, long dropsOut, boolean linkStatus) {
-        this.interface = interface;
+        this.networkInterface = networkInterface;
         this.macAddress = macAddress;
         this.ipAddresses = ipAddresses;
         this.gateway = gateway;
@@ -64,8 +64,8 @@ public class NetworkInfo {
     }
 
     // Getters and Setters
-    public String getInterface() { return interface; }
-    public void setInterface(String interface) { this.interface = interface; }
+    public String getNetworkInterface() { return networkInterface; }
+    public void setNetworkInterface(String networkInterface) { this.networkInterface = networkInterface; }
 
     public String getMacAddress() { return macAddress; }
     public void setMacAddress(String macAddress) { this.macAddress = macAddress; }
@@ -154,6 +154,6 @@ public class NetworkInfo {
     @Override
     public String toString() {
         return String.format("Network: %s - %s (%.1f Mbps) - %s",
-        interface, macAddress, speed, linkStatus ? "UP" : "DOWN");
+                networkInterface, macAddress, speed, linkStatus ? "UP" : "DOWN");
     }
 }

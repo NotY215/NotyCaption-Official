@@ -5,8 +5,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -28,8 +30,8 @@ public class NetworkMonitor {
     public static long getDownloadSpeed() {
         try {
             long startTime = System.currentTimeMillis();
-            java.net.URL url = new java.net.URL("https://speedtest.tele2.net/1MB.zip");
-            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+            URL url = new URL("https://speedtest.tele2.net/1MB.zip");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("HEAD");
             connection.connect();
             long contentLength = connection.getContentLengthLong();
@@ -37,17 +39,16 @@ public class NetworkMonitor {
 
             if (contentLength <= 0) return 0;
 
-            connection = (java.net.HttpURLConnection) url.openConnection();
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.connect();
 
+            long downloaded = 0;
+            byte[] buffer = new byte[8192];
+            int bytesRead;
             try (java.io.InputStream in = connection.getInputStream()) {
-                byte[] buffer = new byte[8192];
-                long downloaded = 0;
-                while (downloaded < contentLength) {
-                    int read = in.read(buffer);
-                    if (read == -1) break;
-                    downloaded += read;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    downloaded += bytesRead;
                 }
             }
 
@@ -63,7 +64,6 @@ public class NetworkMonitor {
     }
 
     public static long getUploadSpeed() {
-        // Upload speed test would require a server endpoint
         return 0;
     }
 

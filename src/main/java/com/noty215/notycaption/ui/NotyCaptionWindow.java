@@ -91,6 +91,8 @@ public class NotyCaptionWindow {
     private String currentNotebookUrl;
     private AtomicBoolean cancelRequested;
     private ScheduledExecutorService monitorExecutor;
+    private javafx.scene.media.MediaPlayer mediaPlayer;
+    private Timer timer;
 
     public NotyCaptionWindow() {
         this.settings = new SettingsManager();
@@ -204,7 +206,7 @@ public class NotyCaptionWindow {
         fileMenu.getItems().add(new SeparatorMenuItem());
 
         MenuItem exitItem = new MenuItem("🚪 " + translator.tr("cancel"));
-        exitItem.setOnAction(e -> stage.close());
+        exitItem.setOnAction(e -> closeWindow());
         fileMenu.getItems().add(exitItem);
 
         // Edit menu
@@ -503,7 +505,7 @@ public class NotyCaptionWindow {
         colabLink.setVisible(false);
         colabLink.setOnAction(e -> {
             if (currentNotebookUrl != null) {
-                getHostServices().showDocument(currentNotebookUrl);
+                Main.getAppHostServices().showDocument(currentNotebookUrl);
             }
         });
 
@@ -1079,6 +1081,7 @@ public class NotyCaptionWindow {
         showInfo("Session Saved", "Current session has been saved.");
     }
 
+    @SuppressWarnings("unchecked")
     private void loadSession() {
         Map<String, Object> sessionData = sessionManager.loadSession();
         if (sessionData != null) {
@@ -1095,7 +1098,6 @@ public class NotyCaptionWindow {
                 outputFolderField.setText(lastOutput);
             }
 
-            @SuppressWarnings("unchecked")
             List<SubtitleEntry> loadedSubtitles = (List<SubtitleEntry>) sessionData.get("subtitles");
             if (loadedSubtitles != null && !loadedSubtitles.isEmpty()) {
                 subtitles = loadedSubtitles;
@@ -1213,7 +1215,7 @@ public class NotyCaptionWindow {
     }
 
     private void openDocumentation() {
-        getHostServices().showDocument("https://github.com/NotY215/NotyCaption");
+        Main.getAppHostServices().showDocument("https://github.com/NotY215/NotyCaption");
     }
 
     private void showAbout() {
@@ -1251,21 +1253,35 @@ public class NotyCaptionWindow {
         return true;
     }
 
-    private void cleanupBeforeExit() {
+    public void cleanupBeforeExit() {
         logger.info("Cleaning up before exit");
 
         // Stop hardware monitoring
-        hardwareMonitor.stopMonitoring();
-        monitorExecutor.shutdown();
+        if (hardwareMonitor != null) {
+            hardwareMonitor.stopMonitoring();
+        }
+        if (monitorExecutor != null) {
+            monitorExecutor.shutdown();
+        }
+
+        // Stop media player
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+        if (timer != null) {
+            timer.cancel();
+        }
 
         // Save settings
-        settings.set("window_width", (int) stage.getWidth());
-        settings.set("window_height", (int) stage.getHeight());
-        settings.set("window_maximized", stage.isMaximized());
-        settings.save();
+        if (settings != null) {
+            settings.set("window_width", (int) stage.getWidth());
+            settings.set("window_height", (int) stage.getHeight());
+            settings.set("window_maximized", stage.isMaximized());
+            settings.save();
+        }
 
         // Save session
-        if (settings.getBoolean("auto_save")) {
+        if (settings != null && settings.getBoolean("auto_save")) {
             saveSession();
         }
 
@@ -1275,6 +1291,11 @@ public class NotyCaptionWindow {
         }
 
         logger.info("Cleanup complete");
+    }
+
+    public void closeWindow() {
+        cleanupBeforeExit();
+        stage.close();
     }
 
     private void showInfo(String title, String message) {
@@ -1299,10 +1320,6 @@ public class NotyCaptionWindow {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    private javafx.application.HostServices getHostServices() {
-        return Main.getHostServices();
     }
 
     public void show() {

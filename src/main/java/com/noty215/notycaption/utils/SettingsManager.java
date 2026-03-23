@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Settings manager for application configuration
@@ -249,10 +248,16 @@ public class SettingsManager {
             return;
         }
 
-        try (Reader reader = Files.newBufferedReader(settingsPath)) {
-            String encrypted = reader.lines().reduce("", (a, b) -> a + b);
+        try (BufferedReader reader = Files.newBufferedReader(settingsPath)) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            String encrypted = sb.toString();
             String decrypted = EncryptionUtils.decryptAndDecompress(encrypted);
             if (decrypted != null) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> loaded = gson.fromJson(decrypted, Map.class);
                 if (loaded != null) {
                     for (Map.Entry<String, Object> entry : loaded.entrySet()) {
@@ -290,6 +295,7 @@ public class SettingsManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T get(String key, Class<T> type) {
         Object value = settings.get(key);
         if (value == null) {

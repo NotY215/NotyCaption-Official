@@ -6,6 +6,7 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -70,23 +71,23 @@ public class GoogleDriveService {
         return result.getFiles();
     }
 
-    public String uploadFile(File file, String folderId) throws Exception {
+    public String uploadFile(java.io.File localFile, String folderId) throws Exception {
         File fileMetadata = new File();
-        fileMetadata.setName(file.getName());
+        fileMetadata.setName(localFile.getName());
         if (folderId != null) {
             fileMetadata.setParents(Collections.singletonList(folderId));
         }
 
-        java.io.FileInputStream stream = new java.io.FileInputStream(file);
-        Drive.Files.Create request = driveService.files().create(fileMetadata, new com.google.api.client.http.FileContent("application/octet-stream", file));
-        File uploadedFile = request.execute();
+        FileContent mediaContent = new FileContent("application/octet-stream", localFile);
+        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                .setFields("id")
+                .execute();
 
-        stream.close();
         logger.info("Uploaded file: {} ({})", uploadedFile.getName(), uploadedFile.getId());
         return uploadedFile.getId();
     }
 
-    public void downloadFile(String fileId, File outputFile) throws Exception {
+    public void downloadFile(String fileId, java.io.File outputFile) throws Exception {
         try (OutputStream out = new FileOutputStream(outputFile)) {
             driveService.files().get(fileId).executeMediaAndDownloadTo(out);
         }
@@ -121,7 +122,6 @@ public class GoogleDriveService {
     }
 
     public void shareFile(String fileId, String email) throws Exception {
-        // Create permission
         com.google.api.services.drive.model.Permission permission = new com.google.api.services.drive.model.Permission();
         permission.setType("user");
         permission.setRole("reader");

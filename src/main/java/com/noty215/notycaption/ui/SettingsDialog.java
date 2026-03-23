@@ -1,6 +1,5 @@
 package com.noty215.notycaption.ui;
 
-import com.noty215.notycaption.models.Theme;
 import com.noty215.notycaption.utils.SettingsManager;
 import com.noty215.notycaption.utils.Translator;
 import javafx.geometry.Insets;
@@ -95,8 +94,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         vbox.setPadding(new Insets(15));
 
         // Theme
-        GroupBox themeBox = new GroupBox();
+        TitledPane themeBox = new TitledPane();
         themeBox.setText(translator.tr("visual_theme"));
+        themeBox.setCollapsible(false);
         VBox themeLayout = new VBox(5);
         themeCombo = new ComboBox<>();
         themeCombo.getItems().addAll(translator.tr("system_default"), translator.tr("light_mode"), translator.tr("dark_mode"));
@@ -104,8 +104,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         themeBox.setContent(themeLayout);
 
         // UI Scaling
-        GroupBox scaleBox = new GroupBox();
+        TitledPane scaleBox = new TitledPane();
         scaleBox.setText(translator.tr("ui_scaling"));
+        scaleBox.setCollapsible(false);
         VBox scaleLayout = new VBox(5);
         scaleCombo = new ComboBox<>();
         scaleCombo.getItems().addAll("75%", "87%", "100%", "125%", "150%", "175%", "200%");
@@ -122,8 +123,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         vbox.setPadding(new Insets(15));
 
         // Temp directory
-        GroupBox tempBox = new GroupBox();
+        TitledPane tempBox = new TitledPane();
         tempBox.setText(translator.tr("temp_dir"));
+        tempBox.setCollapsible(false);
         GridPane tempLayout = new GridPane();
         tempLayout.setHgap(5);
         tempLayout.setVgap(5);
@@ -136,8 +138,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         tempBox.setContent(tempLayout);
 
         // Models directory
-        GroupBox modelsBox = new GroupBox();
+        TitledPane modelsBox = new TitledPane();
         modelsBox.setText(translator.tr("models_dir"));
+        modelsBox.setCollapsible(false);
         GridPane modelsLayout = new GridPane();
         modelsLayout.setHgap(5);
         modelsLayout.setVgap(5);
@@ -159,16 +162,18 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         vbox.setPadding(new Insets(15));
 
         // Auto features
-        GroupBox autoBox = new GroupBox();
+        TitledPane autoBox = new TitledPane();
         autoBox.setText(translator.tr("auto_features"));
+        autoBox.setCollapsible(false);
         VBox autoLayout = new VBox(5);
         autoEnhanceCheck = new CheckBox(translator.tr("auto_enhance"));
         autoLayout.getChildren().add(autoEnhanceCheck);
         autoBox.setContent(autoLayout);
 
         // Default words per line
-        GroupBox wplBox = new GroupBox();
+        TitledPane wplBox = new TitledPane();
         wplBox.setText(translator.tr("default_wpl"));
+        wplBox.setCollapsible(false);
         GridPane wplLayout = new GridPane();
         wplLayout.setHgap(5);
         wplLayout.setVgap(5);
@@ -178,8 +183,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         wplBox.setContent(wplLayout);
 
         // Default format
-        GroupBox formatBox = new GroupBox();
+        TitledPane formatBox = new TitledPane();
         formatBox.setText(translator.tr("default_format"));
+        formatBox.setCollapsible(false);
         GridPane formatLayout = new GridPane();
         formatLayout.setHgap(5);
         formatLayout.setVgap(5);
@@ -199,8 +205,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         vbox.setPadding(new Insets(15));
 
         // Cancel options
-        GroupBox cancelBox = new GroupBox();
+        TitledPane cancelBox = new TitledPane();
         cancelBox.setText(translator.tr("cancel_options"));
+        cancelBox.setCollapsible(false);
         VBox cancelLayout = new VBox(5);
         confirmCancelCheck = new CheckBox(translator.tr("confirm_cancel"));
         cancelLayout.getChildren().add(confirmCancelCheck);
@@ -225,8 +232,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         cancelBox.setContent(cancelLayout);
 
         // UI Options
-        GroupBox uiBox = new GroupBox();
+        TitledPane uiBox = new TitledPane();
         uiBox.setText(translator.tr("ui_options"));
+        uiBox.setCollapsible(false);
         VBox uiLayout = new VBox(5);
         minimizeTrayCheck = new CheckBox(translator.tr("minimize_tray"));
         uiLayout.getChildren().add(minimizeTrayCheck);
@@ -266,9 +274,9 @@ public class SettingsDialog extends Dialog<SettingsManager> {
     private void loadCurrentSettings() {
         // General
         String theme = settings.getString("theme");
-        if (Theme.LIGHT.name().equals(theme)) {
+        if ("LIGHT".equals(theme)) {
             themeCombo.setValue(translator.tr("light_mode"));
-        } else if (Theme.SYSTEM.name().equals(theme)) {
+        } else if ("SYSTEM".equals(theme)) {
             themeCombo.setValue(translator.tr("system_default"));
         } else {
             themeCombo.setValue(translator.tr("dark_mode"));
@@ -308,11 +316,11 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         // General
         String themeValue = themeCombo.getValue();
         if (translator.tr("light_mode").equals(themeValue)) {
-            settings.set("theme", Theme.LIGHT.name());
+            settings.set("theme", "LIGHT");
         } else if (translator.tr("system_default").equals(themeValue)) {
-            settings.set("theme", Theme.SYSTEM.name());
+            settings.set("theme", "SYSTEM");
         } else {
-            settings.set("theme", Theme.DARK.name());
+            settings.set("theme", "DARK");
         }
 
         settings.set("ui_scale", scaleCombo.getValue());
@@ -345,16 +353,5 @@ public class SettingsDialog extends Dialog<SettingsManager> {
         }
 
         settings.save();
-    }
-
-    private static class GroupBox extends TitledPane {
-        public GroupBox() {
-            setCollapsible(false);
-            setStyle("-fx-border-color: #4a6fa5; -fx-border-radius: 5;");
-        }
-
-        public void setContent(javafx.scene.Node content) {
-            setContent(content);
-        }
     }
 }

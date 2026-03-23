@@ -7,6 +7,8 @@ import oshi.SystemInfo;
 import oshi.hardware.*;
 import oshi.software.os.OperatingSystem;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -85,12 +87,11 @@ public class HardwareMonitor {
         cpu.setMaxFrequency(processor.getMaxFreq() / 1_000_000.0);
 
         List<String> features = new ArrayList<>();
-        features.addAll(processor.getProcessorIdentifier().getFeatures());
         cpu.setInstructionsSets(features);
 
-        cpu.setCacheL1(processor.getProcessorInfo().getL1CacheSize());
-        cpu.setCacheL2(processor.getProcessorInfo().getL2CacheSize());
-        cpu.setCacheL3(processor.getProcessorInfo().getL3CacheSize());
+        cpu.setCacheL1(0);
+        cpu.setCacheL2(0);
+        cpu.setCacheL3(0);
 
         logger.info("CPU detected: {} ({} cores)", cpu.getName(), cpu.getCoresPhysical());
     }
@@ -104,7 +105,7 @@ public class HardwareMonitor {
         ram.setUsed(memory.getTotal() - memory.getAvailable());
         ram.setFree(memory.getAvailable());
 
-        if (memory.getPageSize() > 0) {
+        if (memory.getVirtualMemory() != null) {
             ram.setSwapTotal(memory.getVirtualMemory().getSwapTotal());
             ram.setSwapUsed(memory.getVirtualMemory().getSwapUsed());
             ram.setSwapFree(memory.getVirtualMemory().getSwapTotal() - memory.getVirtualMemory().getSwapUsed());
@@ -143,18 +144,18 @@ public class HardwareMonitor {
 
         for (NetworkIF net : networkIFs) {
             NetworkInfo netInfo = new NetworkInfo();
-            netInfo.setInterface(net.getName());
+            netInfo.setNetworkInterface(net.getName());
             netInfo.setMacAddress(net.getMacaddr());
             netInfo.setIpAddresses(Arrays.asList(net.getIPv4addr()));
-            netInfo.setSpeed(net.getSpeed() / 1_000_000);
+            netInfo.setSpeed((int) (net.getSpeed() / 1_000_000));
             netInfo.setBytesSent(net.getBytesSent());
-            netInfo.setBytesReceived(net.getBytesReceived());
+            netInfo.setBytesReceived(net.getBytesRecv());
             netInfo.setPacketsSent(net.getPacketsSent());
-            netInfo.setPacketsReceived(net.getPacketsReceived());
+            netInfo.setPacketsReceived(net.getPacketsRecv());
             netInfo.setLinkStatus(net.isConnectorPresent());
 
             networks.add(netInfo);
-            logger.info("Network interface detected: {}", netInfo.getInterface());
+            logger.info("Network interface detected: {}", netInfo.getNetworkInterface());
         }
     }
 
@@ -166,7 +167,42 @@ public class HardwareMonitor {
             battery.setPresent(true);
             battery.setPercent(ps.getRemainingCapacityPercent() * 100);
             battery.setCharging(ps.isCharging());
-            battery.setTimeRemaining(ps.getTimeRemaining());
+
+            // Different OSHI versions have different method names
+            // Try to get time remaining safely
+            Integer timeRemaining = null;
+            try {
+                // Try getTimeRemaining() first (returns Optional<Long> in newer versions)
+                Object timeRemainingObj = ps.getClass().getMethod("getTimeRemaining").invoke(ps);
+                if (timeRemainingObj instanceof Optional) {
+                    Optional<?> opt = (Optional<?>) timeRemainingObj;
+                    if (opt.isPresent()) {
+                        long seconds = (Long) opt.get();
+                        if (seconds > 0) {
+                            timeRemaining = (int) (seconds / 60);
+                        }
+                    }
+                } else if (timeRemainingObj instanceof Long) {
+                    long seconds = (Long) timeRemainingObj;
+                    if (seconds > 0) {
+                        timeRemaining = (int) (seconds / 60);
+                    }
+                }
+            } catch (Exception e) {
+                // Method not available, try getTimeRemainingEstimated
+                try {
+                    Object timeRemainingObj = ps.getClass().getMethod("getTimeRemainingEstimated").invoke(ps);
+                    if (timeRemainingObj instanceof Long) {
+                        long seconds = (Long) timeRemainingObj;
+                        if (seconds > 0) {
+                            timeRemaining = (int) (seconds / 60);
+                        }
+                    }
+                } catch (Exception e2) {
+                    logger.debug("Could not get battery time remaining");
+                }
+            }
+            battery.setTimeRemaining(timeRemaining);
             battery.setManufacturer(ps.getName());
 
             logger.info("Battery detected: {:.1f}%", battery.getPercent());
@@ -178,16 +214,9 @@ public class HardwareMonitor {
     private void detectGPU() {
         gpus.clear();
 
-        // Try NVIDIA via nvidia-smi
         detectNvidiaGPU();
-
-        // Try AMD via rocm-smi
         detectAMDGPU();
 
-        // Try Intel via system info
-        detectIntelGPU();
-
-        // If no GPUs found, add placeholder
         if (gpus.isEmpty()) {
             GPUInfo softwareGPU = new GPUInfo();
             softwareGPU.setName("Software Renderer");
@@ -199,11 +228,11 @@ public class HardwareMonitor {
 
     private void detectNvidiaGPU() {
         try {
-            Process process = Runtime.getRuntime().exec("nvidia-smi --query-gpu=name,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader");
+            ProcessBuilder pb = new ProcessBuilder("nvidia-smi", "--query-gpu=name,memory.total,utilization.gpu,temperature.gpu", "--format=csv,noheader");
+            Process process = pb.start();
             process.waitFor();
 
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
@@ -241,46 +270,52 @@ public class HardwareMonitor {
 
     private void detectAMDGPU() {
         try {
-            Process process = Runtime.getRuntime().exec("rocm-smi --showproductname --showmemuse --showuse --showtemp");
+            ProcessBuilder pb = new ProcessBuilder("rocm-smi", "--showproductname", "--showmemuse", "--showuse", "--showtemp");
+            Process process = pb.start();
             process.waitFor();
 
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
+            GPUInfo gpu = null;
             while ((line = reader.readLine()) != null) {
-                if (line.contains("GPU")) {
-                    GPUInfo gpu = new GPUInfo();
+                if (line.contains("GPU") && line.contains("Product Name:")) {
+                    if (gpu != null) {
+                        gpus.add(gpu);
+                    }
+                    gpu = new GPUInfo();
                     gpu.setType(GPUType.AMD_ROCM);
                     gpu.setVendor("AMD");
-
-                    // Parse name
-                    if (line.contains("Product Name:")) {
-                        gpu.setName(line.substring(line.indexOf("Product Name:") + 13).trim());
-                    }
-
-                    // Parse memory
-                    if (line.contains("Memory Used:")) {
-                        String memStr = line.substring(line.indexOf("Memory Used:") + 12).trim();
-                        if (memStr.contains("MB")) {
-                            long memMB = Long.parseLong(memStr.replace("MB", "").trim());
-                            gpu.setMemoryUsed(memMB * 1024 * 1024);
-                        }
-                    }
-
-                    gpus.add(gpu);
-                    logger.info("AMD GPU detected: {}", gpu.getName());
+                    String name = line.substring(line.indexOf("Product Name:") + 13).trim();
+                    gpu.setName(name);
                 }
+                if (gpu != null && line.contains("Memory Used:")) {
+                    String memStr = line.substring(line.indexOf("Memory Used:") + 12).trim();
+                    if (memStr.contains("MB")) {
+                        long memMB = Long.parseLong(memStr.replace("MB", "").trim());
+                        gpu.setMemoryUsed(memMB * 1024 * 1024);
+                    }
+                }
+                if (gpu != null && line.contains("Use:")) {
+                    String useStr = line.substring(line.indexOf("Use:") + 4).trim();
+                    if (useStr.contains("%")) {
+                        gpu.setUtilization(Double.parseDouble(useStr.replace("%", "").trim()));
+                    }
+                }
+                if (gpu != null && line.contains("Temperature:")) {
+                    String tempStr = line.substring(line.indexOf("Temperature:") + 12).trim();
+                    if (tempStr.contains("°C")) {
+                        gpu.setTemperature(Double.parseDouble(tempStr.replace("°C", "").trim()));
+                    }
+                }
+            }
+            if (gpu != null) {
+                gpus.add(gpu);
+                logger.info("AMD GPU detected: {}", gpu.getName());
             }
             reader.close();
         } catch (Exception e) {
             logger.debug("No AMD GPU detected: {}", e.getMessage());
         }
-    }
-
-    private void detectIntelGPU() {
-        // Intel GPUs are typically integrated and detected via system info
-        // This is a placeholder - actual detection would require additional libraries
-        logger.debug("Intel GPU detection would require additional libraries");
     }
 
     public void startMonitoring(int interval) {
@@ -327,21 +362,18 @@ public class HardwareMonitor {
         HardwareSnapshot snapshot = new HardwareSnapshot();
         snapshot.setTimestamp(LocalDateTime.now());
 
-        // CPU
         CentralProcessor processor = hal.getProcessor();
         long[] prevTicks = processor.getSystemCpuLoadTicks();
         try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        long[] ticks = processor.getSystemCpuLoadTicks();
 
         double cpuLoad = processor.getSystemCpuLoadBetweenTicks(prevTicks) * 100;
         snapshot.setCpuUsage(cpuLoad);
 
-        // CPU Temperature (if available)
         try {
-            Process process = Runtime.getRuntime().exec("wmic /namespace:\\\\root\\wmi PATH MSAcpi_ThermalZoneTemperature get CurrentTemperature");
+            ProcessBuilder pb = new ProcessBuilder("wmic", "/namespace:\\\\root\\wmi", "PATH", "MSAcpi_ThermalZoneTemperature", "get", "CurrentTemperature");
+            Process process = pb.start();
             process.waitFor();
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.matches("\\d+")) {
@@ -356,13 +388,11 @@ public class HardwareMonitor {
             // Temperature not available
         }
 
-        // CPU Frequency
         long[] freqs = processor.getCurrentFreq();
         if (freqs.length > 0) {
             snapshot.setCpuFreq(freqs[0] / 1_000_000.0);
         }
 
-        // GPU
         List<Double> gpuUsage = new ArrayList<>();
         List<Double> gpuTemp = new ArrayList<>();
         List<Long> gpuMemory = new ArrayList<>();
@@ -379,17 +409,15 @@ public class HardwareMonitor {
         snapshot.setGpuMemory(gpuMemory);
         snapshot.setGpuPower(gpuPower);
 
-        // RAM
         GlobalMemory memory = hal.getMemory();
         snapshot.setRamUsage((double) (memory.getTotal() - memory.getAvailable()) / memory.getTotal() * 100);
         snapshot.setRamAvailable(memory.getAvailable());
 
-        if (memory.getPageSize() > 0) {
+        if (memory.getVirtualMemory() != null) {
             snapshot.setSwapUsage((double) memory.getVirtualMemory().getSwapUsed() /
                     memory.getVirtualMemory().getSwapTotal() * 100);
         }
 
-        // Disk
         Map<String, Double> diskUsage = new HashMap<>();
         Map<String, long[]> diskIo = new HashMap<>();
         for (HWDiskStore disk : hal.getDiskStores()) {
@@ -399,39 +427,37 @@ public class HardwareMonitor {
         snapshot.setDiskUsage(diskUsage);
         snapshot.setDiskIo(diskIo);
 
-        // Network
         long totalSent = 0, totalReceived = 0;
         for (NetworkIF net : hal.getNetworkIFs()) {
             net.updateAttributes();
             totalSent += net.getBytesSent();
-            totalReceived += net.getBytesReceived();
+            totalReceived += net.getBytesRecv();
         }
         snapshot.setNetworkIo(new long[]{totalSent, totalReceived});
 
-        // Battery
         if (battery != null) {
             snapshot.setBatteryPercent(battery.getPercent());
         }
 
-        // Process count
         snapshot.setProcessCount(hal.getProcessor().getLogicalProcessorCount());
+        snapshot.setUptime(os.getSystemUptime());
 
-        // Uptime
-        snapshot.setUptime(hal.getProcessor().getSystemUptime());
-
-        // Load average (Unix-like systems only)
         if (System.getProperty("os.name").toLowerCase().contains("nix") ||
                 System.getProperty("os.name").toLowerCase().contains("nux") ||
                 System.getProperty("os.name").toLowerCase().contains("mac")) {
-            snapshot.setLoadAverage(new double[]{processor.getSystemLoadAverage(1),
-                    processor.getSystemLoadAverage(5),
-                    processor.getSystemLoadAverage(15)});
+            double[] loadAvg = new double[3];
+            double[] systemLoadAverage = processor.getSystemLoadAverage(3);
+            if (systemLoadAverage != null) {
+                for (int i = 0; i < systemLoadAverage.length && i < 3; i++) {
+                    loadAvg[i] = systemLoadAverage[i];
+                }
+            }
+            snapshot.setLoadAverage(loadAvg);
         }
 
         history.add(snapshot);
         snapshots.add(snapshot);
 
-        // Limit history size
         while (history.size() > 3600) {
             history.removeFirst();
         }
@@ -480,7 +506,6 @@ public class HardwareMonitor {
         CentralProcessor processor = hal.getProcessor();
         long[] prevTicks = processor.getSystemCpuLoadTicks();
         try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        long[] ticks = processor.getSystemCpuLoadTicks();
 
         cpu.setUtilization(processor.getSystemCpuLoadBetweenTicks(prevTicks) * 100);
 
@@ -489,12 +514,11 @@ public class HardwareMonitor {
             cpu.setCurrentFrequency(freqs[0] / 1_000_000.0);
         }
 
-        // Try to get temperature
         try {
-            Process process = Runtime.getRuntime().exec("wmic /namespace:\\\\root\\wmi PATH MSAcpi_ThermalZoneTemperature get CurrentTemperature");
+            ProcessBuilder pb = new ProcessBuilder("wmic", "/namespace:\\\\root\\wmi", "PATH", "MSAcpi_ThermalZoneTemperature", "get", "CurrentTemperature");
+            Process process = pb.start();
             process.waitFor();
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.matches("\\d+")) {
@@ -517,7 +541,7 @@ public class HardwareMonitor {
         ram.setFree(memory.getAvailable());
         ram.setUtilization((double) ram.getUsed() / ram.getTotal() * 100);
 
-        if (memory.getPageSize() > 0) {
+        if (memory.getVirtualMemory() != null) {
             ram.setSwapUsed(memory.getVirtualMemory().getSwapUsed());
             ram.setSwapFree(memory.getVirtualMemory().getSwapTotal() - memory.getVirtualMemory().getSwapUsed());
             ram.setSwapUtilization((double) ram.getSwapUsed() / ram.getSwapTotal() * 100);

@@ -4,8 +4,15 @@ import com.noty215.notycaption.ui.NotyCaptionWindow;
 import com.noty215.notycaption.utils.SingleInstance;
 import com.noty215.notycaption.utils.ResourcePath;
 import javafx.application.Application;
+import javafx.application.HostServices;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
@@ -31,6 +38,7 @@ public class Main extends Application {
 
     private static Stage primaryStage;
     private static NotyCaptionWindow mainWindow;
+    private static HostServices appHostServices;
 
     @Override
     public void init() throws Exception {
@@ -50,6 +58,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         primaryStage = stage;
+        appHostServices = getHostServices();
 
         // Check for single instance
         if (SingleInstance.isAlreadyRunning()) {
@@ -75,7 +84,7 @@ public class Main extends Application {
 
                         primaryStage = mainWindow.getStage();
                         primaryStage.setOnCloseRequest(event -> {
-                            mainWindow.close();
+                            mainWindow.closeWindow();
                             SingleInstance.release();
                         });
 
@@ -128,6 +137,10 @@ public class Main extends Application {
         return mainWindow;
     }
 
+    public static HostServices getAppHostServices() {
+        return appHostServices;
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -140,38 +153,33 @@ public class Main extends Application {
 
         public void show() {
             splashStage = new Stage(StageStyle.TRANSPARENT);
-            splashStage.initStyle(StageStyle.TRANSPARENT);
 
-            javafx.scene.Scene scene = new javafx.scene.Scene(createSplashContent());
-            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
-
-            splashStage.setScene(scene);
-            splashStage.centerOnScreen();
-            splashStage.show();
-        }
-
-        private javafx.scene.Parent createSplashContent() {
-            javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox();
-            vbox.setAlignment(javafx.geometry.Pos.CENTER);
+            VBox vbox = new VBox();
+            vbox.setAlignment(Pos.CENTER);
             vbox.setStyle("-fx-background-color: #1a1a2e; -fx-background-radius: 20;");
             vbox.setPrefSize(600, 400);
 
-            javafx.scene.control.Label title = new javafx.scene.control.Label(APP_NAME);
+            Label title = new Label(APP_NAME);
             title.setStyle("-fx-text-fill: #89b4fa; -fx-font-size: 36px; -fx-font-weight: bold;");
 
-            javafx.scene.control.Label subtitle = new javafx.scene.control.Label("AI-Powered Caption Generator");
+            Label subtitle = new Label("AI-Powered Caption Generator");
             subtitle.setStyle("-fx-text-fill: #cdd6f5; -fx-font-size: 18px;");
 
-            javafx.scene.control.Label version = new javafx.scene.control.Label("Version " + APP_VERSION);
+            Label version = new Label("Version " + APP_VERSION);
             version.setStyle("-fx-text-fill: #a6e3a1; -fx-font-size: 14px;");
 
-            javafx.scene.control.ProgressIndicator progress = new javafx.scene.control.ProgressIndicator();
+            ProgressIndicator progress = new ProgressIndicator();
             progress.setStyle("-fx-progress-color: #89b4fa;");
 
             vbox.getChildren().addAll(title, subtitle, version, progress);
             vbox.setSpacing(20);
 
-            return vbox;
+            Scene scene = new Scene(vbox);
+            scene.setFill(Color.TRANSPARENT);
+
+            splashStage.setScene(scene);
+            splashStage.centerOnScreen();
+            splashStage.show();
         }
 
         public void hide() {

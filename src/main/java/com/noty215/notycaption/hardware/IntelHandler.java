@@ -3,6 +3,9 @@ package com.noty215.notycaption.hardware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 /**
  * Handler for Intel GPU monitoring
  */
@@ -14,7 +17,6 @@ public class IntelHandler {
     static {
         try {
             // Check for Intel GPU via system info
-            // This is a placeholder - actual detection requires platform-specific code
             intelAvailable = System.getProperty("os.name").toLowerCase().contains("windows");
             if (intelAvailable) {
                 logger.info("Intel GPU monitoring available (Windows)");
@@ -35,8 +37,8 @@ public class IntelHandler {
         if (!intelAvailable) return "";
 
         try {
-            // On Windows, use WMI
-            Process process = Runtime.getRuntime().exec("wmic path win32_videocontroller get name,adapterram");
+            ProcessBuilder pb = new ProcessBuilder("wmic", "path", "win32_videocontroller", "get", "name,adapterram");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             StringBuilder output = new StringBuilder();
             String line;
@@ -63,7 +65,8 @@ public class IntelHandler {
         if (!intelAvailable) return "";
 
         try {
-            Process process = Runtime.getRuntime().exec("wmic path win32_videocontroller where name like '%Intel%' get name");
+            ProcessBuilder pb = new ProcessBuilder("wmic", "path", "win32_videocontroller", "where", "name like '%Intel%'", "get", "name");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -85,7 +88,8 @@ public class IntelHandler {
         if (!intelAvailable) return 0;
 
         try {
-            Process process = Runtime.getRuntime().exec("wmic path win32_videocontroller where name like '%Intel%' get adapterram");
+            ProcessBuilder pb = new ProcessBuilder("wmic", "path", "win32_videocontroller", "where", "name like '%Intel%'", "get", "adapterram");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -102,21 +106,5 @@ public class IntelHandler {
             logger.error("Failed to get Intel GPU memory", e);
         }
         return 0;
-    }
-
-    private static class BufferedReader {
-        private final java.io.BufferedReader reader;
-
-        public BufferedReader(java.io.Reader reader) {
-            this.reader = new java.io.BufferedReader(reader);
-        }
-
-        public String readLine() throws java.io.IOException {
-            return reader.readLine();
-        }
-
-        public void close() throws java.io.IOException {
-            reader.close();
-        }
     }
 }

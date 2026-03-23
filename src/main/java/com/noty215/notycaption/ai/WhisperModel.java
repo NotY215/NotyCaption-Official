@@ -90,7 +90,13 @@ public class WhisperModel {
             }
         }
 
-        int exitCode = process.waitFor(10, TimeUnit.MINUTES);
+        boolean finished = process.waitFor(10, TimeUnit.MINUTES);
+        if (!finished) {
+            process.destroy();
+            throw new RuntimeException("Whisper timed out");
+        }
+
+        int exitCode = process.exitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Whisper failed with exit code: " + exitCode);
         }

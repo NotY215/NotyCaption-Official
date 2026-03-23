@@ -62,6 +62,10 @@ public class ProgressTracker {
         }
     }
 
+    public synchronized long getStartTime() {
+        return startTime.toEpochMilli();
+    }
+
     private String formatDuration(long seconds) {
         long hours = seconds / 3600;
         long minutes = (seconds % 3600) / 60;

@@ -1,21 +1,24 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.noty215'
-version = '2026.5.0'
+version = '2026.6.0'
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    google()
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
 }
 
 javafx {
     version = "21"
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.media', 'javafx.web']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.media', 'javafx.web', 'javafx.base', 'javafx.graphics']
 }
 
 application {
@@ -23,14 +26,17 @@ application {
 }
 
 dependencies {
-    // JavaFX
-    implementation 'org.openjfx:javafx-controls:21'
-    implementation 'org.openjfx:javafx-fxml:21'
-    implementation 'org.openjfx:javafx-media:21'
-    implementation 'org.openjfx:javafx-web:21'
+    // JavaFX dependencies
+    implementation "org.openjfx:javafx-controls:21"
+    implementation "org.openjfx:javafx-fxml:21"
+    implementation "org.openjfx:javafx-media:21"
+    implementation "org.openjfx:javafx-web:21"
+    implementation "org.openjfx:javafx-base:21"
+    implementation "org.openjfx:javafx-graphics:21"
 
-    // Encryption
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    // Encryption and Security
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78'
 
     // JSON Processing
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -41,23 +47,19 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
     // Google Drive API
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
     implementation 'com.google.api-client:google-api-client:2.2.0'
     implementation 'com.google.oauth-client:google-oauth-client-jetty:1.34.1'
-    implementation 'com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0'
+    implementation 'com.google.http-client:google-http-client-jackson2:1.43.3'
 
     // Audio Processing
-    implementation 'com.github.wendykierp:JTransforms:3.1'
     implementation 'org.bytedeco:javacv:1.5.9'
+    implementation 'org.bytedeco:javacpp:1.5.9'
+    implementation 'org.bytedeco:ffmpeg:6.0-1.5.9'
     implementation 'org.bytedeco:ffmpeg-platform:6.0-1.5.9'
 
-    // Subtitle Processing
-    implementation 'com.github.albfernandez:juniversalchardet:2.4.0'
-
-    // Hardware Monitoring
+    // Hardware Monitoring (OSHI)
     implementation 'com.github.oshi:oshi-core:6.4.10'
-
-    // Process Management
-    implementation 'org.apache.commons:commons-exec:1.3'
 
     // Logging
     implementation 'org.slf4j:slf4j-simple:2.0.9'
@@ -67,21 +69,287 @@ dependencies {
 
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
+tasks.withType(JavaExec) {
+    jvmArgs = [
+            '--add-modules', 'javafx.controls,javafx.fxml,javafx.media,javafx.web,javafx.base,javafx.graphics',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+            '--add-opens', 'javafx.graphics/com.sun.javafx.application=ALL-UNNAMED',
+            '--add-opens', 'javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+            '--add-exports', 'javafx.graphics/com.sun.javafx.application=ALL-UNNAMED'
+    ]
+}
+
 shadowJar {
     manifest {
-        attributes 'Main-Class': 'com.noty215.notycaption.Main'
+        attributes(
+                'Main-Class': 'com.noty215.notycaption.Main',
+                'Implementation-Title': 'NotyCaption Pro',
+                'Implementation-Version': version,
+                'Implementation-Vendor': 'NotY215',
+                'JavaFX-Version': '21'
+        )
     }
     mergeServiceFiles()
-    archiveFileName = 'NotyCaptionPro.jar'
+    archiveFileName = "NotyCaptionPro-${version}.jar"
+
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+
+    // Merge JavaFX modules
+    mergeServiceFiles {
+        include 'META-INF/services/javax.imageio.spi.ImageWriterSpi'
+        include 'META-INF/services/javax.imageio.spi.ImageReaderSpi'
+    }
 }
 
 test {
     useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
+
+// Disable conflicting tasks
+tasks.distTar.enabled = false
+tasks.distZip.enabled = false
+tasks.startScripts.enabled = false
+tasks.installDist.enabled = false
+tasks.startShadowScripts.enabled = false
+tasks.shadowDistTar.enabled = false
+tasks.shadowDistZip.enabled = false
+
+// Task to run the application directly
+task runApp(dependsOn: 'classes', type: JavaExec) {
+    group = 'application'
+    description = 'Run the NotyCaption Pro application'
+    mainClass = 'com.noty215.notycaption.Main'
+    classpath = sourceSets.main.runtimeClasspath
+
+    // Get JavaFX module path
+    def javaFxModules = javafx.modules.collect { "--add-modules=$it" }
+    jvmArgs = [
+            '--module-path', project.projectDir.toString() + '/build/classes/java/main',
+            '--add-modules', javafx.modules.join(','),
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+            '--add-opens', 'javafx.graphics/com.sun.javafx.application=ALL-UNNAMED',
+            '--add-opens', 'javafx.graphics/com.sun.glass.ui=ALL-UNNAMED',
+            '--add-exports', 'javafx.graphics/com.sun.javafx.application=ALL-UNNAMED'
+    ]
+
+    workingDir = project.projectDir
+    enableAssertions = true
+    standardInput = System.in
+}
+
+// Task to run the JAR file
+task runJar(type: JavaExec) {
+    group = 'application'
+    description = 'Run the built JAR file'
+    dependsOn shadowJar
+
+    mainClass = '-jar'
+    args = ["${buildDir}/libs/NotyCaptionPro-${version}.jar"]
+
+    jvmArgs = [
+            '--add-modules', javafx.modules.join(','),
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED'
+    ]
+}
+
+// Task to run tests with verbose output
+task testVerbose(type: Test) {
+    group = 'verification'
+    description = 'Run tests with verbose output'
+    useJUnitPlatform()
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = "full"
+        showStandardStreams = true
+    }
+}
+
+// Task to create a distribution zip
+task createDistribution(type: Zip) {
+    group = 'distribution'
+    description = 'Create a distribution zip file'
+
+    dependsOn shadowJar
+
+    from('src/main/resources') {
+        include '*.html'
+        include '*.ico'
+        include '*.json'
+        include '*.properties'
+        into 'resources'
+    }
+
+    from(buildDir) {
+        include "libs/NotyCaptionPro-${version}.jar"
+        into 'libs'
+    }
+
+    from('.') {
+        include 'README.md'
+        include 'LICENSE'
+        into '.'
+    }
+
+    // Add run scripts
+    from('.') {
+        include 'run.bat'
+        include 'run.sh'
+        into '.'
+    }
+
+    archiveFileName = "NotyCaptionPro-${version}.zip"
+    destinationDirectory = file("${buildDir}/distributions")
+}
+
+// Create run script for Windows
+task createRunScript {
+    group = 'distribution'
+    description = 'Create run script for the application'
+
+    doLast {
+        def runBat = file('run.bat')
+        runBat.text = '''@echo off
+set JAVA_HOME=%JAVA_HOME%
+if "%JAVA_HOME%"=="" set JAVA_HOME=%JAVA_HOME%
+if "%JAVA_HOME%"=="" (
+    echo Please set JAVA_HOME environment variable
+    pause
+    exit /b 1
+)
+"%JAVA_HOME%\\bin\\java" --add-modules javafx.controls,javafx.fxml,javafx.media,javafx.web,javafx.base,javafx.graphics -jar "%~dp0libs\\NotyCaptionPro-''' + version + '''.jar"
+pause
+'''
+
+        def runSh = file('run.sh')
+        runSh.text = '''#!/bin/bash
+JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk}
+if [ ! -d "$JAVA_HOME" ]; then
+    echo "Please set JAVA_HOME environment variable"
+    exit 1
+fi
+"$JAVA_HOME/bin/java" --add-modules javafx.controls,javafx.fxml,javafx.media,javafx.web,javafx.base,javafx.graphics -jar "$(dirname "$0")/libs/NotyCaptionPro-''' + version + '''.jar"
+'''
+        runSh.setExecutable(true)
+    }
+}
+
+// Clean up task
+task cleanAll(type: Delete) {
+    group = 'build'
+    description = 'Delete all build artifacts and temporary files'
+
+    delete buildDir
+    delete 'logs'
+    delete '*.log'
+    delete '*.tmp'
+    delete '*.pt'
+    delete 'settings.notcapz'
+    delete 'key.notcapz'
+    delete 'session.json'
+    delete 'token.json'
+    delete '.gradle'
+    delete 'gradle'
+
+    followSymlinks = false
+}
+
+// Task to set up development environment
+task setupDev {
+    group = 'development'
+    description = 'Set up development environment (create necessary directories)'
+
+    doLast {
+        mkdir 'logs'
+        mkdir 'models'
+        mkdir 'temp'
+        mkdir 'cache'
+        mkdir "${buildDir}/libs"
+        mkdir 'src/main/resources'
+
+        println "=" * 60
+        println "Development environment setup complete!"
+        println "=" * 60
+        println "Created directories:"
+        println "  - logs/"
+        println "  - models/"
+        println "  - temp/"
+        println "  - cache/"
+        println "  - ${buildDir}/libs/"
+        println "  - src/main/resources/"
+        println ""
+        println "Next steps:"
+        println "  1. Place your Google OAuth client.json in src/main/resources/"
+        println "  2. Run 'gradle runApp' to start the application"
+        println "  3. Run 'gradle shadowJar' to build a standalone JAR"
+        println "=" * 60
+    }
+}
+
+// Task to display project information
+task projectInfo {
+    group = 'help'
+    description = 'Display project information'
+
+    doLast {
+        println "=" * 60
+        println "NotyCaption Pro - Project Information"
+        println "=" * 60
+        println "Name: ${project.name}"
+        println "Version: ${project.version}"
+        println "Group: ${project.group}"
+        println "Java Version: ${JavaVersion.current()}"
+        println "Gradle Version: ${gradle.gradleVersion}"
+        println "Build Directory: ${buildDir}"
+        println "Source Compatibility: ${sourceCompatibility}"
+        println "Target Compatibility: ${targetCompatibility}"
+        println "Main Class: ${application.mainClass}"
+        println "JavaFX Modules: ${javafx.modules}"
+        println ""
+        println "Dependencies:"
+        configurations.compileClasspath.get().resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            println "  - ${artifact.name}: ${artifact.moduleVersion.id.version}"
+        }
+        println "=" * 60
+        println "\nUseful Commands:"
+        println "  gradle runApp          - Run the application"
+        println "  gradle runJar          - Run the built JAR file"
+        println "  gradle shadowJar       - Build a standalone JAR file"
+        println "  gradle test            - Run tests"
+        println "  gradle cleanAll        - Clean all build artifacts"
+        println "  gradle setupDev        - Set up development environment"
+        println "  gradle createDistribution - Create a distribution zip"
+        println "=" * 60
+    }
+}
+
+// Make sure createRunScript runs before createDistribution
+createDistribution.dependsOn createRunScript

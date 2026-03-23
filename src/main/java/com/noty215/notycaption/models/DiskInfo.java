@@ -20,7 +20,7 @@ public class DiskInfo {
     private String model;
     private String serial;
     private String firmware;
-    private String interface;
+    private String diskInterface;  // Changed from 'interface' to 'diskInterface'
     private String mediaType;
     private String formFactor;
     private Double temperature;
@@ -109,8 +109,8 @@ public class DiskInfo {
     public String getFirmware() { return firmware; }
     public void setFirmware(String firmware) { this.firmware = firmware; }
 
-    public String getInterface() { return interface; }
-    public void setInterface(String interface) { this.interface = interface; }
+    public String getDiskInterface() { return diskInterface; }
+    public void setDiskInterface(String diskInterface) { this.diskInterface = diskInterface; }
 
     public String getMediaType() { return mediaType; }
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }

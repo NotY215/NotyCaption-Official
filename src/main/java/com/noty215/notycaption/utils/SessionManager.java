@@ -2,7 +2,7 @@ package com.noty215.notycaption.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.noty215.notycaption.models.SubtitleEntry;
+import com.noty215.notycaption.subtitle.SubtitleEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +51,7 @@ public class SessionManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> loadSession() {
         lock.lock();
         try {
@@ -89,6 +90,7 @@ public class SessionManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void saveOperationState(String operationType, Map<String, Object> data) {
         Map<String, Object> session = loadSession();
         if (session == null) {
@@ -134,6 +136,7 @@ public class SessionManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void saveSubtitles(List<SubtitleEntry> subtitles, String filePath) {
         Map<String, Object> data = new HashMap<>();
         data.put("subtitles", subtitles);

@@ -9,6 +9,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDateTime;
@@ -209,11 +210,5 @@ public class PerformanceGraphWidget extends VBox {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    private static class HBox extends javafx.scene.layout.HBox {
-        public HBox(double spacing) {
-            super(spacing);
-        }
     }
 }

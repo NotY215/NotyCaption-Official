@@ -6,6 +6,7 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -43,11 +44,9 @@ public class OnlineHandler {
 
     public boolean login() {
         try {
-            // Load client secrets from resource
             InputStream in = new FileInputStream(ResourcePath.getFile("client.json"));
             GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
-            // Build flow and trigger user authorization request
             NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                     httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
@@ -57,7 +56,6 @@ public class OnlineHandler {
             LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(0).build();
             Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
 
-            // Build Drive service
             driveService = new Drive.Builder(httpTransport, JSON_FACTORY, credential)
                     .setApplicationName("NotyCaption")
                     .build();
@@ -79,8 +77,8 @@ public class OnlineHandler {
         return currentNotebookUrl;
     }
 
-    public void generateCaptions(File audioFile, String languageCode, String task,
-                                 int wordsPerLine, String formatExt, File outputFile,
+    public void generateCaptions(java.io.File audioFile, String languageCode, String task,
+                                 int wordsPerLine, String formatExt, java.io.File outputFile,
                                  GenerationCallback callback) {
         canceled.set(false);
 
@@ -90,7 +88,6 @@ public class OnlineHandler {
                     throw new RuntimeException("Not logged in");
                 }
 
-                // Upload audio file
                 callback.onProgress(10, "Uploading audio...");
                 String audioFileId = uploadFile(audioFile, "uploads");
                 if (canceled.get()) {
@@ -99,7 +96,6 @@ public class OnlineHandler {
                     return;
                 }
 
-                // Generate and upload notebook
                 callback.onProgress(30, "Generating notebook...");
                 String notebookId = createNotebook(audioFile.getName(), languageCode, task, wordsPerLine, formatExt);
                 if (canceled.get()) {
@@ -108,11 +104,9 @@ public class OnlineHandler {
                     return;
                 }
 
-                // Open Colab
                 currentNotebookUrl = "https://colab.research.google.com/drive/" + notebookId;
                 callback.onNotebookUrl(currentNotebookUrl);
 
-                // Wait for output
                 callback.onProgress(50, "Waiting for Colab...");
                 String outputFileId = pollForOutput(outputFile.getName());
                 if (canceled.get()) {
@@ -121,7 +115,6 @@ public class OnlineHandler {
                     return;
                 }
 
-                // Download result
                 callback.onProgress(80, "Downloading result...");
                 downloadFile(outputFileId, outputFile);
                 if (canceled.get()) {
@@ -130,7 +123,6 @@ public class OnlineHandler {
                     return;
                 }
 
-                // Cleanup
                 cleanup(audioFileId, notebookId);
 
                 callback.onProgress(100, "Complete");
@@ -143,26 +135,23 @@ public class OnlineHandler {
         }).start();
     }
 
-    private String uploadFile(File file, String folderName) throws Exception {
-        // Get or create folder
+    private String uploadFile(java.io.File localFile, String folderName) throws Exception {
         String folderId = getOrCreateFolder(folderName);
 
-        // Upload file
         File fileMetadata = new File();
-        fileMetadata.setName(file.getName());
+        fileMetadata.setName(localFile.getName());
         fileMetadata.setParents(Collections.singletonList(folderId));
 
-        java.io.FileInputStream stream = new java.io.FileInputStream(file);
-        Drive.Files.Create request = driveService.files().create(fileMetadata, new com.google.api.client.http.FileContent("audio/wav", file));
-        File uploadedFile = request.execute();
+        FileContent mediaContent = new FileContent("audio/wav", localFile);
+        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                .setFields("id")
+                .execute();
 
-        stream.close();
         logger.info("Uploaded file: {}", uploadedFile.getId());
         return uploadedFile.getId();
     }
 
     private String getOrCreateFolder(String folderName) throws Exception {
-        // Search for existing folder
         String query = "name='" + folderName + "' and mimeType='application/vnd.google-apps.folder' and trashed=false";
         FileList result = driveService.files().list().setQ(query).setFields("files(id, name)").execute();
         List<File> files = result.getFiles();
@@ -171,7 +160,6 @@ public class OnlineHandler {
             return files.get(0).getId();
         }
 
-        // Create new folder
         File folderMetadata = new File();
         folderMetadata.setName(folderName);
         folderMetadata.setMimeType("application/vnd.google-apps.folder");
@@ -183,24 +171,21 @@ public class OnlineHandler {
 
     private String createNotebook(String audioFileName, String languageCode, String task,
                                   int wordsPerLine, String formatExt) throws Exception {
-        // Generate notebook content
         String notebookContent = generateNotebookContent(audioFileName, languageCode, task, wordsPerLine, formatExt);
 
-        // Create temporary file
         Path tempNotebook = Files.createTempFile("notebook_", ".ipynb");
         Files.write(tempNotebook, notebookContent.getBytes());
 
-        // Upload notebook
         String folderId = getOrCreateFolder("notebooks");
         File fileMetadata = new File();
         fileMetadata.setName("NotyCaption_Generator.ipynb");
         fileMetadata.setParents(Collections.singletonList(folderId));
 
-        java.io.FileInputStream stream = new java.io.FileInputStream(tempNotebook.toFile());
-        Drive.Files.Create request = driveService.files().create(fileMetadata, new com.google.api.client.http.FileContent("application/json", tempNotebook.toFile()));
-        File uploadedFile = request.execute();
+        FileContent mediaContent = new FileContent("application/json", tempNotebook.toFile());
+        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                .setFields("id")
+                .execute();
 
-        stream.close();
         Files.delete(tempNotebook);
 
         logger.info("Created notebook: {}", uploadedFile.getId());
@@ -209,100 +194,27 @@ public class OnlineHandler {
 
     private String generateNotebookContent(String audioFileName, String languageCode, String task,
                                            int wordsPerLine, String formatExt) {
-        return
-                "{\n" +
-                        "  \"nbformat\": 4,\n" +
-                        "  \"nbformat_minor\": 0,\n" +
-                        "  \"metadata\": {\n" +
-                        "    \"kernelspec\": {\"name\": \"python3\", \"display_name\": \"Python 3\"},\n" +
-                        "    \"language_info\": {\"name\": \"python\"},\n" +
-                        "    \"accelerator\": \"GPU\"\n" +
-                        "  },\n" +
-                        "  \"cells\": [\n" +
-                        "    {\n" +
-                        "      \"cell_type\": \"code\",\n" +
-                        "      \"metadata\": {},\n" +
-                        "      \"source\": [\n" +
-                        "        \"%%capture\\n\",\n" +
-                        "        \"!apt update -qq\\n\",\n" +
-                        "        \"!apt install -y ffmpeg -qq\\n\",\n" +
-                        "        \"!pip install -q openai-whisper\\n\",\n" +
-                        "        \"!pip install -q pysrt pysubs2\\n\",\n" +
-                        "        \"import os\\n\",\n" +
-                        "        \"print('Dependencies installed')\\n\"\n" +
-                        "      ]\n" +
-                        "    },\n" +
-                        "    {\n" +
-                        "      \"cell_type\": \"code\",\n" +
-                        "      \"metadata\": {},\n" +
-                        "      \"source\": [\n" +
-                        "        \"from google.colab import drive\\n\",\n" +
-                        "        \"drive.mount('/content/drive', force_remount=True)\\n\",\n" +
-                        "        \"print('Drive mounted')\\n\"\n" +
-                        "      ]\n" +
-                        "    },\n" +
-                        "    {\n" +
-                        "      \"cell_type\": \"code\",\n" +
-                        "      \"metadata\": {},\n" +
-                        "      \"source\": [\n" +
-                        "        \"import whisper\\n\",\n" +
-                        "        \"print('Loading model...')\\n\",\n" +
-                        "        \"model = whisper.load_model('large-v3')\\n\",\n" +
-                        "        \"print('Model loaded')\\n\"\n" +
-                        "      ]\n" +
-                        "    },\n" +
-                        "    {\n" +
-                        "      \"cell_type\": \"code\",\n" +
-                        "      \"metadata\": {},\n" +
-                        "      \"source\": [\n" +
-                        "        \"audio_path = '/content/drive/My Drive/uploads/" + audioFileName + "'\\n\",\n" +
-                        "        \"result = model.transcribe(audio_path, language='" + languageCode + "', task='" + task + "', word_timestamps=True)\\n\",\n" +
-                        "        \"print('Transcription complete')\\n\"\n" +
-                        "      ]\n" +
-                        "    },\n" +
-                        "    {\n" +
-                        "      \"cell_type\": \"code\",\n" +
-                        "      \"metadata\": {},\n" +
-                        "      \"source\": [\n" +
-                        "        \"import pysrt\\n\",\n" +
-                        "        \"import pysubs2\\n\",\n" +
-                        "        \"from datetime import timedelta\\n\",\n" +
-                        "        \"subtitles = []\\n\",\n" +
-                        "        \"idx = 1\\n\",\n" +
-                        "        \"for seg in result['segments']:\\n\",\n" +
-                        "        \"    words = seg.get('words', [])\\n\",\n" +
-                        "        \"    if not words: continue\\n\",\n" +
-                        "        \"    for i in range(0, len(words), " + wordsPerLine + "):\\n\",\n" +
-                        "        \"        chunk = words[i:i+" + wordsPerLine + "]\\n\",\n" +
-                        "        \"        if not chunk: continue\\n\",\n" +
-                        "        \"        text = ' '.join([w['word'].strip() for w in chunk])\\n\",\n" +
-                        "        \"        start = chunk[0]['start']\\n\",\n" +
-                        "        \"        end = chunk[-1]['end']\\n\",\n" +
-                        "        \"        subtitles.append((idx, start, end, text))\\n\",\n" +
-                        "        \"        idx += 1\\n\",\n" +
-                        "        \"output_path = '/content/drive/My Drive/captions" + formatExt + "'\\n\",\n" +
-                        "        \"if '" + formatExt + "' == '.srt':\\n\",\n" +
-                        "        \"    srt = pysrt.SubRipFile()\\n\",\n" +
-                        "        \"    for idx, start, end, text in subtitles:\\n\",\n" +
-                        "        \"        item = pysrt.SubRipItem(index=idx, start=pysrt.SubRipTime(milliseconds=int(start*1000)), end=pysrt.SubRipTime(milliseconds=int(end*1000)), text=text)\\n\",\n" +
-                        "        \"        srt.append(item)\\n\",\n" +
-                        "        \"    srt.save(output_path)\\n\",\n" +
-                        "        \"else:\\n\",\n" +
-                        "        \"    ass = pysubs2.SSAFile()\\n\",\n" +
-                        "        \"    for idx, start, end, text in subtitles:\\n\",\n" +
-                        "        \"        event = pysubs2.SSAEvent(start=int(start*1000), end=int(end*1000), text=text)\\n\",\n" +
-                        "        \"        ass.events.append(event)\\n\",\n" +
-                        "        \"    ass.save(output_path)\\n\",\n" +
-                        "        \"print('Captions saved')\\n\"\n" +
-                        "      ]\n" +
-                        "    }\n" +
-                        "  ]\n" +
-                        "}";
+        return "{\n" +
+                "  \"nbformat\": 4,\n" +
+                "  \"nbformat_minor\": 0,\n" +
+                "  \"metadata\": {\n" +
+                "    \"kernelspec\": {\"name\": \"python3\", \"display_name\": \"Python 3\"},\n" +
+                "    \"language_info\": {\"name\": \"python\"},\n" +
+                "    \"accelerator\": \"GPU\"\n" +
+                "  },\n" +
+                "  \"cells\": [\n" +
+                "    {\"cell_type\": \"code\", \"metadata\": {}, \"source\": [\"!pip install -q openai-whisper pysrt pysubs2\\n\", \"import whisper\\n\"]},\n" +
+                "    {\"cell_type\": \"code\", \"metadata\": {}, \"source\": [\"from google.colab import drive\\n\", \"drive.mount('/content/drive')\\n\"]},\n" +
+                "    {\"cell_type\": \"code\", \"metadata\": {}, \"source\": [\"model = whisper.load_model('large-v3')\\n\"]},\n" +
+                "    {\"cell_type\": \"code\", \"metadata\": {}, \"source\": [\"result = model.transcribe('/content/drive/MyDrive/uploads/" + audioFileName + "', language='" + languageCode + "', task='" + task + "')\\n\"]},\n" +
+                "    {\"cell_type\": \"code\", \"metadata\": {}, \"source\": [\"import pysrt\\n\", \"from datetime import timedelta\\n\", \"subtitles = []\\n\", \"idx = 1\\n\", \"for seg in result['segments']:\\n\", \"    words = seg.get('words', [])\\n\", \"    for i in range(0, len(words), " + wordsPerLine + "):\\n\", \"        chunk = words[i:i+" + wordsPerLine + "]\\n\", \"        text = ' '.join([w['word'].strip() for w in chunk])\\n\", \"        start = chunk[0]['start']\\n\", \"        end = chunk[-1]['end']\\n\", \"        subtitles.append((idx, start, end, text))\\n\", \"        idx += 1\\n\", \"output_path = '/content/drive/MyDrive/captions" + formatExt + "'\\n\", \"srt = pysrt.SubRipFile()\\n\", \"for idx, start, end, text in subtitles:\\n\", \"    item = pysrt.SubRipItem(index=idx, start=pysrt.SubRipTime(milliseconds=int(start*1000)), end=pysrt.SubRipTime(milliseconds=int(end*1000)), text=text)\\n\", \"    srt.append(item)\\n\", \"srt.save(output_path)\\n\", \"print('Done')\\n\"]}\n" +
+                "  ]\n" +
+                "}";
     }
 
     private String pollForOutput(String outputFileName) throws Exception {
         int attempts = 0;
-        int maxAttempts = 180; // 3 minutes at 1 second intervals
+        int maxAttempts = 180;
 
         while (attempts < maxAttempts && !canceled.get()) {
             String query = "name='" + outputFileName + "' and trashed=false";
@@ -320,7 +232,7 @@ public class OnlineHandler {
         throw new RuntimeException("Timeout waiting for output");
     }
 
-    private void downloadFile(String fileId, File outputFile) throws Exception {
+    private void downloadFile(String fileId, java.io.File outputFile) throws Exception {
         try (OutputStream out = new FileOutputStream(outputFile)) {
             driveService.files().get(fileId).executeMediaAndDownloadTo(out);
         }
@@ -349,7 +261,7 @@ public class OnlineHandler {
     public interface GenerationCallback {
         void onProgress(int progress, String message);
         void onNotebookUrl(String url);
-        void onComplete(File outputFile);
+        void onComplete(java.io.File outputFile);
         void onError(Exception e);
         void onCanceled();
     }
