@@ -36,6 +36,7 @@ KEY_FILE_NAME   = "key.notcapz"
 # Documentation files
 README_FILE     = "Readme.html"
 TOC_FILE        = "T&C.html"
+PRIVACY_FILE    = "Privacy.html"
 
 # Build directories
 BUILD_DIR       = "build"
@@ -75,8 +76,22 @@ PYINSTALLER_ARGS = [
     "--windowed",
     "--clean",
     "--noupx",
-    "--log-level=ERROR",  # Reduce noise
+    "--log-level=ERROR",
 ]
+
+# Model download URL
+MODEL_DOWNLOAD_URL = "https://huggingface.co/EgoGPT/speech_encoder/resolve/main/large-v3.pt?download=true"
+MODEL_NAME = "large-v3.pt"
+COLAB_MODEL_NAME = "large-v3-turbo"
+
+# App Data Roaming Path
+APPDATA_ROAMING = os.environ.get('APPDATA', os.path.expanduser('~'))
+APP_DATA_ROOT = os.path.join(APPDATA_ROAMING, "NotYCaptionGenAI")
+MODELS_DIR = os.path.join(APP_DATA_ROOT, "models")
+CACHE_DIR_APP = os.path.join(APP_DATA_ROOT, "cache")
+LOGS_DIR = os.path.join(APP_DATA_ROOT, "logs")
+EXPORTS_DIR_APP = os.path.join(APP_DATA_ROOT, "exports")
+BACKUPS_DIR_APP = os.path.join(APP_DATA_ROOT, "backups")
 
 # ────────────────────────────────────────────────
 # CLEANUP UTILITIES
@@ -90,11 +105,9 @@ def force_remove(path):
             if os.path.isfile(path) or os.path.islink(path):
                 os.unlink(path)
             elif os.path.isdir(path):
-                # First try normal rmtree
                 try:
                     shutil.rmtree(path, ignore_errors=False)
                 except:
-                    # If fails, try to change permissions and remove
                     for root, dirs, files in os.walk(path):
                         for d in dirs:
                             os.chmod(os.path.join(root, d), stat.S_IWRITE)
@@ -119,10 +132,8 @@ def clean_all_temp():
     removed_count = 0
     failed_count = 0
     
-    # Clean temp directories
     for pattern in TEMP_DIRECTORIES:
         if '*' in pattern:
-            # Handle wildcard patterns
             for path in glob.glob(pattern):
                 if force_remove(path):
                     print(f"✓ Removed: {path}")
@@ -130,7 +141,6 @@ def clean_all_temp():
                 else:
                     failed_count += 1
         else:
-            # Handle exact directory names
             if os.path.exists(pattern):
                 if force_remove(pattern):
                     print(f"✓ Removed directory: {pattern}/")
@@ -138,7 +148,6 @@ def clean_all_temp():
                 else:
                     failed_count += 1
     
-    # Clean temp files
     for pattern in TEMP_FILES:
         for path in glob.glob(pattern):
             if os.path.exists(path):
@@ -148,7 +157,6 @@ def clean_all_temp():
                 else:
                     failed_count += 1
     
-    # Clean Python cache directories recursively
     for root, dirs, files in os.walk('.'):
         if '__pycache__' in dirs:
             pycache = os.path.join(root, '__pycache__')
@@ -156,7 +164,6 @@ def clean_all_temp():
                 print(f"✓ Removed: {pycache}/")
                 removed_count += 1
         
-        # Clean .pyc files
         for file in files:
             if file.endswith('.pyc'):
                 pyc_file = os.path.join(root, file)
@@ -164,13 +171,7 @@ def clean_all_temp():
                     print(f"✓ Removed: {pyc_file}")
                     removed_count += 1
     
-    # Clean PyInstaller specific files
-    pyinstaller_files = [
-        "warn*.txt",
-        "*.toc",
-        "*.pyz",
-        "*.spec",
-    ]
+    pyinstaller_files = ["warn*.txt", "*.toc", "*.pyz", "*.spec"]
     for pattern in pyinstaller_files:
         for path in glob.glob(pattern):
             if os.path.exists(path):
@@ -255,7 +256,6 @@ def encrypt_client():
 def create_documentation():
     """Create HTML documentation files if they don't exist"""
     
-    # Readme.html
     if not os.path.exists(README_FILE):
         readme_content = """<!DOCTYPE html>
 <html>
@@ -310,7 +310,7 @@ def create_documentation():
     
     <div class="note">
         <strong>⚠️ Important:</strong> This software uses AI models that may require 
-        initial download (~2.9GB). Ensure stable internet connection for first run.
+        initial download (~2.9GB). Model is downloaded to: %APPDATA%\\NotYCaptionGenAI\\models\\
     </div>
     
     <p style="text-align: center; margin-top: 30px; color: #89b4fa;">
@@ -322,7 +322,6 @@ def create_documentation():
             f.write(readme_content)
         print(f"✓ Created {README_FILE}")
 
-    # T&C.html
     if not os.path.exists(TOC_FILE):
         toc_content = """<!DOCTYPE html>
 <html>
@@ -338,7 +337,7 @@ def create_documentation():
 </head>
 <body>
     <h1>📜 Terms and Conditions</h1>
-    <p><strong>Last Updated: March 2026</strong></p>
+    <p><strong>Last Updated: April 2026</strong></p>
     
     <div class="section">
         <h2>1. License Agreement</h2>
@@ -373,8 +372,9 @@ def create_documentation():
     
     <div class="section">
         <h2>5. AI Model Usage</h2>
-        <p>The Whisper and Spleeter models are downloaded separately and subject to their
+        <p>The Whisper models are downloaded separately from Hugging Face and subject to their
         respective licenses. You are responsible for complying with those licenses.</p>
+        <p>Model Download Location: %APPDATA%\\NotYCaptionGenAI\\models\\large-v3.pt</p>
     </div>
     
     <p style="text-align: center; margin-top: 30px;">
@@ -385,6 +385,13 @@ def create_documentation():
         with open(TOC_FILE, "w", encoding="utf-8") as f:
             f.write(toc_content)
         print(f"✓ Created {TOC_FILE}")
+
+def create_app_data_dirs():
+    """Create necessary app data directories in Roaming"""
+    dirs = [MODELS_DIR, CACHE_DIR_APP, LOGS_DIR, EXPORTS_DIR_APP, BACKUPS_DIR_APP]
+    for d in dirs:
+        os.makedirs(d, exist_ok=True)
+        print(f"✓ Created app data directory: {d}")
 
 # ────────────────────────────────────────────────
 # BUILD FUNCTIONS
@@ -449,7 +456,6 @@ def build_app():
             print(result.stderr)
         sys.exit(1)
     
-    # Copy to package folder
     src = f"dist/{APP_NAME}.exe"
     dst = f"{PACKAGE_DIR}/{APP_NAME}.exe"
     if os.path.exists(src):
@@ -487,7 +493,6 @@ def build_uninstaller():
             print(result.stderr)
         sys.exit(1)
     
-    # Copy to package folder
     src = "dist/uninstall.exe"
     dst = f"{PACKAGE_DIR}/uninstall.exe"
     if os.path.exists(src):
@@ -504,21 +509,20 @@ def build_installer():
     print(" Building Installer Package ".center(60))
     print("="*60)
 
-    # Copy installer script and required files
     shutil.copy2(INSTALLER_SCRIPT, f"{PACKAGE_DIR}/installer.py")
     shutil.copy2(ICON_FILE, f"{PACKAGE_DIR}/App.ico")
     shutil.copy2(UNINSTALLER_ICON, f"{PACKAGE_DIR}/Uninstaller.ico")
     shutil.copy2(ENCRYPTED_FILE, f"{PACKAGE_DIR}/client.notycapz")
     shutil.copy2(KEY_FILE_NAME, f"{PACKAGE_DIR}/key.notcapz")
     
-    # Copy documentation
     create_documentation()
     if os.path.exists(README_FILE):
         shutil.copy2(README_FILE, f"{PACKAGE_DIR}/Readme.html")
     if os.path.exists(TOC_FILE):
         shutil.copy2(TOC_FILE, f"{PACKAGE_DIR}/T&C.html")
+    if os.path.exists(PRIVACY_FILE):
+        shutil.copy2(PRIVACY_FILE, f"{PACKAGE_DIR}/Privacy.html")
 
-    # Create the installer executable
     cmd = [
         "pyinstaller",
         "--onefile",
@@ -543,7 +547,6 @@ def build_installer():
             print(result.stderr)
         sys.exit(1)
 
-    # Copy to release folder
     src = f"dist/{APP_NAME}_Setup.exe"
     dst = f"{RELEASE_FOLDER}/{APP_NAME}_Setup.exe"
     if os.path.exists(src):
@@ -570,6 +573,7 @@ def verify_package():
         f"{PACKAGE_DIR}/key.notcapz",
         f"{PACKAGE_DIR}/Readme.html",
         f"{PACKAGE_DIR}/T&C.html",
+        f"{PACKAGE_DIR}/Privacy.html",
     ]
 
     missing = []
@@ -577,7 +581,7 @@ def verify_package():
     
     for f in required_in_package:
         if os.path.exists(f):
-            sizes[f] = os.path.getsize(f) / (1024*1024)  # MB
+            sizes[f] = os.path.getsize(f) / (1024*1024)
         else:
             missing.append(f)
 
@@ -596,7 +600,7 @@ def verify_package():
 def create_release_info():
     """Create release information file"""
     info = f"""=== {APP_NAME} Pro ===
-Version: 2026.1.0
+Version: 2026.5.0
 Build Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Publisher: {PUBLISHER}
 
@@ -605,22 +609,35 @@ Installation Instructions:
 2. Follow the installation wizard
 3. Launch {APP_NAME} from Desktop or Start Menu
 
+Model Download:
+- Model is NOT included in the installer
+- On first run, click "Download Model" button
+- Model will be downloaded to: %APPDATA%\\NotYCaptionGenAI\\models\\large-v3.pt
+- Model size: ~2.9GB
+- Download URL: https://huggingface.co/EgoGPT/speech_encoder/resolve/main/large-v3.pt
+
+App Data Location:
+- All app data (cache, logs, exports, backups) is stored in:
+- %APPDATA%\\NotYCaptionGenAI\\
+- This folder persists after uninstallation (manual deletion required)
+
 Package Contents:
 - Main Application: {APP_NAME}.exe
 - Uninstaller: uninstall.exe
 - Installer: {APP_NAME}_Setup.exe
-- Documentation: Readme.html, T&C.html
-- Configuration files
+- Documentation: Readme.html, T&C.html, Privacy.html
 
 System Requirements:
 - Windows 10/11 (64-bit)
 - 4GB RAM minimum (8GB recommended)
-- 3GB free disk space
-- Internet connection for online mode
+- 3GB free disk space (plus ~3GB for model)
+- Internet connection for online mode and model download
 
 Build Environment:
 - Python: {sys.version.split()[0]}
 - Platform: {sys.platform}
+
+Repository: https://github.com/NotY215/NotyCaption-Official
 
 All rights reserved © 2026 {PUBLISHER}
 """
@@ -642,66 +659,55 @@ def main():
     
     start_time = time.time()
 
-    # Step 1: Kill any lingering PyInstaller processes
     print("\n🔪 Step 1: Killing lingering processes...")
     kill_pyinstaller_processes()
 
-    # Step 2: Comprehensive cleanup
     print("\n🧹 Step 2: Cleaning all temporary files...")
     clean_all_temp()
 
-    # Step 3: Encrypt client secrets
     print("\n📁 Step 3: Preparing secrets...")
     encrypt_client()
 
-    # Step 4: Create documentation
     print("\n📄 Step 4: Creating documentation...")
     create_documentation()
 
-    # Step 5: Create necessary directories
     print("\n📂 Step 5: Creating build directories...")
     create_directories()
 
-    # Step 6: Build main app
-    print("\n🔨 Step 6: Building main application...")
+    print("\n📁 Step 6: Creating app data directories structure...")
+    create_app_data_dirs()
+
+    print("\n🔨 Step 7: Building main application...")
     build_app()
 
-    # Step 7: Build uninstaller
-    print("\n🔨 Step 7: Building uninstaller...")
+    print("\n🔨 Step 8: Building uninstaller...")
     build_uninstaller()
 
-    # Step 8: Build installer
-    print("\n🔨 Step 8: Building installer...")
+    print("\n🔨 Step 9: Building installer...")
     build_installer()
 
-    # Step 9: Verify package
-    print("\n✅ Step 9: Verifying package...")
+    print("\n✅ Step 10: Verifying package...")
     if not verify_package():
         print("❌ Package verification failed!")
         sys.exit(1)
 
-    # Step 10: Create release info
-    print("\n📝 Step 10: Creating release information...")
+    print("\n📝 Step 11: Creating release information...")
     create_release_info()
 
-    # Calculate build time
     build_time = time.time() - start_time
     minutes = int(build_time // 60)
     seconds = int(build_time % 60)
 
-    # Final cleanup
     print("\n🧹 Final cleanup...")
-    temp_to_keep = [RELEASE_FOLDER]  # Keep only the release folder
+    temp_to_keep = [RELEASE_FOLDER]
     all_items = [d for d in os.listdir('.') if os.path.isdir(d) and d not in temp_to_keep]
     for item in all_items:
         if item.startswith('build') or item.startswith('dist') or item.startswith('package') or item.startswith('spec'):
             force_remove(item)
     
-    # Clean spec files
     for spec in glob.glob("*.spec"):
         force_remove(spec)
 
-    # Final summary
     print("\n" + "="*80)
     print(" BUILD COMPLETE - SUCCESS ".center(80, "="))
     print("="*80)
@@ -717,6 +723,8 @@ def main():
     print(f"   • Package includes: Main App, Uninstaller, Documentation")
     
     print(f"\n▶️  Run {RELEASE_FOLDER}/{APP_NAME}_Setup.exe to install")
+    print(f"\n📁 App data will be stored in: %APPDATA%\\NotYCaptionGenAI\\")
+    print(f"📁 Model will be downloaded to: %APPDATA%\\NotYCaptionGenAI\\models\\large-v3.pt")
     print(f"\n{datetime.datetime.now():%Y-%m-%d %H:%M:%S} - Build finished successfully\n")
 
 if __name__ == "__main__":

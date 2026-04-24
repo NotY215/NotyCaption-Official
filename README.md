@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NotY215/NotyCaption/releases/latest">
+  <a href="https://github.com/NotY215/NotyCaption-Official/releases/latest">
     <img src="https://img.shields.io/github/v/release/NotY215/NotyCaption?color=00c853&label=Latest%20Release&logo=windows&logoColor=white&style=for-the-badge" alt="Latest Release">
   </a>
-  <a href="https://github.com/NotY215/NotyCaption/releases">
+  <a href="https://github.com/NotY215/NotyCaption-Official/releases">
     <img src="https://img.shields.io/github/downloads/NotY215/NotyCaption/total?color=4285f4&style=for-the-badge&logo=google-drive&logoColor=white" alt="Downloads">
   </a>
   <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NotY215/NotyCaption/releases/">
+  <a href="https://github.com/NotY215/NotyCaption-Official/releases/">
     <img src="https://img.shields.io/badge/DOWNLOAD%20INSTALLER-2.9%E2%80%93GB%20Model%20Ready-00c853?style=for-the-badge&logo=windows&logoColor=white&labelColor=111111" alt="Download Windows Installer">
   </a>
 </p>
@@ -268,7 +268,7 @@ set TF_CPP_MIN_LOG_LEVEL=2
 |---------|------|
 | **Telegram** | https://t.me/Noty_215 |
 | **YouTube** | https://www.youtube.com/@NotY215 |
-| **GitHub** | https://github.com/NotY215/NotYCaptionGenAi |
+| **GitHub** | https://github.com/NotY215/NotyCaption-OfficialGenAi |
 | **Email** | NotY215@outlook.com |
 
 ## 🤝 Contributing
@@ -280,7 +280,7 @@ Contributions are welcome! Please:
 
 ### Development Setup
 ```bash
-git clone https://github.com/NotY215/NotYCaptionGenAi.git
+git clone https://github.com/NotY215/NotyCaption-OfficialGenAi.git
 cd NotYCaptionGenAi
 python -m venv venv
 venv\Scripts\activate
