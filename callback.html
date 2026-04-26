@@ -55,6 +55,8 @@
                 hash = window.location.search.substring(1);
             }
             
+            console.log('Callback processing hash:', hash);
+            
             if (!hash) {
                 messageEl.innerHTML = '<span class="error">❌ No authentication data found</span>';
                 setTimeout(() => window.location.replace('index.html'), 2000);
@@ -75,18 +77,18 @@
             if (access_token && expires_in) {
                 messageEl.innerHTML = '✅ Authentication successful!<br>Saving your session...';
                 
-                // Clear any existing data
-                localStorage.clear();
-                sessionStorage.clear();
+                // Calculate expiry time (session will expire after expires_in seconds)
+                const expiryTime = Date.now() + (parseInt(expires_in) * 1000);
                 
-                // Save to localStorage
+                // Save to localStorage (persists until browser data is cleared)
                 localStorage.setItem('notycaption_access_token', access_token);
-                localStorage.setItem('notycaption_token_expiry', (Date.now() + (parseInt(expires_in) * 1000)).toString());
+                localStorage.setItem('notycaption_token_expiry', expiryTime.toString());
                 
-                // Save to cookies
+                // Save to session cookies (will be cleared when browser closes)
                 document.cookie = `notycaption_access_token=${access_token};path=/;max-age=${parseInt(expires_in)}`;
-                document.cookie = `notycaption_token_expiry=${Date.now() + (parseInt(expires_in) * 1000)};path=/;max-age=${parseInt(expires_in)}`;
+                document.cookie = `notycaption_token_expiry=${expiryTime};path=/;max-age=${parseInt(expires_in)}`;
                 
+                console.log('Token saved, expiry:', new Date(expiryTime));
                 messageEl.innerHTML = '✅ Token saved!<br>Fetching your profile...';
                 
                 try {
@@ -99,23 +101,24 @@
                         localStorage.setItem('notycaption_user_info', JSON.stringify(userInfo));
                         document.cookie = `notycaption_user_info=${JSON.stringify(userInfo)};path=/;max-age=${parseInt(expires_in)}`;
                         
+                        console.log('User info saved:', userInfo.name);
                         messageEl.innerHTML = `<span class="success">✅ Welcome, ${userInfo.name || 'User'}!</span><br>Email: ${userInfo.email}<br>Redirecting to app...`;
                         
-                        // Replace history and redirect to app.html#web
+                        // Redirect to app.html - data is now saved
                         setTimeout(() => {
-                            window.location.replace('app.html#web');
+                            window.location.replace('app.html');
                         }, 1500);
                     } else {
                         messageEl.innerHTML = '<span class="error">⚠️ Could not fetch profile</span>';
                         setTimeout(() => {
-                            window.location.replace('app.html#web');
+                            window.location.replace('app.html');
                         }, 1500);
                     }
                 } catch (err) {
                     console.error('Error:', err);
                     messageEl.innerHTML = '<span class="error">⚠️ Profile fetch failed</span>';
                     setTimeout(() => {
-                        window.location.replace('app.html#web');
+                        window.location.replace('app.html');
                     }, 1500);
                 }
             } else {

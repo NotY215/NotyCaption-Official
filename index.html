@@ -214,39 +214,6 @@
             color: #ff4081;
             margin-top: 10px;
         }
-        /* Fullscreen mode styles */
-        .game-container:-webkit-full-screen {
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-        }
-        .game-container:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-        }
-        .game-container:-webkit-full-screen .game-iframe {
-            width: 100%;
-            height: 100%;
-        }
-        .game-container:fullscreen .game-iframe {
-            width: 100%;
-            height: 100%;
-        }
-        #exitFullscreenHint {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #aaa;
-            z-index: 9999;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
         @media (max-width: 768px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -285,7 +252,7 @@
             <div class="sidebar">
                 <h3>📁 Explore</h3>
                 <div class="sidebar-links">
-                    <a onclick="showSection('game')">🐦 Arrow Dash Game</a>
+                    <a onclick="showSection('game')">🎮 Arrow Dash Game</a>
                     <a onclick="showSection('about')">📖 About</a>
                     <a onclick="showSection('policies')">🔒 Privacy Policy</a>
                     <a onclick="showSection('terms')">📜 Terms & Conditions</a>
@@ -294,10 +261,10 @@
             </div>
         </div>
         
-        <!-- Game Section (Enlarged) -->
+        <!-- Game Section -->
         <div id="gameSection" class="section-container" style="display:none">
             <div class="section-header">
-                <h2>🐦 ARROW DASH - Rhythm Platformer</h2>
+                <h2>🎮 ARROW DASH - Rhythm Platformer</h2>
                 <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
             </div>
             <div class="game-container" id="gameContainer">
@@ -329,7 +296,7 @@
             <iframe src="T&C.html" class="content-iframe" style="min-height:500px"></iframe>
         </div>
         
-        <!-- Contact Section with Email Form -->
+        <!-- Contact Section -->
         <div id="contactSection" class="section-container" style="display:none">
             <div class="section-header">
                 <h2>📞 Contact Me</h2>
@@ -352,13 +319,11 @@
         </div>
     </div>
     
-    <!-- Exit Fullscreen Hint -->
-    <div id="exitFullscreenHint">Press ESC to exit fullscreen</div>
+    <div id="exitFullscreenHint" style="position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7); padding:8px 15px; border-radius:20px; font-size:12px; color:#aaa; z-index:9999; pointer-events:none; opacity:0; transition:opacity 0.3s;">Press ESC to exit fullscreen</div>
 
     <script src="config.js"></script>
     <script>
         let currentSection = null;
-        let fullscreenElement = null;
         
         function loginWithGoogle() {
             console.log('🔐 Login button clicked!');
@@ -380,13 +345,11 @@
             currentSection = section;
         }
         
-        // Fullscreen functionality
         function toggleFullscreen() {
             const gameContainer = document.getElementById('gameContainer');
             const hint = document.getElementById('exitFullscreenHint');
             
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                // Enter fullscreen
                 if (gameContainer.requestFullscreen) {
                     gameContainer.requestFullscreen();
                 } else if (gameContainer.webkitRequestFullscreen) {
@@ -397,7 +360,6 @@
                     hint.style.opacity = '0';
                 }, 3000);
             } else {
-                // Exit fullscreen
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.webkitExitFullscreen) {
@@ -406,30 +368,24 @@
             }
         }
         
-        // Listen for fullscreen change events
-        document.addEventListener('fullscreenchange', updateFullscreenButton);
-        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-        
-        function updateFullscreenButton() {
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+        document.addEventListener('fullscreenchange', () => {
             const btn = document.querySelector('.fullscreen-btn');
-            if (isFullscreen) {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
                 if (btn) btn.innerHTML = '✕ Exit Fullscreen';
             } else {
                 if (btn) btn.innerHTML = '⛶ Fullscreen';
             }
-        }
+        });
         
-        // ESC key to exit fullscreen (handled by browser, but we update button)
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (document.fullscreenElement || document.webkitFullscreenElement) {
-                    setTimeout(updateFullscreenButton, 100);
-                }
+        document.addEventListener('webkitfullscreenchange', () => {
+            const btn = document.querySelector('.fullscreen-btn');
+            if (document.webkitFullscreenElement) {
+                if (btn) btn.innerHTML = '✕ Exit Fullscreen';
+            } else {
+                if (btn) btn.innerHTML = '⛶ Fullscreen';
             }
         });
         
-        // Handle URL hash for direct section access
         function handleHash() {
             const hash = window.location.hash.substring(1);
             if (hash && ['game', 'about', 'policies', 'terms', 'contact'].includes(hash)) {
@@ -437,7 +393,7 @@
             }
         }
         
-        // Contact Form - Send email via mailto
+        // Contact Form
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
             contactForm.addEventListener('submit', function(e) {
@@ -455,21 +411,6 @@
                 contactForm.reset();
                 setTimeout(() => statusDiv.innerHTML = '', 5000);
             });
-        }
-        
-        // Check for token in URL (direct callback)
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const token = params.get('access_token');
-            const expiresIn = params.get('expires_in');
-            if (token) {
-                localStorage.setItem('notycaption_access_token', token);
-                localStorage.setItem('notycaption_token_expiry', (Date.now() + (parseInt(expiresIn) * 1000)).toString());
-                document.cookie = `notycaption_access_token=${token};path=/;max-age=${parseInt(expiresIn)}`;
-                document.cookie = `notycaption_token_expiry=${Date.now() + (parseInt(expiresIn) * 1000)};path=/;max-age=${parseInt(expiresIn)}`;
-                window.location.hash = '';
-                window.location.href = 'app.html';
-            }
         }
         
         handleHash();
