@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotyCaption Pro - AI Caption Generator</title>
+    <link rel="icon" type="image/x-icon" href="App.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Load all modules in correct order -->
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="drive.js"></script>
+    <script src="ipynb.js"></script>
+    <script src="colab.js"></script>
+    
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;color:#fff}
+        .navbar{position:fixed;top:0;width:100%;background:rgba(15,12,41,0.95);backdrop-filter:blur(10px);padding:15px 40px;display:flex;justify-content:space-between;align-items:center;z-index:1000;border-bottom:1px solid rgba(255,255,255,0.1)}
+        .logo{display:flex;align-items:center;gap:12px}
+        .logo img{height:40px}
+        .logo h1{font-size:20px;font-weight:700;background:linear-gradient(90deg,#00e5ff,#00c853);-webkit-background-clip:text;background-clip:text;color:transparent}
+        .nav-links{display:flex;gap:25px}
+        .nav-links a{color:#ddd;text-decoration:none;font-size:14px;transition:color .3s}
+        .nav-links a:hover,.nav-links a.active{color:#00e5ff}
+        .container{max-width:1400px;margin:0 auto;padding:100px 30px 40px}
+        .auth-section{text-align:center;margin-bottom:40px}
+        .google-btn{background:linear-gradient(90deg,#4285f4,#34a853);border:none;padding:14px 35px;border-radius:50px;color:white;font-size:16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform 0.2s}
+        .google-btn:hover{transform:scale(1.05)}
+        .user-info{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);padding:15px 25px;border-radius:15px;display:inline-flex;align-items:center;gap:20px}
+        .user-avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#00c853);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px}
+        .main-grid{display:grid;grid-template-columns:1fr 380px;gap:25px}
+        .left-panel,.right-panel{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:20px;padding:25px;border:1px solid rgba(255,255,255,0.1)}
+        .audio-player{background:rgba(0,0,0,0.3);border-radius:15px;padding:20px;margin-bottom:25px;text-align:center}
+        .audio-player audio{width:100%;margin-top:15px;border-radius:8px}
+        .file-info{margin-top:10px;font-size:12px;color:#aaa}
+        .enhanced-player{background:rgba(0,0,0,0.3);border-radius:15px;padding:15px;margin-top:15px;border:1px solid rgba(0,229,255,0.3)}
+        .captions-box{background:rgba(0,0,0,0.3);border-radius:15px;padding:20px;min-height:400px;max-height:500px;overflow-y:auto}
+        .captions-box h3{margin-bottom:15px;color:#00e5ff}
+        .caption-line{padding:12px;margin-bottom:8px;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;font-size:13px;transition:all 0.2s}
+        .caption-line:hover{background:rgba(0,229,255,0.2);transform:translateX(5px)}
+        .caption-line.active{background:rgba(0,229,255,0.3);border-left:3px solid #00e5ff}
+        .control-group{margin-bottom:20px}
+        .control-group label{display:block;margin-bottom:8px;font-size:13px;color:#aaa}
+        select,input{width:100%;padding:12px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:white;transition:all 0.2s}
+        select:focus,input:focus{outline:none;border-color:#00e5ff}
+        .upload-area{border:2px dashed rgba(255,255,255,0.3);border-radius:15px;padding:30px;text-align:center;cursor:pointer;margin-bottom:20px;transition:all 0.2s}
+        .upload-area:hover{border-color:#00e5ff;background:rgba(0,229,255,0.05)}
+        .btn{width:100%;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;transition:transform 0.2s}
+        .btn:hover{transform:translateY(-2px)}
+        .btn-primary{background:linear-gradient(90deg,#00e5ff,#00c853);color:#1a1a2e}
+        .btn-secondary{background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2)}
+        .btn-success{background:linear-gradient(90deg,#00c853,#00e5ff);color:#1a1a2e}
+        .btn-danger{background:linear-gradient(90deg,#ff4081,#ff6b6b);color:white}
+        .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .progress-container{margin-top:20px;display:none}
+        .progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden}
+        .progress-fill{width:0%;height:100%;background:linear-gradient(90deg,#00e5ff,#00c853);transition:width .3s}
+        .status-text{margin-top:10px;font-size:12px;text-align:center;color:#aaa}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);z-index:2000;justify-content:center;align-items:center}
+        .modal-content{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px;padding:30px;max-width:500px;width:90%;text-align:center;border:1px solid rgba(0,229,255,0.3)}
+        .toast{position:fixed;bottom:30px;right:30px;background:rgba(0,0,0,0.9);color:white;padding:12px 20px;border-radius:10px;z-index:2000;display:none;animation:slideIn 0.3s ease}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .footer{text-align:center;padding:30px;margin-top:40px;border-top:1px solid rgba(255,255,255,0.1);font-size:12px;color:#888}
+        .drag-over{border-color:#00e5ff;background:rgba(0,229,255,0.1)}
+        .debug-panel{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);padding:12px;border-radius:10px;font-size:11px;z-index:9999;max-width:350px;border:1px solid #00e5ff;font-family:monospace}
+        .debug-panel h4{margin:0 0 8px 0;color:#00e5ff}
+        .debug-row{margin:4px 0;word-break:break-all}
+        .debug-label{color:#888}
+        .debug-value{color:#00c853}
+        button.small{background:#00e5ff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;margin-top:8px;font-size:11px;font-weight:bold}
+        .spinner-small{width:30px;height:30px;border:2px solid rgba(255,255,255,0.3);border-top-color:#00e5ff;border-radius:50%;animation:spin 1s linear infinite;margin:15px auto}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+        @media(max-width:768px){.navbar{padding:12px 20px;flex-direction:column}.container{padding:120px 15px 30px}.debug-panel{max-width:250px;font-size:9px}}
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">
+        <img src="Logo.ico" alt="Logo" onerror="this.style.display='none'">
+        <h1>NotyCaption Pro</h1>
+    </div>
+    <div class="nav-links">
+        <a href="#home" data-section="home">Home</a>
+        <a href="#about" data-section="about">About</a>
+        <a href="#policies" data-section="policies">Privacy</a>
+        <a href="#terms" data-section="terms">Terms</a>
+        <a href="#contact" data-section="contact">Contact</a>
+    </div>
+</nav>
+
+<!-- HOME SECTION -->
+<div id="homeSection" class="container">
+    <div class="auth-section" id="authSection">
+        <button class="google-btn" id="loginButton">🔐 Sign in with Google</button>
+    </div>
+
+    <div id="mainApp" style="display:none">
+        <div class="main-grid">
+            <div class="left-panel">
+                <div class="audio-player">
+                    <h3>🎵 Original Audio</h3>
+                    <audio id="audioPlayer" controls preload="metadata"></audio>
+                    <div class="file-info" id="fileInfo">No file loaded</div>
+                </div>
+                <div id="enhancedSection" style="display:none">
+                    <div class="enhanced-player">
+                        <h4>✨ Enhanced Audio (Vocals Only)</h4>
+                        <audio id="enhancedPlayer" controls preload="metadata"></audio>
+                        <button class="btn btn-success" id="downloadEnhancedBtn">📥 Download Enhanced Audio</button>
+                    </div>
+                </div>
+                <div class="captions-box">
+                    <h3>📝 Generated Captions</h3>
+                    <div id="captionsList">
+                        <p style="color:#666;text-align:center">
+                            🎯 Ready to generate captions<br><br>
+                            1. Sign in with Google<br>
+                            2. Upload an audio file<br>
+                            3. Click "Generate AI Captions"<br><br>
+                            <small>Supported: MP3, WAV, M4A, FLAC, OGG, AAC (Max 50MB)</small>
+                        </p>
+                    </div>
+                    <button class="btn btn-secondary" id="exportBtn" disabled>📤 Export Captions (SRT/ASS)</button>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="upload-area" id="uploadArea">
+                    📁 Click or Drag & Drop Audio File<br>
+                    <small style="color:#888">MP3, WAV, M4A, FLAC, OGG, AAC (Max 50MB)</small>
+                </div>
+                <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.flac,.ogg,.aac,.webm" style="display:none">
+
+                <div class="control-group">
+                    <label>🌍 Language / Speech Recognition</label>
+                    <select id="languageSelect">
+                        <option value="en">English (US/UK)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="ar">العربية (Arabic)</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="th">ภาษาไทย (Thai)</option>
+                        <option value="auto">🔍 Auto Detect Language</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>📝 Words Per Subtitle Line</label>
+                    <input type="number" id="wordsPerLine" value="5" min="1" max="20">
+                    <small style="color:#888">Lower = more lines, Higher = longer lines</small>
+                </div>
+
+                <div class="control-group">
+                    <label>📄 Output Subtitle Format</label>
+                    <select id="outputFormat">
+                        <option value="srt">SRT (SubRip - Universal)</option>
+                        <option value="ass">ASS (Advanced SubStation - Styling)</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-secondary" id="enhanceBtn" disabled>🎤 Extract Vocals (Remove Background Music)</button>
+                <button class="btn btn-primary" id="generateBtn" disabled>🚀 Generate AI Captions (Whisper)</button>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="status-text" id="statusText">Ready</div>
+                </div>
+                
+                <div style="margin-top:20px;padding:12px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:11px;color:#888;text-align:center">
+                    ⚡ Powered by Google Colab GPU | OpenAI Whisper Large-v3<br>
+                    🔒 Your files stay in your Google Drive<br>
+                    🎯 Word-level timing for perfect sync
+                </div>
+            </div>
+        </div>
+        <div class="footer">© 2025-2026 NotY215 | Open Source | <a href="#policies" style="color:#00e5ff">Privacy Policy</a> | <a href="#terms" style="color:#00e5ff">Terms of Service</a></div>
+    </div>
+</div>
+
+<!-- OTHER SECTIONS -->
+<div id="aboutSection" class="container" style="display:none"><div id="aboutContent"></div></div>
+<div id="policiesSection" class="container" style="display:none"><div id="policiesContent"></div></div>
+<div id="termsSection" class="container" style="display:none"><div id="termsContent"></div></div>
+<div id="contactSection" class="container" style="display:none"><div id="contactContent"></div></div>
+
+<!-- MODALS -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Processing</h3>
+        <p id="modalMessage">Please wait...</p>
+        <div class="spinner-small"></div>
+        <button class="btn btn-secondary" id="closeModalBtn" style="margin-top:15px">Close</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- DEBUG PANEL -->
+<div class="debug-panel" id="debugPanel" style="display:none">
+    <h4>🔧 Debug Panel (Ctrl+Shift+D)</h4>
+    <div class="debug-row"><span class="debug-label">Token:</span> <span class="debug-value" id="debugToken">-</span></div>
+    <div class="debug-row"><span class="debug-label">User:</span> <span class="debug-value" id="debugUser">-</span></div>
+    <div class="debug-row"><span class="debug-label">Email:</span> <span class="debug-value" id="debugEmail">-</span></div>
+    <div class="debug-row"><span class="debug-label">Audio ID:</span> <span class="debug-value" id="debugAudioId">-</span></div>
+    <div class="debug-row"><span class="debug-label">Login Status:</span> <span class="debug-value" id="debugLoginStatus">-</span></div>
+    <button class="small" id="forceRefreshBtn">🔄 Force Refresh Auth</button>
+    <button class="small" id="clearDataBtn" style="background:#ff4081;margin-left:5px">🗑️ Clear All Data</button>
+</div>
+
+<script>
+    // ========================================
+    // GLOBAL VARIABLES
+    // ========================================
+    let currentAudioDriveId = null;
+    let currentEnhancedFileUrl = null;
+    let currentSubtitles = [];
+    let isProcessing = false;
+    let authCheckInterval = null;
+
+    // ========================================
+    // UI UPDATE FUNCTIONS (uses auth.js)
+    // ========================================
+    function updateUIBasedOnAuth() {
+        const authSection = document.getElementById('authSection');
+        const mainApp = document.getElementById('mainApp');
+        
+        const isLoggedIn = typeof isAuthenticated === 'function' ? isAuthenticated() : false;
+        const userInfo = typeof getUserInfo === 'function' ? getUserInfo() : null;
+        
+        console.log('🔄 Updating UI - Logged in:', isLoggedIn);
+        
+        if (isLoggedIn && userInfo) {
+            // Need to await userInfo if it's a promise
+            Promise.resolve(userInfo).then(info => {
+                if (info) {
+                    authSection.innerHTML = `
+                        <div class="user-info">
+                            <div class="user-avatar">${info.name ? info.name.charAt(0).toUpperCase() : 'U'}</div>
+                            <div>
+                                <strong>${info.name || 'User'}</strong><br>
+                                <small style="color: #aaa;">${info.email || ''}</small>
+                            </div>
+                            <button class="google-btn" onclick="logout()" style="padding: 8px 20px; margin: 0;">🚪 Logout</button>
+                        </div>
+                    `;
+                    mainApp.style.display = 'block';
+                    
+                    const enhanceBtn = document.getElementById('enhanceBtn');
+                    const generateBtn = document.getElementById('generateBtn');
+                    if (enhanceBtn) enhanceBtn.disabled = !currentAudioDriveId;
+                    if (generateBtn) generateBtn.disabled = !currentAudioDriveId;
+                    
+                    if (!window.toastShown) {
+                        window.toastShown = true;
+                        showToast(`✅ Welcome, ${info.name || 'User'}!`);
+                        setTimeout(() => { window.toastShown = false; }, 5000);
+                    }
+                }
+            });
+        } else {
+            authSection.innerHTML = `<button class="google-btn" onclick="loginWithGoogle()">🔐 Sign in with Google</button>`;
+            mainApp.style.display = 'none';
+            
+            const audioPlayer = document.getElementById('audioPlayer');
+            const enhancedSection = document.getElementById('enhancedSection');
+            const captionsList = document.getElementById('captionsList');
+            const fileInfo = document.getElementById('fileInfo');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            if (audioPlayer) audioPlayer.src = '';
+            if (enhancedSection) enhancedSection.style.display = 'none';
+            if (captionsList) captionsList.innerHTML = '<p style="color:#666;text-align:center">Please sign in to use NotyCaption Pro</p>';
+            if (fileInfo) fileInfo.innerHTML = 'No file loaded';
+            if (exportBtn) exportBtn.disabled = true;
+        }
+        
+        updateDebugPanel();
+    }
+
+    function forceRefreshAuth() {
+        console.log('🔄 Force refreshing auth...');
+        if (typeof loadSavedToken === 'function') {
+            loadSavedToken();
+        }
+        if (typeof getUserInfo === 'function') {
+            Promise.resolve(getUserInfo()).then(() => {
+                updateUIBasedOnAuth();
+            });
+        }
+        showToast('Auth refreshed');
+    }
+
+    function clearAllData() {
+        if (confirm('⚠️ This will clear all authentication data, settings, and uploaded files. Continue?')) {
+            localStorage.clear();
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const name = cookie.trim().split('=')[0];
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+            }
+            sessionStorage.clear();
+            currentAudioDriveId = null;
+            currentEnhancedFileUrl = null;
+            currentSubtitles = [];
+            if (typeof clearToken === 'function') clearToken();
+            updateUIBasedOnAuth();
+            showToast('✅ All data cleared');
+        }
+    }
+
+    // ========================================
+    // DEBUG PANEL
+    // ========================================
+    function updateDebugPanel() {
+        const token = localStorage.getItem('notycaption_access_token');
+        const userInfo = localStorage.getItem('notycaption_user_info');
+        let userName = 'None';
+        let userEmail = 'None';
+        if (userInfo) {
+            try {
+                const parsed = JSON.parse(userInfo);
+                userName = parsed.name || 'None';
+                userEmail = parsed.email || 'None';
+            } catch(e) {}
+        }
+        
+        document.getElementById('debugToken').innerText = token ? token.substring(0, 30) + '...' : '❌ None';
+        document.getElementById('debugUser').innerText = userName;
+        document.getElementById('debugEmail').innerText = userEmail;
+        document.getElementById('debugAudioId').innerText = currentAudioDriveId ? currentAudioDriveId.substring(0, 20) + '...' : '❌ None';
+        document.getElementById('debugLoginStatus').innerText = token ? '✅ Logged In' : '❌ Not Logged In';
+    }
+
+    // ========================================
+    // TOAST & PROGRESS FUNCTIONS
+    // ========================================
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.backgroundColor = isError ? 'rgba(255,64,129,0.95)' : 'rgba(0,0,0,0.95)';
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 4000);
+    }
+
+    function showProgress(show, msg = 'Processing...', percent = 0) {
+        const container = document.getElementById('progressContainer');
+        const statusText = document.getElementById('statusText');
+        const fill = document.getElementById('progressFill');
+        if (container) container.style.display = show ? 'block' : 'none';
+        if (statusText && show) statusText.textContent = msg;
+        if (fill && show) fill.style.width = percent + '%';
+    }
+
+    function showModal(title, msg) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = msg;
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    // ========================================
+    // FILE UPLOAD FUNCTION
+    // ========================================
+    async function handleFileUpload(file) {
+        if (!file) return;
+        
+        const allowedExtensions = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac', '.webm'];
+        const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        const isAudio = allowedExtensions.includes(fileExtension);
+        
+        if (!isAudio) {
+            showToast('❌ Please upload only audio files (MP3, WAV, M4A, FLAC, OGG, AAC)', true);
+            return;
+        }
+        
+        if (file.size > 50 * 1024 * 1024) {
+            showToast('❌ File too large! Max 50MB', true);
+            return;
+        }
+        
+        const audioPlayer = document.getElementById('audioPlayer');
+        const fileInfo = document.getElementById('fileInfo');
+        const captionsList = document.getElementById('captionsList');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        currentAudioDriveId = null;
+        currentEnhancedFileUrl = null;
+        currentSubtitles = [];
+        document.getElementById('enhancedSection').style.display = 'none';
+        if (captionsList) captionsList.innerHTML = '<p style="color:#666;text-align:center">⏳ Uploading audio to Google Drive...</p>';
+        if (exportBtn) exportBtn.disabled = true;
+        
+        audioPlayer.src = URL.createObjectURL(file);
+        fileInfo.innerHTML = `📄 ${file.name} - Uploading to Google Drive...`;
+        
+        showProgress(true, 'Uploading to Google Drive...', 30);
+        
+        try {
+            const isLoggedIn = typeof isAuthenticated === 'function' ? isAuthenticated() : false;
+            if (!isLoggedIn) {
+                showToast('❌ Please sign in with Google first', true);
+                showProgress(false);
+                fileInfo.innerHTML = `📄 ${file.name} - ❌ Please sign in first`;
+                return;
+            }
+            
+            let token = localStorage.getItem('notycaption_access_token');
+            if (!token) {
+                token = typeof getAccessToken === 'function' ? getAccessToken() : null;
+            }
+            
+            if (!token) throw new Error('Authentication failed');
+            
+            const formData = new FormData();
+            const metadata = { name: file.name, mimeType: file.type, parents: ['root'] };
+            formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            formData.append('file', file);
+            
+            const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            
+            if (!uploadResponse.ok) throw new Error(`Upload failed: ${uploadResponse.status}`);
+            
+            const uploadData = await uploadResponse.json();
+            currentAudioDriveId = uploadData.id;
+            
+            fileInfo.innerHTML = `📄 ${file.name} - ✅ Uploaded to Google Drive`;
+            showProgress(false);
+            showToast('✅ Audio uploaded! Click "Generate Captions" to start AI processing.');
+            
+            const generateBtn = document.getElementById('generateBtn');
+            const enhanceBtn = document.getElementById('enhanceBtn');
+            if (generateBtn) generateBtn.disabled = false;
+            if (enhanceBtn) enhanceBtn.disabled = false;
+            
+            if (captionsList) captionsList.innerHTML = '<p style="color:#666;text-align:center">✅ Audio uploaded!<br>Click "Generate AI Captions" to start processing</p>';
+            
+        } catch (err) {
+            console.error('Upload error:', err);
+            showProgress(false);
+            showToast('❌ Upload failed: ' + err.message, true);
+            fileInfo.innerHTML = `📄 ${file.name} - ❌ Upload failed`;
+            audioPlayer.src = '';
+        }
+    }
+
+    // ========================================
+    // CAPTION GENERATION
+    // ========================================
+    async function generateCaptions() {
+        if (!currentAudioDriveId) {
+            showToast('❌ Please upload an audio file first', true);
+            return;
+        }
+        
+        if (isProcessing) {
+            showToast('⏳ Already processing, please wait...', true);
+            return;
+        }
+        
+        const isLoggedIn = typeof isAuthenticated === 'function' ? isAuthenticated() : false;
+        if (!isLoggedIn) {
+            showToast('❌ Please sign in with Google first', true);
+            return;
+        }
+        
+        if (typeof getNotebookContent === 'undefined') {
+            showToast('❌ Error: ipynb.js not loaded. Please refresh the page.', true);
+            return;
+        }
+        
+        if (typeof createAndOpenColabNotebook === 'undefined') {
+            showToast('❌ Error: colab.js not loaded. Please refresh the page.', true);
+            return;
+        }
+        
+        isProcessing = true;
+        const language = document.getElementById('languageSelect').value;
+        const wordsPerLine = document.getElementById('wordsPerLine').value;
+        const outputFormat = document.getElementById('outputFormat').value;
+        
+        showModal('🎬 Generating AI Captions', `Processing with Whisper AI...\nLanguage: ${language === 'auto' ? 'Auto Detect' : language}\nThis may take a few minutes.`);
+        showProgress(true, 'Preparing Colab notebook...', 10);
+        
+        try {
+            const operationId = await createAndOpenColabNotebook('generate', {
+                audioId: currentAudioDriveId,
+                language: language,
+                wordsPerLine: wordsPerLine,
+                outputFormat: outputFormat
+            }, 
+            async (fileId, fileName) => {
+                console.log('✅ Processing complete! File ID:', fileId);
+                showProgress(true, 'Downloading captions...', 95);
+                
+                try {
+                    const token = localStorage.getItem('notycaption_access_token');
+                    if (!token) throw new Error('Authentication failed');
+                    
+                    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (!fileResponse.ok) throw new Error('Failed to download captions');
+                    
+                    const content = await fileResponse.text();
+                    displayCaptions(content, fileName);
+                    
+                    showProgress(false);
+                    closeModal();
+                    showToast('✅ Captions generated successfully!');
+                    isProcessing = false;
+                    
+                } catch (error) {
+                    console.error('Download error:', error);
+                    showToast('❌ Failed to download captions: ' + error.message, true);
+                    showProgress(false);
+                    closeModal();
+                    isProcessing = false;
+                }
+            },
+            (error) => {
+                console.error('Processing error:', error);
+                showToast('❌ Failed to process: ' + error, true);
+                showProgress(false);
+                closeModal();
+                isProcessing = false;
+            });
+            
+            if (!operationId) throw new Error('Failed to create Colab notebook');
+            
+            showProgress(true, 'Opening Google Colab...', 60);
+            showToast('📓 Colab notebook opened! Click "Run All" to start processing.', false);
+            
+        } catch (error) {
+            console.error('Generation error:', error);
+            showToast('❌ Failed: ' + error.message, true);
+            isProcessing = false;
+            showProgress(false);
+            closeModal();
+        }
+    }
+
+    // ========================================
+    // VOCAL ENHANCEMENT
+    // ========================================
+    async function enhanceAudio() {
+        if (!currentAudioDriveId) {
+            showToast('❌ Please upload an audio file first', true);
+            return;
+        }
+        
+        if (isProcessing) {
+            showToast('⏳ Already processing, please wait...', true);
+            return;
+        }
+        
+        const isLoggedIn = typeof isAuthenticated === 'function' ? isAuthenticated() : false;
+        if (!isLoggedIn) {
+            showToast('❌ Please sign in with Google first', true);
+            return;
+        }
+        
+        if (typeof createAndOpenColabNotebook === 'undefined') {
+            showToast('❌ Error: colab.js not loaded. Please refresh the page.', true);
+            return;
+        }
+        
+        isProcessing = true;
+        showModal('🎤 Vocal Enhancement', 'Extracting vocals with Spleeter AI...\nThis may take a few minutes.');
+        showProgress(true, 'Preparing vocal extraction...', 10);
+        
+        try {
+            const operationId = await createAndOpenColabNotebook('enhance', {
+                audioId: currentAudioDriveId
+            },
+            async (fileId, fileName) => {
+                console.log('✅ Vocal extraction complete! File ID:', fileId);
+                showProgress(true, 'Downloading enhanced audio...', 90);
+                
+                try {
+                    const token = localStorage.getItem('notycaption_access_token');
+                    const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${token}`;
+                    currentEnhancedFileUrl = downloadUrl;
+                    
+                    const enhancedPlayer = document.getElementById('enhancedPlayer');
+                    const enhancedSection = document.getElementById('enhancedSection');
+                    
+                    if (enhancedPlayer) enhancedPlayer.src = downloadUrl;
+                    if (enhancedSection) enhancedSection.style.display = 'block';
+                    
+                    showProgress(false);
+                    closeModal();
+                    showToast('✅ Vocal extraction complete! Enhanced audio ready.');
+                    isProcessing = false;
+                    
+                } catch (error) {
+                    console.error('Download error:', error);
+                    showToast('❌ Failed to load enhanced audio', true);
+                    showProgress(false);
+                    closeModal();
+                    isProcessing = false;
+                }
+            },
+            (error) => {
+                console.error('Enhancement error:', error);
+                showToast('❌ Failed to extract vocals: ' + error, true);
+                showProgress(false);
+                closeModal();
+                isProcessing = false;
+            });
+            
+            if (!operationId) throw new Error('Failed to create Colab notebook');
+            
+            showProgress(true, 'Opening Google Colab...', 60);
+            showToast('📓 Colab notebook opened! Click "Run All" to start vocal extraction.', false);
+            
+        } catch (error) {
+            console.error('Enhancement error:', error);
+            showToast('❌ Failed: ' + error.message, true);
+            isProcessing = false;
+            showProgress(false);
+            closeModal();
+        }
+    }
+
+    // ========================================
+    // DISPLAY AND EXPORT CAPTIONS
+    // ========================================
+    function displayCaptions(content, filename) {
+        const container = document.getElementById('captionsList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        currentSubtitles = [];
+        
+        if (filename.endsWith('.srt')) {
+            const blocks = content.trim().split(/\n\s*\n/);
+            blocks.forEach(block => {
+                const lines = block.split('\n');
+                if (lines.length >= 3) {
+                    let timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
+                    if (!timeMatch) {
+                        timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+                    }
+                    if (timeMatch) {
+                        currentSubtitles.push({
+                            start: timeMatch[1],
+                            end: timeMatch[2],
+                            text: lines.slice(2).join('\n')
+                        });
+                    }
+                }
+            });
+        }
+        
+        if (currentSubtitles.length === 0) {
+            container.innerHTML = '<p style="color:#666;text-align:center">⚠️ No captions were generated.<br>Please check the Colab notebook for errors.</p>';
+            return;
+        }
+        
+        currentSubtitles.forEach((sub, i) => {
+            const div = document.createElement('div');
+            div.className = 'caption-line';
+            div.innerHTML = `<span style="color:#00e5ff">${sub.start} → ${sub.end}</span><br>${escapeHtml(sub.text.substring(0, 150))}${sub.text.length > 150 ? '...' : ''}`;
+            div.onclick = () => {
+                let timeStr = sub.start.replace(',', '.');
+                const parts = timeStr.split(':');
+                let seconds = 0;
+                if (parts.length === 3) {
+                    seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
+                }
+                const audioPlayer = document.getElementById('audioPlayer');
+                if (audioPlayer && !isNaN(seconds)) {
+                    audioPlayer.currentTime = seconds;
+                    audioPlayer.play();
+                }
+                document.querySelectorAll('.caption-line').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+            };
+            container.appendChild(div);
+        });
+        
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) exportBtn.disabled = false;
+        showToast(`✅ ${currentSubtitles.length} captions loaded! Click on any caption to jump to that time.`);
+    }
+
+    function exportCaptions() {
+        if (!currentSubtitles.length) {
+            showToast('No captions to export', true);
+            return;
+        }
+        
+        const format = document.getElementById('outputFormat').value;
+        let content = '';
+        
+        if (format === 'srt') {
+            content = currentSubtitles.map((s, i) => `${i+1}\n${s.start} --> ${s.end}\n${s.text}\n`).join('\n');
+        } else {
+            content = `[Script Info]\nTitle=NotyCaption Subtitles\n\n[Events]\nFormat: Layer, Start, End, Text\n` +
+                      currentSubtitles.map(s => `Dialogue: 0,${s.start},${s.end},Default,,0,0,0,,${s.text.replace(/\n/g, '\\N')}\n`).join('');
+        }
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `captions.${format}`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast('✅ Captions exported!');
+    }
+
+    function downloadEnhancedAudio() {
+        if (currentEnhancedFileUrl) {
+            const a = document.createElement('a');
+            a.href = currentEnhancedFileUrl;
+            a.download = 'enhanced_vocals.wav';
+            a.click();
+            showToast('Downloading enhanced audio...');
+        } else {
+            showToast('No enhanced audio available', true);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ========================================
+    // NAVIGATION & ROUTING
+    // ========================================
+    async function loadExternalContent() {
+        const pages = ['Readme.html', 'Privacy%20Policy.html', 'T&C.html'];
+        const targets = ['aboutContent', 'policiesContent', 'termsContent'];
+        
+        for (let i = 0; i < pages.length; i++) {
+            try {
+                const resp = await fetch(pages[i] + '?t=' + Date.now());
+                const targetEl = document.getElementById(targets[i]);
+                if (resp.ok && targetEl) {
+                    targetEl.innerHTML = await resp.text();
+                } else if (targetEl) {
+                    targetEl.innerHTML = '<div style="text-align:center;padding:40px"><p>Content not found</p><a href="#home" style="color:#00e5ff">← Back to Home</a></div>';
+                }
+            } catch(e) {
+                const targetEl = document.getElementById(targets[i]);
+                if (targetEl) {
+                    targetEl.innerHTML = '<div style="text-align:center;padding:40px"><p>Content not found</p><a href="#home" style="color:#00e5ff">← Back to Home</a></div>';
+                }
+            }
+        }
+        
+        document.getElementById('contactContent').innerHTML = `
+            <div style="text-align:center;padding:40px;">
+                <h2>📞 Contact NotY215</h2>
+                <p style="margin:20px 0">For support, questions, or feedback:</p>
+                <div style="background:rgba(255,255,255,0.05);padding:30px;border-radius:20px;display:inline-block;text-align:left;">
+                    <p>🐙 <strong>GitHub:</strong> <a href="https://github.com/NotY215" style="color:#00e5ff;">https://github.com/NotY215</a></p>
+                    <p>📧 <strong>Email:</strong> <a href="mailto:NotY215@outlook.com" style="color:#00e5ff;">NotY215@outlook.com</a></p>
+                    <p>📺 <strong>YouTube:</strong> <a href="https://www.youtube.com/@NotY215" style="color:#00e5ff;">@NotY215</a></p>
+                    <p>💬 <strong>Telegram:</strong> <a href="https://t.me/Noty_215" style="color:#00e5ff;">@Noty_215</a></p>
+                </div>
+            </div>
+        `;
+    }
+
+    function hashRouter() {
+        const hash = window.location.hash.substring(1) || 'home';
+        const sections = ['home', 'about', 'policies', 'terms', 'contact'];
+        
+        sections.forEach(section => {
+            const el = document.getElementById(`${section}Section`);
+            if (el) el.style.display = section === hash ? 'block' : 'none';
+        });
+        
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            const section = link.getAttribute('data-section');
+            if (section === hash) link.classList.add('active');
+            else link.classList.remove('active');
+        });
+        
+        if (hash === 'home') setTimeout(() => updateUIBasedOnAuth(), 100);
+    }
+
+    function setupDragAndDrop() {
+        const area = document.getElementById('uploadArea');
+        if (!area) return;
+        
+        area.addEventListener('click', () => document.getElementById('audioFile').click());
+        area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+        area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+        area.addEventListener('drop', e => {
+            e.preventDefault();
+            area.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.type.startsWith('audio/') || /\.(mp3|wav|m4a|flac|ogg|aac|webm)$/i.test(file.name))) {
+                handleFileUpload(file);
+            } else {
+                showToast('Please drop an audio file (MP3, WAV, M4A, FLAC, OGG, AAC)', true);
+            }
+        });
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem('notycaption_settings');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                if (settings.wordsPerLine) document.getElementById('wordsPerLine').value = settings.wordsPerLine;
+                if (settings.outputFormat) document.getElementById('outputFormat').value = settings.outputFormat;
+                if (settings.language) document.getElementById('languageSelect').value = settings.language;
+            } catch(e) {}
+        }
+    }
+
+    function saveSettings() {
+        localStorage.setItem('notycaption_settings', JSON.stringify({
+            wordsPerLine: document.getElementById('wordsPerLine').value,
+            outputFormat: document.getElementById('outputFormat').value,
+            language: document.getElementById('languageSelect').value
+        }));
+    }
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    async function initialize() {
+        console.log('🚀 Initializing NotyCaption Pro...');
+        console.log('Current URL:', window.location.href);
+        
+        setupDragAndDrop();
+        await loadExternalContent();
+        loadSettings();
+        
+        // Setup navigation
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                window.location.hash = link.getAttribute('data-section');
+                hashRouter();
+            });
+        });
+        window.addEventListener('hashchange', hashRouter);
+        
+        // Settings listeners
+        document.getElementById('wordsPerLine').addEventListener('change', saveSettings);
+        document.getElementById('outputFormat').addEventListener('change', saveSettings);
+        document.getElementById('languageSelect').addEventListener('change', saveSettings);
+        
+        // File input
+        document.getElementById('audioFile').addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleFileUpload(e.target.files[0]);
+        });
+        
+        // Button event listeners
+        const generateBtn = document.getElementById('generateBtn');
+        if (generateBtn) generateBtn.onclick = generateCaptions;
+        
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        if (enhanceBtn) enhanceBtn.onclick = enhanceAudio;
+        
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) exportBtn.onclick = exportCaptions;
+        
+        const downloadEnhancedBtn = document.getElementById('downloadEnhancedBtn');
+        if (downloadEnhancedBtn) downloadEnhancedBtn.onclick = downloadEnhancedAudio;
+        
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        if (closeModalBtn) closeModalBtn.onclick = closeModal;
+        
+        const forceRefreshBtn = document.getElementById('forceRefreshBtn');
+        if (forceRefreshBtn) forceRefreshBtn.onclick = forceRefreshAuth;
+        
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        if (clearDataBtn) clearDataBtn.onclick = clearAllData;
+        
+        // Initialize auth and update UI
+        if (typeof initAuth === 'function') {
+            await initAuth();
+        }
+        
+        updateUIBasedOnAuth();
+        hashRouter();
+        
+        // Periodic auth check
+        authCheckInterval = setInterval(() => {
+            updateUIBasedOnAuth();
+        }, 3000);
+        
+        // Debug panel toggle (Ctrl+Shift+D)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                const panel = document.getElementById('debugPanel');
+                if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+        
+        console.log('✅ App initialized successfully');
+    }
+
+    // Start the app
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
+</script>
+</body>
+</html>
