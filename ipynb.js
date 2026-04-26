@@ -49,9 +49,7 @@ const NOTEBOOK_TEMPLATES = {
     "!pip install -q openai-whisper pysrt pysubs2 google-auth google-auth-oauthlib google-api-python-client\\n",
     "\\n",
     "print(\"✅ Dependencies installed successfully\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -63,9 +61,7 @@ const NOTEBOOK_TEMPLATES = {
     "from google.colab import drive\\n",
     "drive.mount('/content/drive', force_remount=True)\\n",
     "print(\"✅ Drive mounted successfully\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -76,15 +72,14 @@ const NOTEBOOK_TEMPLATES = {
     "# Setup Drive API\\n",
     "from google.auth import default\\n",
     "from googleapiclient.discovery import build\\n",
-    "from googleapiclient.http import MediaIoBaseDownload\\n",
+    "from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload\\n",
     "import io\\n",
+    "import json\\n",
     "\\n",
     "creds, _ = default()\\n",
     "drive_service = build('drive', 'v3', credentials=creds)\\n",
     "print(\"✅ Drive API initialized\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -94,10 +89,10 @@ const NOTEBOOK_TEMPLATES = {
    "source": [
     "# Configuration\\n",
     "AUDIO_ID = \"{{AUDIO_ID}}\"\\n",
-    "LANGUAGE = \"{{LANGUAGE}}\\n",
+    "LANGUAGE = \"{{LANGUAGE}}\"\\n",
     "WORDS_PER_LINE = {{WORDS_PER_LINE}}\\n",
-    "OUTPUT_FORMAT = \"{{OUTPUT_FORMAT}}\\n",
-    "OPERATION_ID = \"{{OPERATION_ID}}\\n",
+    "OUTPUT_FORMAT = \"{{OUTPUT_FORMAT}}\"\\n",
+    "OPERATION_ID = \"{{OPERATION_ID}}\"\\n",
     "\\n",
     "print(f\"📁 Audio ID: {AUDIO_ID}\")\\n",
     "print(f\"🌍 Language: {LANGUAGE if LANGUAGE != 'auto' else 'Auto Detect'}\")\\n",
@@ -119,9 +114,7 @@ const NOTEBOOK_TEMPLATES = {
     "audio_path = f\"/content/audio_{OPERATION_ID}.wav\"\\n",
     "download_file(AUDIO_ID, audio_path)\\n",
     "print(f\"🎵 Audio file ready: {audio_path}\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -136,15 +129,13 @@ const NOTEBOOK_TEMPLATES = {
     "model = whisper.load_model(\"large-v3-turbo\")\\n",
     "\\n",
     "print(\"🎙️ Transcribing audio...\")\\n",
-    "if LANGUAGE == 'auto':\\n",
+    "if LANGUAGE == 'auto' or LANGUAGE == '':\\n",
     "    result = model.transcribe(audio_path, word_timestamps=True)\\n",
     "else:\\n",
     "    result = model.transcribe(audio_path, language=LANGUAGE, word_timestamps=True)\\n",
     "\\n",
     "print(f\"✅ Transcription complete! Found {len(result['segments'])} segments\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -158,20 +149,26 @@ const NOTEBOOK_TEMPLATES = {
     "\\n",
     "for seg in result['segments']:\\n",
     "    words = seg.get('words', [])\\n",
-    "    for i in range(0, len(words), WORDS_PER_LINE):\\n",
-    "        chunk = words[i:i+WORDS_PER_LINE]\\n",
-    "        if not chunk:\\n",
-    "            continue\\n",
-    "        text = ' '.join([w['word'].strip() for w in chunk])\\n",
-    "        start = chunk[0]['start']\\n",
-    "        end = chunk[-1]['end']\\n",
+    "    if not words:\\n",
+    "        # Fallback if no word timestamps\\n",
+    "        text = seg['text'].strip()\\n",
+    "        start = seg['start']\\n",
+    "        end = seg['end']\\n",
     "        subtitles.append((idx, start, end, text))\\n",
     "        idx += 1\\n",
+    "    else:\\n",
+    "        for i in range(0, len(words), WORDS_PER_LINE):\\n",
+    "            chunk = words[i:i+WORDS_PER_LINE]\\n",
+    "            if not chunk:\\n",
+    "                continue\\n",
+    "            text = ' '.join([w['word'].strip() for w in chunk])\\n",
+    "            start = chunk[0]['start']\\n",
+    "            end = chunk[-1]['end']\\n",
+    "            subtitles.append((idx, start, end, text))\\n",
+    "            idx += 1\\n",
     "\\n",
     "print(f\"📝 Generated {len(subtitles)} subtitle lines\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -184,15 +181,20 @@ const NOTEBOOK_TEMPLATES = {
     "\\n",
     "if OUTPUT_FORMAT == \"srt\":\\n",
     "    import pysrt\\n",
+    "    from datetime import timedelta\\n",
     "    srt = pysrt.SubRipFile()\\n",
     "    for i, s, e, t in subtitles:\\n",
-    "        srt.append(pysrt.SubRipItem(\\n",
+    "        start_time = timedelta(seconds=s)\\n",
+    "        end_time = timedelta(seconds=e)\\n",
+    "        item = pysrt.SubRipItem(\\n",
     "            index=i,\\n",
-    "            start=pysrt.SubRipTime(milliseconds=int(s*1000)),\\n",
-    "            end=pysrt.SubRipTime(milliseconds=int(e*1000)),\\n",
+    "            start=pysrt.SubRipTime(hours=start_time.seconds//3600, minutes=(start_time.seconds//60)%60, seconds=start_time.seconds%60, milliseconds=int((s % 1)*1000)),\\n",
+    "            end=pysrt.SubRipTime(hours=end_time.seconds//3600, minutes=(end_time.seconds//60)%60, seconds=end_time.seconds%60, milliseconds=int((e % 1)*1000)),\\n",
     "            text=t\\n",
-    "        ))\\n",
+    "        )\\n",
+    "        srt.append(item)\\n",
     "    srt.save(output_path)\\n",
+    "    print(f\"💾 SRT saved to {output_path}\")\\n",
     "else:\\n",
     "    import pysubs2\\n",
     "    ass = pysubs2.SSAFile()\\n",
@@ -203,11 +205,8 @@ const NOTEBOOK_TEMPLATES = {
     "            text=t\\n",
     "        ))\\n",
     "    ass.save(output_path)\\n",
-    "\\n",
-    "print(f\"💾 Subtitles saved to {output_path}\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+    "    print(f\"💾 ASS saved to {output_path}\")"
+   ]
   },
   {
    "cell_type": "code",
@@ -216,12 +215,9 @@ const NOTEBOOK_TEMPLATES = {
    },
    "source": [
     "# Upload results back to Google Drive\\n",
-    "from googleapiclient.http import MediaFileUpload\\n",
-    "\\n",
-    "# Create output folder\\n",
     "folder_name = \"NotyCaption_Output\"\\n",
     "query = f\"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false\"\\n",
-    "response = drive_service.files().list(q=query, fields=\"files(id, name)\").execute()\\n",
+    "response = drive_service.files().list(q=query, fields='files(id, name)').execute()\\n",
     "\\n",
     "if response.get('files'):\\n",
     "    folder_id = response['files'][0]['id']\\n",
@@ -245,7 +241,6 @@ const NOTEBOOK_TEMPLATES = {
     "    'operation_id': OPERATION_ID\\n",
     "}\\n",
     "\\n",
-    "import json\\n",
     "from IPython.display import display, Javascript\\n",
     "\\n",
     "# Send result back to web app\\n",
@@ -256,9 +251,7 @@ const NOTEBOOK_TEMPLATES = {
     "display(Javascript(js_code))\\n",
     "\\n",
     "print(\"🎉 All done! You can close this tab.\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   }
  ]
 }`,
@@ -308,9 +301,7 @@ const NOTEBOOK_TEMPLATES = {
     "!pip install -q spleeter google-auth google-api-python-client\\n",
     "\\n",
     "print(\"✅ Dependencies installed\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -322,9 +313,7 @@ const NOTEBOOK_TEMPLATES = {
     "from google.colab import drive\\n",
     "drive.mount('/content/drive', force_remount=True)\\n",
     "print(\"✅ Drive mounted\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -337,13 +326,12 @@ const NOTEBOOK_TEMPLATES = {
     "from googleapiclient.discovery import build\\n",
     "from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload\\n",
     "import io\\n",
+    "import json\\n",
     "\\n",
     "creds, _ = default()\\n",
     "drive_service = build('drive', 'v3', credentials=creds)\\n",
     "print(\"✅ Drive API ready\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -352,8 +340,8 @@ const NOTEBOOK_TEMPLATES = {
    },
    "source": [
     "# Download audio file\\n",
-    "AUDIO_ID = \"{{AUDIO_ID}}\\n",
-    "OPERATION_ID = \"{{OPERATION_ID}}\\n",
+    "AUDIO_ID = \"{{AUDIO_ID}}\"\\n",
+    "OPERATION_ID = \"{{OPERATION_ID}}\"\\n",
     "\\n",
     "def download_file(file_id, destination):\\n",
     "    request = drive_service.files().get_media(fileId=file_id)\\n",
@@ -362,14 +350,14 @@ const NOTEBOOK_TEMPLATES = {
     "    done = False\\n",
     "    while not done:\\n",
     "        status, done = downloader.next_chunk()\\n",
+    "        if status:\\n",
+    "            print(f\"⬇️ Downloaded: {int(status.progress() * 100)}%\")\\n",
     "    print(f\"✅ Downloaded to {destination}\")\\n",
     "\\n",
     "audio_path = f\"/content/audio_{OPERATION_ID}.wav\"\\n",
     "download_file(AUDIO_ID, audio_path)\\n",
     "print(f\"🎵 Audio ready: {audio_path}\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -387,9 +375,7 @@ const NOTEBOOK_TEMPLATES = {
     "separator.separate_to_file(audio_path, \"/content/output\")\\n",
     "\\n",
     "print(\"✅ Vocal extraction complete!\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   },
   {
    "cell_type": "code",
@@ -403,7 +389,7 @@ const NOTEBOOK_TEMPLATES = {
     "# Create folder\\n",
     "folder_name = \"NotyCaption_Enhanced\"\\n",
     "query = f\"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false\"\\n",
-    "response = drive_service.files().list(q=query, fields=\"files(id, name)\").execute()\\n",
+    "response = drive_service.files().list(q=query, fields='files(id, name)').execute()\\n",
     "\\n",
     "if response.get('files'):\\n",
     "    folder_id = response['files'][0]['id']\\n",
@@ -420,15 +406,14 @@ const NOTEBOOK_TEMPLATES = {
     "print(f\"✅ Enhanced vocals uploaded: https://drive.google.com/file/d/{uploaded_file['id']}\")\\n",
     "\\n",
     "# Store result\\n",
-    "import json\\n",
-    "from IPython.display import display, Javascript\\n",
-    "\\n",
     "result = {\\n",
     "    'success': True,\\n",
     "    'file_id': uploaded_file['id'],\\n",
     "    'file_name': f'vocals_{OPERATION_ID}.wav',\\n",
     "    'operation_id': OPERATION_ID\\n",
     "}\\n",
+    "\\n",
+    "from IPython.display import display, Javascript\\n",
     "\\n",
     "js_code = f'''\\n",
     "sessionStorage.setItem('colab_result_{OPERATION_ID}', '{json.dumps(result)}');\\n",
@@ -437,18 +422,20 @@ const NOTEBOOK_TEMPLATES = {
     "display(Javascript(js_code))\\n",
     "\\n",
     "print(\"🎉 All done! You can close this tab.\")"
-   ],
-   "execution_count": null,
-   "outputs": []
+   ]
   }
  ]
 }`
 };
 
-function createNotebookFromTemplate(templateType, params) {
-    let template = NOTEBOOK_TEMPLATES[templateType];
+function getNotebookContent(operationType, params) {
+    console.log('📝 Getting notebook content for:', operationType, params);
+    
+    let template = NOTEBOOK_TEMPLATES[operationType === 'enhance' ? 'vocalEnhancement' : 'captionGeneration'];
+    
     if (!template) {
-        throw new Error(`Unknown template type: ${templateType}`);
+        console.error('Template not found for:', operationType);
+        throw new Error(`Template not found for: ${operationType}`);
     }
     
     // Replace placeholders
@@ -459,15 +446,23 @@ function createNotebookFromTemplate(templateType, params) {
         .replace(/\{\{OUTPUT_FORMAT\}\}/g, params.outputFormat || 'srt')
         .replace(/\{\{OPERATION_ID\}\}/g, params.operationId);
     
-    return JSON.parse(notebookJson);
+    console.log('✅ Notebook content generated successfully');
+    return notebookJson;
 }
 
-function getNotebookContent(operationType, params) {
-    const templateType = operationType === 'enhance' ? 'vocalEnhancement' : 'captionGeneration';
-    const notebook = createNotebookFromTemplate(templateType, params);
-    return JSON.stringify(notebook);
+// Also expose a helper function to validate the notebook
+function validateNotebook(notebookJson) {
+    try {
+        JSON.parse(notebookJson);
+        return true;
+    } catch (e) {
+        console.error('Invalid notebook JSON:', e);
+        return false;
+    }
 }
 
 // Export functions
 window.getNotebookContent = getNotebookContent;
-window.createNotebookFromTemplate = createNotebookFromTemplate;
+window.validateNotebook = validateNotebook;
+
+console.log('✅ ipynb.js loaded successfully');

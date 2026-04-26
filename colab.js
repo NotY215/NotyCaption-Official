@@ -1,10 +1,9 @@
 // ========================================
-// Colab Processing Handler
+// NotyCaption Pro - Colab Processing Handler
 // ========================================
 
 let colabWindow = null;
 let pollInterval = null;
-let activeOperationId = null;
 
 async function openNotebookInColab(notebookDriveId) {
     const colabUrl = `https://colab.research.google.com/drive/${notebookDriveId}`;
@@ -15,7 +14,7 @@ async function openNotebookInColab(notebookDriveId) {
 
 function startPolling(operationId, operationType, onSuccess, onError) {
     let attempts = 0;
-    const maxAttempts = 120; // 10 minutes max (5 seconds * 120)
+    const maxAttempts = 180; // 15 minutes max (5 seconds * 180)
     
     if (pollInterval) clearInterval(pollInterval);
     
@@ -29,7 +28,7 @@ function startPolling(operationId, operationType, onSuccess, onError) {
         const result = sessionStorage.getItem(resultKey);
         
         if (result) {
-            console.log(`📥 Result received for operation ${operationId}`, result);
+            console.log(`📥 Result received for operation ${operationId}`);
             clearInterval(pollInterval);
             sessionStorage.removeItem(resultKey);
             
@@ -39,12 +38,15 @@ function startPolling(operationId, operationType, onSuccess, onError) {
                     if (onSuccess) await onSuccess(data.file_id, data.file_name);
                     
                     // Clean up notebook file from Drive
-                    const opData = JSON.parse(sessionStorage.getItem(`colab_op_${operationId}`) || '{}');
-                    if (opData.notebookDriveId && typeof deleteDriveFile === 'function') {
-                        await deleteDriveFile(opData.notebookDriveId);
-                        console.log(`🗑️ Deleted notebook: ${opData.notebookDriveId}`);
+                    const opData = sessionStorage.getItem(`colab_op_${operationId}`);
+                    if (opData) {
+                        const opDataObj = JSON.parse(opData);
+                        if (opDataObj.notebookDriveId && typeof deleteDriveFile === 'function') {
+                            await deleteDriveFile(opDataObj.notebookDriveId);
+                            console.log(`🗑️ Deleted notebook: ${opDataObj.notebookDriveId}`);
+                        }
+                        sessionStorage.removeItem(`colab_op_${operationId}`);
                     }
-                    sessionStorage.removeItem(`colab_op_${operationId}`);
                     
                     // Close Colab tab if still open
                     if (colabWindow && !colabWindow.closed) {
@@ -57,7 +59,7 @@ function startPolling(operationId, operationType, onSuccess, onError) {
                 console.error('Error parsing result:', e);
                 if (onError) onError('Error processing result');
             }
-            activeOperationId = null;
+            pollInterval = null;
             return;
         }
         
@@ -65,14 +67,23 @@ function startPolling(operationId, operationType, onSuccess, onError) {
             console.error(`⏰ Timeout for operation ${operationId}`);
             clearInterval(pollInterval);
             if (onError) onError('Timeout! Please check Colab for results.');
-            activeOperationId = null;
+            pollInterval = null;
         } else if (attempts % 12 === 0) { // Log every minute
-            console.log(`⏳ Waiting for results... (${attempts * 5} seconds)`);
+            console.log(`⏳ Waiting for results... (${attempts * 5} seconds elapsed)`);
         }
     }, 5000);
 }
 
 async function createAndOpenColabNotebook(operationType, params, onSuccess, onError) {
+    console.log('createAndOpenColabNotebook called with:', operationType, params);
+    
+    // Check if getNotebookContent exists
+    if (typeof getNotebookContent === 'undefined') {
+        console.error('getNotebookContent is undefined. ipynb.js may not be loaded.');
+        if (onError) onError('ipynb.js not loaded properly. Please refresh the page.');
+        return null;
+    }
+    
     const operationId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 8);
     console.log(`🚀 Creating ${operationType} notebook with ID: ${operationId}`);
     
@@ -85,6 +96,15 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
             outputFormat: params.outputFormat || 'srt',
             operationId: operationId
         });
+        
+        // Validate notebook content
+        try {
+            JSON.parse(notebookJSONString);
+            console.log('✅ Notebook JSON is valid');
+        } catch (e) {
+            console.error('Invalid notebook JSON:', e);
+            throw new Error('Failed to create notebook: Invalid JSON');
+        }
         
         const notebookName = `NotyCaption_${operationType}_${operationId}.ipynb`;
         console.log(`📝 Creating notebook: ${notebookName}`);
@@ -116,18 +136,9 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
     }
 }
 
-// Function to simulate result (for testing - remove in production)
-function simulateColabResult(operationId, fileId, fileName) {
-    const result = {
-        success: true,
-        file_id: fileId,
-        file_name: fileName,
-        timestamp: Date.now()
-    };
-    sessionStorage.setItem(`colab_result_${operationId}`, JSON.stringify(result));
-    console.log(`🔔 Simulated result for ${operationId}`);
-}
-
 // Export functions
 window.createAndOpenColabNotebook = createAndOpenColabNotebook;
-window.simulateColabResult = simulateColabResult;
+window.openNotebookInColab = openNotebookInColab;
+window.startPolling = startPolling;
+
+console.log('✅ colab.js loaded successfully');
