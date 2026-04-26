@@ -22,7 +22,6 @@
             backdrop-filter: blur(10px);
             padding: 40px;
             border-radius: 20px;
-            max-width: 500px;
         }
         .spinner {
             width: 50px;
@@ -48,18 +47,6 @@
     </div>
 
     <script>
-        const STORAGE_KEYS = {
-            ACCESS_TOKEN: "notycaption_access_token",
-            TOKEN_EXPIRY: "notycaption_token_expiry",
-            USER_INFO: "notycaption_user_info"
-        };
-
-        function setCookie(name, value, days = 7) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-        }
-
         async function processCallback() {
             const messageEl = document.getElementById('message');
             
@@ -68,10 +55,9 @@
                 hash = window.location.search.substring(1);
             }
             
-            console.log('Processing callback with hash:', hash);
-            
             if (!hash) {
                 messageEl.innerHTML = '<span class="error">❌ No authentication data found</span>';
+                setTimeout(() => window.location.replace('index.html'), 2000);
                 return;
             }
             
@@ -82,16 +68,24 @@
             
             if (error) {
                 messageEl.innerHTML = `<span class="error">❌ Login Error: ${decodeURIComponent(error)}</span>`;
+                setTimeout(() => window.location.replace('index.html'), 3000);
                 return;
             }
             
             if (access_token && expires_in) {
                 messageEl.innerHTML = '✅ Authentication successful!<br>Saving your session...';
                 
-                localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
-                localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, (Date.now() + (parseInt(expires_in) * 1000)).toString());
-                setCookie(STORAGE_KEYS.ACCESS_TOKEN, access_token, 7);
-                setCookie(STORAGE_KEYS.TOKEN_EXPIRY, (Date.now() + (parseInt(expires_in) * 1000)).toString(), 7);
+                // Clear any existing data
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Save to localStorage
+                localStorage.setItem('notycaption_access_token', access_token);
+                localStorage.setItem('notycaption_token_expiry', (Date.now() + (parseInt(expires_in) * 1000)).toString());
+                
+                // Save to cookies
+                document.cookie = `notycaption_access_token=${access_token};path=/;max-age=${parseInt(expires_in)}`;
+                document.cookie = `notycaption_token_expiry=${Date.now() + (parseInt(expires_in) * 1000)};path=/;max-age=${parseInt(expires_in)}`;
                 
                 messageEl.innerHTML = '✅ Token saved!<br>Fetching your profile...';
                 
@@ -102,32 +96,34 @@
                     
                     if (userResponse.ok) {
                         const userInfo = await userResponse.json();
-                        localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo));
-                        setCookie(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo), 7);
+                        localStorage.setItem('notycaption_user_info', JSON.stringify(userInfo));
+                        document.cookie = `notycaption_user_info=${JSON.stringify(userInfo)};path=/;max-age=${parseInt(expires_in)}`;
                         
                         messageEl.innerHTML = `<span class="success">✅ Welcome, ${userInfo.name || 'User'}!</span><br>Email: ${userInfo.email}<br>Redirecting to app...`;
                         
+                        // Replace history and redirect to app.html#web
                         setTimeout(() => {
-                            window.location.href = '/#home';
-                        }, 2000);
+                            window.location.replace('app.html#web');
+                        }, 1500);
                     } else {
                         messageEl.innerHTML = '<span class="error">⚠️ Could not fetch profile</span>';
                         setTimeout(() => {
-                            window.location.href = '/#home';
-                        }, 2000);
+                            window.location.replace('app.html#web');
+                        }, 1500);
                     }
                 } catch (err) {
                     console.error('Error:', err);
                     messageEl.innerHTML = '<span class="error">⚠️ Profile fetch failed</span>';
                     setTimeout(() => {
-                        window.location.href = '/#home';
-                    }, 2000);
+                        window.location.replace('app.html#web');
+                    }, 1500);
                 }
             } else {
                 messageEl.innerHTML = '<span class="error">❌ Invalid authentication response</span>';
+                setTimeout(() => window.location.replace('index.html'), 2000);
             }
         }
-
+        
         processCallback();
     </script>
 </body>
