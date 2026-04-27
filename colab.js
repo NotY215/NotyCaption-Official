@@ -1,5 +1,5 @@
 // ========================================
-// NotyCaption Pro - Colab Processing Handler
+// Colab Processing Handler
 // ========================================
 
 let colabWindow = null;
@@ -14,7 +14,7 @@ async function openNotebookInColab(notebookDriveId) {
 
 function startPolling(operationId, operationType, onSuccess, onError) {
     let attempts = 0;
-    const maxAttempts = 180; // 15 minutes max (5 seconds * 180)
+    const maxAttempts = 180;
     
     if (pollInterval) clearInterval(pollInterval);
     
@@ -23,32 +23,26 @@ function startPolling(operationId, operationType, onSuccess, onError) {
     pollInterval = setInterval(async () => {
         attempts++;
         
-        // Check sessionStorage for result
-        const resultKey = `colab_result_${operationId}`;
-        const result = sessionStorage.getItem(resultKey);
-        
+        const result = sessionStorage.getItem(`colab_result_${operationId}`);
         if (result) {
             console.log(`📥 Result received for operation ${operationId}`);
             clearInterval(pollInterval);
-            sessionStorage.removeItem(resultKey);
+            sessionStorage.removeItem(`colab_result_${operationId}`);
             
             try {
                 const data = JSON.parse(result);
                 if (data.success) {
                     if (onSuccess) await onSuccess(data.file_id, data.file_name);
                     
-                    // Clean up notebook file from Drive
                     const opData = sessionStorage.getItem(`colab_op_${operationId}`);
                     if (opData) {
                         const opDataObj = JSON.parse(opData);
                         if (opDataObj.notebookDriveId && typeof deleteDriveFile === 'function') {
                             await deleteDriveFile(opDataObj.notebookDriveId);
-                            console.log(`🗑️ Deleted notebook: ${opDataObj.notebookDriveId}`);
                         }
                         sessionStorage.removeItem(`colab_op_${operationId}`);
                     }
                     
-                    // Close Colab tab if still open
                     if (colabWindow && !colabWindow.closed) {
                         colabWindow.close();
                     }
@@ -68,8 +62,6 @@ function startPolling(operationId, operationType, onSuccess, onError) {
             clearInterval(pollInterval);
             if (onError) onError('Timeout! Please check Colab for results.');
             pollInterval = null;
-        } else if (attempts % 12 === 0) { // Log every minute
-            console.log(`⏳ Waiting for results... (${attempts * 5} seconds elapsed)`);
         }
     }, 5000);
 }
@@ -77,7 +69,6 @@ function startPolling(operationId, operationType, onSuccess, onError) {
 async function createAndOpenColabNotebook(operationType, params, onSuccess, onError) {
     console.log('createAndOpenColabNotebook called with:', operationType, params);
     
-    // Check if getNotebookContent exists
     if (typeof getNotebookContent === 'undefined') {
         console.error('getNotebookContent is undefined. ipynb.js may not be loaded.');
         if (onError) onError('ipynb.js not loaded properly. Please refresh the page.');
@@ -88,7 +79,6 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
     console.log(`🚀 Creating ${operationType} notebook with ID: ${operationId}`);
     
     try {
-        // Get notebook content from ipynb.js
         const notebookJSONString = getNotebookContent(operationType, {
             audioId: params.audioId,
             language: params.language || 'en',
@@ -97,23 +87,12 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
             operationId: operationId
         });
         
-        // Validate notebook content
-        try {
-            JSON.parse(notebookJSONString);
-            console.log('✅ Notebook JSON is valid');
-        } catch (e) {
-            console.error('Invalid notebook JSON:', e);
-            throw new Error('Failed to create notebook: Invalid JSON');
-        }
-        
         const notebookName = `NotyCaption_${operationType}_${operationId}.ipynb`;
         console.log(`📝 Creating notebook: ${notebookName}`);
         
-        // Upload notebook to Drive
         const notebookDriveId = await uploadNotebookToDrive(notebookJSONString, notebookName);
         console.log(`✅ Notebook uploaded to Drive: ${notebookDriveId}`);
         
-        // Store operation data
         sessionStorage.setItem(`colab_op_${operationId}`, JSON.stringify({
             ...params,
             operationId,
@@ -122,10 +101,7 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
             timestamp: Date.now()
         }));
         
-        // Open in Colab
         await openNotebookInColab(notebookDriveId);
-        
-        // Start polling for results
         startPolling(operationId, operationType, onSuccess, onError);
         
         return operationId;
@@ -136,9 +112,4 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
     }
 }
 
-// Export functions
 window.createAndOpenColabNotebook = createAndOpenColabNotebook;
-window.openNotebookInColab = openNotebookInColab;
-window.startPolling = startPolling;
-
-console.log('✅ colab.js loaded successfully');

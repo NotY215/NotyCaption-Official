@@ -50,7 +50,6 @@
         async function processCallback() {
             const messageEl = document.getElementById('message');
             
-            // Get the token from URL hash
             let hash = window.location.hash.substring(1);
             if (!hash && window.location.search) {
                 hash = window.location.search.substring(1);
@@ -104,21 +103,20 @@
                         
                         messageEl.innerHTML = `<span class="success">✅ Welcome, ${userInfo.name || 'User'}!</span><br>Email: ${userInfo.email}<br>Redirecting to app...`;
                         
-                        // Redirect to app.html
                         setTimeout(() => {
-                            window.location.href = 'app.html';
+                            window.location.href = 'app.html#web';
                         }, 1500);
                     } else {
                         messageEl.innerHTML = '<span class="error">⚠️ Could not fetch profile</span>';
                         setTimeout(() => {
-                            window.location.href = 'app.html';
+                            window.location.href = 'app.html#web';
                         }, 1500);
                     }
                 } catch (err) {
                     console.error('Error:', err);
                     messageEl.innerHTML = '<span class="error">⚠️ Profile fetch failed</span>';
                     setTimeout(() => {
-                        window.location.href = 'app.html';
+                        window.location.href = 'app.html#web';
                     }, 1500);
                 }
             } else {

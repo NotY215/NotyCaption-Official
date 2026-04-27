@@ -319,7 +319,33 @@
 
     <script src="config.js"></script>
     <script>
-        // SIMPLE LOGIN FUNCTION - NO COMPLEX LOGIC
+        // Check if user is already logged in
+        function isLoggedIn() {
+            let token = localStorage.getItem('notycaption_access_token');
+            let cookieToken = null;
+            
+            // Also check cookies
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'notycaption_access_token') {
+                    cookieToken = decodeURIComponent(value);
+                    break;
+                }
+            }
+            
+            if (token || cookieToken) {
+                console.log('User is already logged in, redirecting to app');
+                return true;
+            }
+            return false;
+        }
+        
+        // If already logged in, redirect to app.html#web immediately
+        if (isLoggedIn()) {
+            window.location.href = 'app.html#web';
+        }
+        
         function loginWithGoogle() {
             console.log('🔐 Login button clicked!');
             const redirectUri = encodeURIComponent('https://notycaption.rf.gd/callback.html');

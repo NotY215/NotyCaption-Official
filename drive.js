@@ -5,38 +5,31 @@
 let currentAudioDriveId = null;
 
 async function ensureValidToken() {
-    if (!accessToken) {
+    let token = localStorage.getItem('notycaption_access_token');
+    if (!token) {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'notycaption_access_token') {
+                token = decodeURIComponent(value);
+                localStorage.setItem('notycaption_access_token', token);
+                break;
+            }
+        }
+    }
+    if (!token) {
         throw new Error('No access token available. Please login first.');
     }
-    return true;
-}
-
-async function apiRequest(url, options = {}) {
-    await ensureValidToken();
-    
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-    
-    if (response.status === 401) {
-        console.log('Token expired, clearing...');
-        clearToken();
-        throw new Error('Authentication failed. Please login again.');
-    }
-    
-    return response;
+    return token;
 }
 
 async function getOrCreateFolder(folderName) {
-    await ensureValidToken();
+    const token = await ensureValidToken();
     
     const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const response = await apiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
     
     const data = await response.json();
     
@@ -49,8 +42,12 @@ async function getOrCreateFolder(folderName) {
         mimeType: 'application/vnd.google-apps.folder'
     };
     
-    const createResponse = await apiRequest('https://www.googleapis.com/drive/v3/files', {
+    const createResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify(metadata)
     });
     
@@ -58,41 +55,10 @@ async function getOrCreateFolder(folderName) {
     return folderData.id;
 }
 
-async function uploadFileToDrive(file, folderId) {
-    await ensureValidToken();
-    
-    const metadata = {
-        name: file.name,
-        mimeType: file.type,
-        parents: [folderId]
-    };
-    
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', file);
-    
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-        body: form
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
-    return data.id;
-}
-
 async function uploadNotebookToDrive(notebookJSONString, notebookName) {
-    await ensureValidToken();
+    const token = await ensureValidToken();
     
     const folderId = await getOrCreateFolder(CONFIG.NOTEBOOK_FOLDER_NAME);
-    
-    const notebookBlob = new Blob([notebookJSONString], { type: 'application/json' });
-    const notebookFile = new File([notebookBlob], notebookName, { type: 'application/json' });
     
     const metadata = {
         name: notebookName,
@@ -100,14 +66,14 @@ async function uploadNotebookToDrive(notebookJSONString, notebookName) {
         parents: [folderId]
     };
     
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', notebookFile);
+    const formData = new FormData();
+    formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    formData.append('file', new Blob([notebookJSONString], { type: 'application/json' }));
     
     const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-        body: form
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
     });
     
     if (!response.ok) {
@@ -121,22 +87,32 @@ async function uploadNotebookToDrive(notebookJSONString, notebookName) {
 }
 
 async function getFileContent(fileId) {
-    await ensureValidToken();
+    const token = await ensureValidToken();
     
-    const response = await apiRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Failed to get file content: ${response.status}`);
+    }
+    
     return await response.text();
 }
 
 async function getFileDownloadUrl(fileId) {
-    await ensureValidToken();
-    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${accessToken}`;
+    const token = await ensureValidToken();
+    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${token}`;
 }
 
 async function deleteDriveFile(fileId) {
-    await ensureValidToken();
+    const token = await ensureValidToken();
     
     try {
-        await apiRequest(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' });
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         console.log(`Deleted file: ${fileId}`);
     } catch (error) {
         console.error('Delete error:', error);
@@ -146,8 +122,11 @@ async function deleteDriveFile(fileId) {
 async function cleanupOldNotebooks() {
     try {
         const folderId = await getOrCreateFolder(CONFIG.NOTEBOOK_FOLDER_NAME);
+        const token = await ensureValidToken();
         const query = `'${folderId}' in parents and name contains 'NotyCaption_' and trashed=false`;
-        const response = await apiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
         
         if (data.files && data.files.length > 0) {
@@ -164,15 +143,7 @@ async function cleanupOldNotebooks() {
     }
 }
 
-async function uploadAudioToDrive(file) {
-    const folderId = await getOrCreateFolder(CONFIG.TEMP_FOLDER_NAME);
-    const fileId = await uploadFileToDrive(file, folderId);
-    currentAudioDriveId = fileId;
-    return fileId;
-}
-
 // Export functions
-window.uploadAudioToDrive = uploadAudioToDrive;
 window.uploadNotebookToDrive = uploadNotebookToDrive;
 window.getFileContent = getFileContent;
 window.getFileDownloadUrl = getFileDownloadUrl;
