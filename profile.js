@@ -40,24 +40,17 @@
   }
 
   async function signOut() {
-    try {
-      const currentToken = token();
-      if (currentToken) {
-        await fetch('/api/logout.php', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + currentToken }
-        }).catch(() => {});
-      }
-    } finally {
-      [
-        'notycaption_access_token',
-        'notycaption_username',
-        'notycaption_user',
-        'notycaption_email'
-      ].forEach(key => localStorage.removeItem(key));
-      document.cookie = 'notycaption_access_token=; Max-Age=0; path=/; SameSite=Lax';
-      window.location.href = '/home';
-    }
+    [
+      'notycaption_access_token',
+      'notycaption_username',
+      'notycaption_user',
+      'notycaption_email'
+    ].forEach(key => localStorage.removeItem(key));
+    document.cookie.split(';').forEach(cookie => {
+      const name = cookie.split('=')[0].trim();
+      if (name) document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
+    });
+    window.location.href = '/home';
   }
 
   function openModal(current) {
