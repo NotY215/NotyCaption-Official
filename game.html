@@ -45,6 +45,9 @@
     pointer-events: none;
   }
 
+  #gameLeaderboardButton { position: fixed; right: 18px; bottom: 18px; z-index: 500; padding: 12px 18px; border: 1px solid var(--neon-cyan); border-radius: 10px; background: rgba(5,5,16,.94); color: var(--neon-cyan); font-family: Orbitron, monospace; font-weight: 700; letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 18px rgba(0,245,255,.16); }
+  #gameLeaderboardButton:hover { background: rgba(0,245,255,.12); box-shadow: 0 0 28px rgba(0,245,255,.35); }
+
   #app {
     position: relative;
     width: 100vw;
@@ -449,19 +452,19 @@
         <div class="diff-icon">🌊</div>
         <div class="diff-name">Easy</div>
         <div class="diff-desc">Chill Lo-Fi Beats<br>Forgiving jumps</div>
-        <div class="diff-stages">3 STAGES</div>
+        <div class="diff-stages">∞ INFINITE STAGES</div>
       </div>
       <div class="diff-card normal" data-diff="normal" onclick="selectDiff('normal')">
         <div class="diff-icon">⚡</div>
         <div class="diff-name">Normal</div>
         <div class="diff-desc">Cyberpunk Pulse<br>Sharp timing</div>
-        <div class="diff-stages">4 STAGES</div>
+        <div class="diff-stages">∞ INFINITE STAGES</div>
       </div>
       <div class="diff-card hard" data-diff="hard" onclick="selectDiff('hard')">
         <div class="diff-icon">🔥</div>
         <div class="diff-name">Hard</div>
         <div class="diff-desc">Intense Beats<br>Precise movement</div>
-        <div class="diff-stages">5 STAGES</div>
+        <div class="diff-stages">∞ INFINITE STAGES</div>
       </div>
     </div>
 
@@ -567,6 +570,8 @@
 
 </div>
 
+<button id="gameLeaderboardButton" type="button" onclick="location.href='/settings#leaderboard'">LEADERBOARD</button>
+
 <script>
 // ============================================================
 //  ARROW DASH - GAME ENGINE
@@ -603,7 +608,7 @@ const state = {
 const DIFFICULTIES = {
   easy: {
     name: 'Easy',
-    stages: 3,
+    stages: Infinity,
     speed: 4.8,
     gravity: 0.52,
     jumpPower: -14.2,
@@ -616,7 +621,7 @@ const DIFFICULTIES = {
   },
   normal: {
     name: 'Normal',
-    stages: 4,
+    stages: Infinity,
     speed: 6.8,
     gravity: 0.62,
     jumpPower: -15.5,
@@ -629,7 +634,7 @@ const DIFFICULTIES = {
   },
   hard: {
     name: 'Hard',
-    stages: 5,
+    stages: Infinity,
     speed: 9.2,
     gravity: 0.74,
     jumpPower: -16.8,
@@ -799,7 +804,7 @@ function buildStageLayout() {
   obstacles = [];
   coins = [];
   powerups = [];
-  const stageLen = STAGE_LENGTHS[state.difficulty][state.stageIndex];
+  const stageLen = 12000 + Math.min(state.stageIndex, 1000) * 80;
   levelEnd = stageLen;
 
   // Ground segments
@@ -1191,8 +1196,8 @@ function stageComplete() {
   stopMusic();
 
   const cfg = DIFFICULTIES[state.difficulty];
-  const totalStages = cfg.stages;
-  const bonus = 1000 * (totalStages - state.stageIndex);
+  const totalStages = Infinity;
+  const bonus = 1000 + state.stageIndex * 100;
   state.score += bonus;
   state.totalScore += state.score;
 
@@ -1202,19 +1207,11 @@ function stageComplete() {
   playWinSound();
 
   setTimeout(() => {
-    if (state.stageIndex >= totalStages - 1) {
-      // Game won
-      document.getElementById('winSub').textContent = `${cfg.name.toUpperCase()} - ALL ${totalStages} STAGES`;
-      document.getElementById('wScore').textContent = state.totalScore;
-      document.getElementById('wAttempts').textContent = state.attempts;
-      document.getElementById('winOverlay').classList.add('active');
-    } else {
-      const rating = state.attempts <= state.stageIndex+1 ? '★★★' : state.attempts <= (state.stageIndex+1)*2 ? '★★☆' : '★☆☆';
-      document.getElementById('stageSub').textContent = `STAGE ${state.stageIndex+1} COMPLETE`;
-      document.getElementById('sScore').textContent = state.score;
-      document.getElementById('sRating').textContent = rating;
-      document.getElementById('stageOverlay').classList.add('active');
-    }
+    const rating = state.attempts <= state.stageIndex + 1 ? '★★★' : state.attempts <= (state.stageIndex + 1) * 2 ? '★★☆' : '★☆☆';
+    document.getElementById('stageSub').textContent = 'STAGE ' + (state.stageIndex + 1) + ' COMPLETE';
+    document.getElementById('sScore').textContent = state.score;
+    document.getElementById('sRating').textContent = rating;
+    document.getElementById('stageOverlay').classList.add('active');
   }, 500);
 }
 
@@ -1839,6 +1836,7 @@ function hideOverlays() {
 })();
 
 </script>
+    <script src="/game-infinite.js"></script>
     <script src="/nav.js"></script>
 </body>
 </html>
