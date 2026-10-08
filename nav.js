@@ -13,7 +13,10 @@
 
   function isLoggedIn() {
     try {
-      return Boolean(localStorage.getItem('notycaption_access_token'));
+      if (localStorage.getItem('notycaption_access_token')) return true;
+      return document.cookie.split(';').some(cookie => {
+        return cookie.trim().startsWith('notycaption_access_token=');
+      });
     } catch (_) {
       return false;
     }
