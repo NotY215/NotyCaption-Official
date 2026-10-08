@@ -4,7 +4,7 @@ NotyCaption Pro is an AI-powered caption generation application built around Whi
 
 ## Website
 
-https://notycaption.rf.gd
+https://notycaptiongen.free.nf
 
 ## Repository
 
