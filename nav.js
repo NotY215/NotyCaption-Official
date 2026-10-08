@@ -111,3 +111,11 @@
 
   window.NotyCaptionNav = { loggedIn };
 })();
+
+(function loadArrowDashEnhancements() {
+  if (location.pathname.replace(/\/+$/, '') !== '/game') return;
+  const script = document.createElement('script');
+  script.src = '/game-infinite.js';
+  script.defer = false;
+  document.body.appendChild(script);
+})();
