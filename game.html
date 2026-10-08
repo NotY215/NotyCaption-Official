@@ -432,7 +432,7 @@
     transition: border 0.05s, box-shadow 0.05s;
   }
 </style>
-    <link rel="stylesheet" href="/nav.css?v=3">
+    <link rel="stylesheet" href="/nav.css?v=4">
 </head>
 <body class="noty-nav-overlay">
 
@@ -1710,6 +1710,8 @@ function startGame() {
 
 function loadAndStartStage() {
   hideOverlays();
+  const leaderboardButton = document.getElementById('gameLeaderboardButton');
+  if (leaderboardButton) leaderboardButton.style.display = 'none';
   document.getElementById('menu').style.display = 'none';
   document.getElementById('hud').style.display = 'block';
   document.getElementById('progressWrap').style.display = 'block';
@@ -1795,6 +1797,8 @@ function goMenu() {
   stopMusic();
   if (animId) cancelAnimationFrame(animId);
   state.running = false;
+  const leaderboardButton = document.getElementById('gameLeaderboardButton');
+  if (leaderboardButton) leaderboardButton.style.display = 'block';
   document.getElementById('menu').style.display = 'flex';
   document.getElementById('hud').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
@@ -1836,7 +1840,7 @@ function hideOverlays() {
 })();
 
 </script>
-    <script src="/game-infinite.js?v=3"></script>
-    <script src="/nav.js?v=3"></script>
+    <script src="/game-infinite.js?v=4"></script>
+    <script src="/nav.js?v=4"></script>
 </body>
 </html>
