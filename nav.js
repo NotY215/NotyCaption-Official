@@ -6,6 +6,7 @@
     { key: 'app', href: '/app', label: 'App' },
     { key: 'game', href: '/game', label: 'Game' },
     { key: 'documentation', href: '/documentation', label: 'Documentation' },
+    { key: 'settings', href: '/settings', label: 'Settings' },
     { key: 'contact', href: '/contact', label: 'Contact' }
   ];
 
@@ -44,10 +45,6 @@
     return isLoggedIn() ? '/app' : '/home';
   }
 
-  function settingsMarkup() {
-    return '<a class="noty-nav-settings" data-nav-settings href="/settings">Settings</a>';
-  }
-
   function render() {
     if (document.querySelector('.noty-global-nav')) return;
 
@@ -69,7 +66,6 @@
           LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '">' + x.label + '</a>').join('') +
         '</nav>' +
         '<div class="noty-nav-actions">' +
-          settingsMarkup() +
           '<a class="noty-nav-primary" data-nav-app href="' + appHref() + '">' + (loggedIn ? 'Open App' : 'Sign In') + '</a>' +
         '</div>' +
       '</div>';
@@ -84,7 +80,6 @@
         '</div>' +
         '<nav class="noty-nav-drawer-list" aria-label="Mobile navigation">' +
           LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '"><span>' + x.label + '</span><span aria-hidden="true">›</span></a>').join('') +
-          '<a data-nav-key="settings" href="/settings"><span>Settings</span><span aria-hidden="true">›</span></a>' +
           '<a data-nav-key="privacy" href="/privacy"><span>Privacy Policy</span><span aria-hidden="true">›</span></a>' +
           '<a data-nav-key="terms" href="/terms"><span>Terms & Conditions</span><span aria-hidden="true">›</span></a>' +
         '</nav>' +
@@ -143,13 +138,4 @@
   }
 
   window.NotyCaptionNav = window.NotyCaptionNav || { loggedIn: isLoggedIn, applyTheme };
-})();
-
-(function loadArrowDashEnhancements() {
-  const path = location.pathname.replace(/\\/+$/, '');
-  if (path !== '/game') return;
-  const script = document.createElement('script');
-  script.src = '/game-infinite.js';
-  script.defer = false;
-  document.body.appendChild(script);
 })();
