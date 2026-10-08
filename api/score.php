@@ -14,8 +14,14 @@ if (!in_array($difficulty, ['easy','normal','hard'], true)) {
 }
 
 $profile = read_json('username.json', []);
-$record = $profile[$user['email']] ?? ensure_user($user['email'], $user['name']);
-$username = $record['username'] ?? ensure_user($user['email'], $user['name'])['username'];
+if (!isset($profile[$user['email']])) {
+    ensure_user($user['email'], $user['name']);
+    $profile = read_json('username.json', []);
+}
+$record = $profile[$user['email']] ?? null;
+if (!$record) json_response(['ok' => false, 'error' => 'Account profile unavailable'], 503);
+$username = (string)$record['username'];
+$cacheLock = acquire_cache_lock();
 
 update_json('username.json', function(array $data) use ($user, $username, $difficulty, $score, $stage): array {
     $key = $user['email'];
@@ -45,5 +51,6 @@ update_json('scores.json', function(array $data) use ($user, $username, $difficu
     return $data;
 }, ['easy'=>[],'normal'=>[],'hard'=>[]]);
 
+release_cache_lock($cacheLock);
 json_response(['ok'=>true,'difficulty'=>$difficulty,'score'=>$score,'stage'=>$stage,'username'=>$username]);
 ?>
