@@ -64,7 +64,7 @@
       } else {
         document.getElementById('emailValue').textContent = 'Not signed in';
       }
-      lockAccountControls('Sign in to manage your account. The leaderboard is still available.');
+      lockAccountControls('Sign in to manage your account. The  is still available.');
       return;
     }
 
@@ -129,36 +129,6 @@
     }
   }
 
-  async function loadLeaderboard() {
-    const difficulty = document.getElementById('leaderboardDifficulty').value;
-    const body = document.getElementById('leaderboardBody');
-    body.innerHTML = '<tr><td colspan="4">Loading leaderboard...</td></tr>';
-
-    try {
-      const data = await fetch('/api/leaderboard.php?difficulty=' + encodeURIComponent(difficulty)).then(async response => {
-        const value = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(value.error || 'Could not load leaderboard');
-        return value;
-      });
-
-      const rows = Array.isArray(data.leaderboard) ? data.leaderboard : [];
-      if (!rows.length) {
-        body.innerHTML = '<tr><td colspan="4">No scores yet.</td></tr>';
-        return;
-      }
-
-      body.innerHTML = rows.map(row =>
-        '<tr>' +
-          '<td>#' + Number(row.rank || 0) + '</td>' +
-          '<td>' + escapeHtml(row.username || 'Player') + '</td>' +
-          '<td>' + Math.max(1, Number(row.stage || 1)) + '</td>' +
-          '<td>' + Number(row.score || 0).toLocaleString() + '</td>' +
-        '</tr>'
-      ).join('');
-    } catch (error) {
-      body.innerHTML = '<tr><td colspan="4">' + escapeHtml(error.message) + '</td></tr>';
-    }
-  }
 
   function signOut() {
     [
@@ -193,15 +163,12 @@
   document.getElementById('usernameInput').addEventListener('keydown', event => {
     if (event.key === 'Enter') saveUsername();
   });
-  document.getElementById('leaderboardDifficulty').addEventListener('change', loadLeaderboard);
+  document.getElementById('Difficulty').addEventListener('change', loadLeaderboard);
   document.getElementById('signOut').addEventListener('click', signOut);
 
   applyTheme(localStorage.getItem('notycaption_theme') || 'dark');
 
-  if (location.hash === '#leaderboard') {
-    setTimeout(() => document.getElementById('scoresSection')?.scrollIntoView({behavior:'smooth', block:'start'}), 100);
   }
 
   loadProfile();
-  loadLeaderboard();
 })();
