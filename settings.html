@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="canonical" href="https://notycaptiongen.free.nf/settings">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage your NotyCaption Pro account, theme and game scores.">
+  <title>Settings - NotyCaption Pro</title>
+  <link rel="icon" href="/App.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/nav.css">
+  <link rel="stylesheet" href="/settings.css">
+</head>
+<body class="noty-settings-page">
+  <main class="settings-shell">
+    <header class="settings-header">
+      <div>
+        <p class="settings-kicker">ACCOUNT</p>
+        <h1>Settings</h1>
+        <p class="settings-subtitle">Manage your username, appearance, session and Arrow Dash scores from one place.</p>
+      </div>
+      <a class="settings-back" href="/app">Back to App</a>
+    </header>
+
+    <div id="settingsMessage" class="settings-message" role="status" aria-live="polite"></div>
+
+    <section class="settings-card" id="accountSection">
+      <div class="section-title">
+        <div>
+          <p class="settings-kicker">PROFILE</p>
+          <h2>Account</h2>
+        </div>
+        <div id="accountAvatar" class="account-avatar">?</div>
+      </div>
+
+      <div class="account-grid">
+        <div>
+          <span class="field-label">Username</span>
+          <div class="username-row">
+            <input id="usernameInput" type="text" maxlength="20" autocomplete="off" spellcheck="false">
+            <button id="saveUsername" class="primary-btn" type="button">Save</button>
+          </div>
+          <p class="field-help">3 to 20 characters. Letters, numbers and underscores only. Usernames are unique without case sensitivity.</p>
+        </div>
+        <div>
+          <span class="field-label">Email</span>
+          <div id="emailValue" class="readonly-value">Loading...</div>
+          <p class="field-help">Your email remains the stable account identifier, so changing your username does not remove your scores.</p>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <div>
+          <strong>Sign out</strong>
+          <span>Remove the local Google session from this browser.</span>
+        </div>
+        <button id="signOut" class="danger-btn" type="button">Sign out</button>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="section-title">
+        <div>
+          <p class="settings-kicker">APPEARANCE</p>
+          <h2>Theme</h2>
+        </div>
+      </div>
+      <div class="theme-options" role="radiogroup" aria-label="Theme">
+        <button class="theme-option" data-theme="dark" type="button">
+          <span class="theme-icon">☾</span>
+          <span><strong>Dark</strong><small>Default neon interface</small></span>
+        </button>
+        <button class="theme-option" data-theme="light" type="button">
+          <span class="theme-icon">☀</span>
+          <span><strong>Light</strong><small>Bright interface</small></span>
+        </button>
+        <button class="theme-option" data-theme="system" type="button">
+          <span class="theme-icon">◐</span>
+          <span><strong>System</strong><small>Follow device preference</small></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-card" id="scoresSection">
+      <div class="section-title">
+        <div>
+          <p class="settings-kicker">ARROW DASH</p>
+          <h2>Your Scores</h2>
+        </div>
+        <a href="/game" class="secondary-btn">Play Game</a>
+      </div>
+
+      <div id="scoreCards" class="score-grid">
+        <div class="score-card loading-card">Loading scores...</div>
+      </div>
+
+      <div class="leaderboard-head">
+        <div>
+          <p class="settings-kicker">LEADERBOARD</p>
+          <h3>Top Players</h3>
+        </div>
+        <select id="leaderboardDifficulty" aria-label="Leaderboard difficulty">
+          <option value="easy">Easy</option>
+          <option value="normal">Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+
+      <div class="leaderboard-wrap">
+        <table class="leaderboard">
+          <thead>
+            <tr><th>Rank</th><th>Username</th><th>Stage</th><th>Score</th></tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="4">Loading leaderboard...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="settings-footer">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/documentation">Documentation</a>
+    </footer>
+  </main>
+
+  <script src="/nav.js"></script>
+  <script src="/settings.js"></script>
+</body>
+</html>
