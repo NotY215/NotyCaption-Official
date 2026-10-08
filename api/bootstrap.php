@@ -61,16 +61,45 @@ function google_user(): array {
         json_response(['ok' => false, 'error' => 'Authentication required'], 401);
     }
 
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'header' => "Authorization: Bearer {$token}\r\nAccept: application/json\r\n",
-            'timeout' => 8,
-            'ignore_errors' => true
-        ]
-    ]);
+    $raw = false;
 
-    $raw = @file_get_contents('https://www.googleapis.com/oauth2/v2/userinfo', false, $context);
+    if (function_exists('curl_init')) {
+        $ch = curl_init('https://www.googleapis.com/oauth2/v2/userinfo');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+                'Accept: application/json'
+            ],
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2
+        ]);
+        $raw = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($raw === false || $status < 200 || $status >= 300) {
+            $raw = false;
+        }
+    }
+
+    if ($raw === false) {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => "Authorization: Bearer {$token}\r\nAccept: application/json\r\n",
+                'timeout' => 10,
+                'ignore_errors' => true
+            ]
+        ]);
+        $raw = @file_get_contents(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            false,
+            $context
+        );
+    }
+
     $user = json_decode($raw ?: '', true);
 
     if (!is_array($user) || empty($user['email']) || empty($user['id'])) {
