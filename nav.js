@@ -64,6 +64,7 @@
           DRAWER.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '"><span>' + x.label + '</span><span>›</span></a>').join('') +
         '</div>' +
         '<div class="noty-nav-drawer-actions">' +
+          (loggedIn() ? '<button type="button" class="noty-drawer-signout" data-nav-signout>Sign out</button>' : '') +
           '<a href="https://github.com/NotY215/NotyCaption-Official" target="_blank" rel="noopener">⌘ Source</a>' +
         '</div>' +
       '</aside>';
@@ -101,6 +102,22 @@
     });
 
     document.querySelectorAll('[data-noty-home]').forEach(a => a.addEventListener('click', () => {}));
+
+    const signOut = () => {
+      [
+        'notycaption_access_token',
+        'notycaption_username',
+        'notycaption_user',
+        'notycaption_email'
+      ].forEach(key => localStorage.removeItem(key));
+      document.cookie.split(';').forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        if (name) document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
+      });
+      window.location.href = '/home';
+    };
+    const signOutButton = nav.querySelector('[data-nav-signout]') || backdrop.querySelector('[data-nav-signout]');
+    if (signOutButton) signOutButton.addEventListener('click', signOut);
   }
 
   if (document.readyState === 'loading') {
