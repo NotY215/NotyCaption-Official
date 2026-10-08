@@ -29,7 +29,9 @@ function request_json(): array {
 
 function bearer_token(): ?string {
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/^Bearer\s+(.+)$/i', $header, $m)) return trim($m[1]);
+    if (preg_match('/^Bearer\s+(.+)$/i', $header, $m)) {
+        return trim($m[1]);
+    }
     return null;
 }
 
@@ -47,6 +49,7 @@ function google_user(): array {
             'ignore_errors' => true
         ]
     ]);
+
     $raw = @file_get_contents('https://www.googleapis.com/oauth2/v2/userinfo', false, $context);
     $user = json_decode($raw ?: '', true);
 
@@ -54,35 +57,57 @@ function google_user(): array {
         json_response(['ok' => false, 'error' => 'Invalid or expired Google session'], 401);
     }
 
-    $email = strtolower(trim((string)$user['email']));
     return [
         'id' => (string)$user['id'],
-        'email' => $email,
+        'email' => strtolower(trim((string)$user['email'])),
         'name' => trim((string)($user['name'] ?? 'User'))
     ];
 }
 
 function ensure_cache(): void {
-    if (!is_dir(CACHE_DIR)) @mkdir(CACHE_DIR, 0755, true);
+    if (!is_dir(CACHE_DIR)) {
+        @mkdir(CACHE_DIR, 0755, true);
+    }
+
     foreach (['scores.json', 'username.json', 'Id.json'] as $name) {
         $path = CACHE_DIR . '/' . $name;
         if (!file_exists($path)) {
-            @file_put_contents($path, json_encode($name === 'scores.json'
+            $initial = $name === 'scores.json'
                 ? ['easy' => [], 'normal' => [], 'hard' => []]
-                : [], JSON_PRETTY_PRINT));
+                : [];
+            @file_put_contents($path, json_encode($initial, JSON_PRETTY_PRINT));
         }
     }
 }
 
-function acquire_cache_lock() {\n    ensure_cache();\n    $fp = @fopen(CACHE_DIR . '/.lock', 'c');\n    if (!$fp || !flock($fp, LOCK_EX)) json_response(['ok' => false, 'error' => 'Server storage busy'], 503);\n    return $fp;\n}\n\nfunction release_cache_lock($fp): void {\n    if ($fp) { flock($fp, LOCK_UN); fclose($fp); }\n}\n\nfunction read_json(string $name, array $fallback): array {
+function acquire_cache_lock() {
+    ensure_cache();
+    $fp = @fopen(CACHE_DIR . '/.lock', 'c');
+    if (!$fp || !flock($fp, LOCK_EX)) {
+        json_response(['ok' => false, 'error' => 'Server storage busy'], 503);
+    }
+    return $fp;
+}
+
+function release_cache_lock($fp): void {
+    if ($fp) {
+        flock($fp, LOCK_UN);
+        fclose($fp);
+    }
+}
+
+function read_json(string $name, array $fallback): array {
     ensure_cache();
     $path = CACHE_DIR . '/' . $name;
     $fp = @fopen($path, 'c+');
     if (!$fp) return $fallback;
+
     flock($fp, LOCK_SH);
+    rewind($fp);
     $raw = stream_get_contents($fp);
     flock($fp, LOCK_UN);
     fclose($fp);
+
     $data = json_decode($raw ?: '', true);
     return is_array($data) ? $data : $fallback;
 }
@@ -91,21 +116,26 @@ function update_json(string $name, callable $mutator, array $fallback): array {
     ensure_cache();
     $path = CACHE_DIR . '/' . $name;
     $fp = @fopen($path, 'c+');
-    if (!$fp) json_response(['ok' => false, 'error' => 'Server storage unavailable'], 503);
+    if (!$fp) {
+        json_response(['ok' => false, 'error' => 'Server storage unavailable'], 503);
+    }
 
     flock($fp, LOCK_EX);
     rewind($fp);
     $raw = stream_get_contents($fp);
     $data = json_decode($raw ?: '', true);
     if (!is_array($data)) $data = $fallback;
+
     $data = $mutator($data);
     $encoded = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     ftruncate($fp, 0);
     rewind($fp);
     fwrite($fp, $encoded);
     fflush($fp);
     flock($fp, LOCK_UN);
     fclose($fp);
+
     return $data;
 }
 
@@ -128,8 +158,13 @@ function find_username_for_email(string $email): ?string {
 }
 
 function ensure_user(string $email, string $displayName = 'User'): array {
+    $cacheLock = acquire_cache_lock();
+
     $existing = find_username_for_email($email);
-    if ($existing) { release_cache_lock($cacheLock); return ['username' => $existing]; }
+    if ($existing) {
+        release_cache_lock($cacheLock);
+        return ['username' => $existing];
+    }
 
     $base = preg_replace('/[^A-Za-z0-9_]/', '', $displayName);
     $base = $base !== '' ? substr($base, 0, 16) : 'Player';
@@ -137,16 +172,24 @@ function ensure_user(string $email, string $displayName = 'User'): array {
 
     $ids = read_json('Id.json', []);
     $used = [];
-    foreach ($ids as $entry) if (isset($entry['username'])) $used[username_key((string)$entry['username'])] = true;
+    foreach ($ids as $entry) {
+        if (isset($entry['username'])) {
+            $used[username_key((string)$entry['username'])] = true;
+        }
+    }
 
     $candidate = $base;
     $n = 2;
     while (isset($used[username_key($candidate)])) {
-        $candidate = substr($base, 0, max(3, 20 - strlen((string)$n))) . $n++;
+        $suffix = (string)$n++;
+        $candidate = substr($base, 0, max(3, 20 - strlen($suffix))) . $suffix;
     }
 
     update_json('Id.json', function(array $data) use ($email, $candidate): array {
-        $data[strtolower($email)] = ['email' => strtolower($email), 'username' => $candidate];
+        $data[strtolower($email)] = [
+            'email' => strtolower($email),
+            'username' => $candidate
+        ];
         return $data;
     }, []);
 
@@ -160,6 +203,7 @@ function ensure_user(string $email, string $displayName = 'User'): array {
         return $data;
     }, []);
 
+    release_cache_lock($cacheLock);
     return ['username' => $candidate];
 }
 ?>
