@@ -61,7 +61,7 @@
             if (!hash) {
                 messageEl.innerHTML = '<span class="error">❌ No authentication data found</span>';
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }, 2000);
                 return;
             }
@@ -74,7 +74,7 @@
             if (error) {
                 messageEl.innerHTML = `<span class="error">❌ Login Error: ${decodeURIComponent(error)}</span>`;
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }, 3000);
                 return;
             }
@@ -105,25 +105,25 @@
                         messageEl.innerHTML = `<span class="success">✅ Welcome, ${userInfo.name || 'User'}!</span><br>Email: ${userInfo.email}<br>Redirecting to app...`;
                         
                         setTimeout(() => {
-                            window.location.href = 'app.html#web';
+                            window.location.href = '/';
                         }, 1500);
                     } else {
                         messageEl.innerHTML = '<span class="error">⚠️ Could not fetch profile</span>';
                         setTimeout(() => {
-                            window.location.href = 'app.html#web';
+                            window.location.href = '/';
                         }, 1500);
                     }
                 } catch (err) {
                     console.error('Error:', err);
                     messageEl.innerHTML = '<span class="error">⚠️ Profile fetch failed</span>';
                     setTimeout(() => {
-                        window.location.href = 'app.html#web';
+                        window.location.href = '/';
                     }, 1500);
                 }
             } else {
                 messageEl.innerHTML = '<span class="error">❌ Invalid authentication response</span>';
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }, 2000);
             }
         }
