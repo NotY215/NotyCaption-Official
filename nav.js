@@ -45,9 +45,7 @@
   }
 
   function settingsMarkup() {
-    return isLoggedIn()
-      ? '<a class="noty-nav-settings" data-nav-settings href="/settings">Settings</a>'
-      : '';
+    return '<a class="noty-nav-settings" data-nav-settings href="/settings">Settings</a>';
   }
 
   function render() {
@@ -86,7 +84,7 @@
         '</div>' +
         '<nav class="noty-nav-drawer-list" aria-label="Mobile navigation">' +
           LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '"><span>' + x.label + '</span><span aria-hidden="true">›</span></a>').join('') +
-          (loggedIn ? '<a data-nav-key="settings" href="/settings"><span>Settings</span><span aria-hidden="true">›</span></a>' : '') +
+          '<a data-nav-key="settings" href="/settings"><span>Settings</span><span aria-hidden="true">›</span></a>' +
           '<a data-nav-key="privacy" href="/privacy"><span>Privacy Policy</span><span aria-hidden="true">›</span></a>' +
           '<a data-nav-key="terms" href="/terms"><span>Terms & Conditions</span><span aria-hidden="true">›</span></a>' +
         '</nav>' +
