@@ -16,8 +16,10 @@ json_response([
     'project_id' => $web['project_id'] ?? null,
     'auth_uri' => $web['auth_uri'] ?? 'https://accounts.google.com/o/oauth2/auth',
     'token_uri' => $web['token_uri'] ?? 'https://oauth2.googleapis.com/token',
-    'redirect_uris' => [$web['redirect_uris'][0] ?? null],\n    'redirect_uri' => $web['redirect_uris'][0] ?? null,
-    'auth_provider_x509_cert_url' => $web['auth_provider_x509_cert_url'] ?? null,\n    'scopes' => $web['scopes'] ?? [
+    'redirect_uris' => [$web['redirect_uris'][0] ?? null],
+    'redirect_uri' => $web['redirect_uris'][0] ?? null,
+    'auth_provider_x509_cert_url' => $web['auth_provider_x509_cert_url'] ?? null,
+    'scopes' => $web['scopes'] ?? [
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'
