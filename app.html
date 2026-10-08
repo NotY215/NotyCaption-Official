@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="canonical" href="https://notycaptiongen.free.nf/app.html">
+    <link rel="canonical" href="https://notycaptiongen.free.nf/app">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NotyCaption Pro - AI Caption Generator</title>
@@ -83,7 +83,7 @@
         @media(max-width:900px){.app-wrapper{flex-direction:column}.sidebar{width:100%;position:relative;top:0}.main-grid{grid-template-columns:1fr}}
         @media(max-width:768px){.navbar{padding:12px 20px;flex-direction:column}.container{padding:120px 15px 30px}}
     </style>
-</head>
+    <link rel="stylesheet" href="/nav.css">\n</head>
 <body>
 
 <nav class="navbar">
@@ -92,12 +92,12 @@
         <h1>NotyCaption Pro</h1>
     </div>
     <div class="nav-links">
-        <a href="app.html">Home</a>
-        <a href="game.html">Game</a>
-        <a href="documentation.html">Documentation</a>
-        <a href="Privacy%20Policy.html">Privacy</a>
-        <a href="T%26C.html">Terms</a>
-        <a href="contact.html">Contact</a>
+        <a href="/app">Home</a>
+        <a href="/game">Game</a>
+        <a href="/documentation">Documentation</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
         <a onclick="logout()">Logout</a>
     </div>
 </nav>
@@ -107,12 +107,12 @@
     <div class="sidebar">
         <h3>📁 Explore</h3>
         <div class="sidebar-links">
-            <a href="app.html">🏠 Home</a>
-            <a href="game.html">🎮 Arrow Dash Game</a>
-            <a href="documentation.html">📖 Documentation</a>
-            <a href="Privacy%20Policy.html">🔒 Privacy Policy</a>
-            <a href="T%26C.html">📜 Terms & Conditions</a>
-            <a href="contact.html">📞 Contact</a>
+            <a href="/app">🏠 Home</a>
+            <a href="/game">🎮 Arrow Dash Game</a>
+            <a href="/documentation">📖 Documentation</a>
+            <a href="/privacy">🔒 Privacy Policy</a>
+            <a href="/terms">📜 Terms & Conditions</a>
+            <a href="/contact">📞 Contact</a>
         </div>
     </div>
     
@@ -231,7 +231,7 @@
     }
     
     if (!isLoggedIn()) {
-        window.location.href = 'index.html';
+        window.location.href = '/home';
     }
     
     // Global functions
@@ -592,5 +592,5 @@
         }
     });
 </script>
-</body>
+    <script src="/nav.js"></script>\n</body>
 </html>
