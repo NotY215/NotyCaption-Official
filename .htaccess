@@ -5,7 +5,10 @@
 RewriteEngine On
 RewriteBase /
 
-# Server-only files and runtime storage.\nRewriteRule ^(?:cache(?:/|$)|client\.json$|api/bootstrap\.php$) - [F,L,NC]\n\n# Sitemap is always directly accessible.
+# Server-only files and runtime storage.
+RewriteRule ^(?:cache(?:/|$)|client\.json$|api/bootstrap\.php$) - [F,L,NC]
+
+# Sitemap is always directly accessible.
 RewriteRule ^(?:[^/]+/)?sitemap\.xml$ sitemap.xml [L]
 RewriteRule ^(?:[^/]+/)?sitemap\.cml$ sitemap.xml [L]
 
