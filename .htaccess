@@ -25,28 +25,6 @@ RewriteRule ^(?:privacy)/?$ "Privacy Policy.html" [L]
 RewriteRule ^(?:terms|tc)/?$ "T&C.html" [L]
 RewriteRule ^(?:contact)/?$ contact.html [L]
 
-# Redirect legacy public HTML URLs to their clean routes.
-RewriteCond %{THE_REQUEST} \s/+index\.html(?:[\s?]|$) [NC]
-RewriteRule ^index\.html$ /home [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+app\.html(?:[\s?]|$) [NC]
-RewriteRule ^app\.html$ /app [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+game\.html(?:[\s?]|$) [NC]
-RewriteRule ^game\.html$ /game [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+documentation\.html(?:[\s?]|$) [NC]
-RewriteRule ^documentation\.html$ /documentation [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+Privacy(?:%20|\s+)Policy\.html(?:[\s?]|$) [NC]
-RewriteRule ^Privacy(?:%20|\s+)Policy\.html$ /privacy [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+T(?:%26|&)C\.html(?:[\s?]|$) [NC]
-RewriteRule ^T(?:%26|&)C\.html$ /terms [R=301,L]
-
-RewriteCond %{THE_REQUEST} \s/+contact\.html(?:[\s?]|$) [NC]
-RewriteRule ^contact\.html$ /contact [R=301,L]
-
 # Do not rewrite extension-based resources.
 RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{2,5}$
 RewriteRule ^ - [L]
