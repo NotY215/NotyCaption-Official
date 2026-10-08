@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotyCaption Pro Documentation</title>
+<link rel="icon" href="App.ico" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,sans-serif;background:#080914;color:#eee;line-height:1.7}a{color:#65e6ff;text-decoration:none}.layout{display:flex;min-height:100vh}.side{width:280px;padding:28px 20px;background:#101225;border-right:1px solid #252943;position:sticky;top:0;height:100vh}.brand{font-size:20px;font-weight:800;margin-bottom:30px;background:linear-gradient(90deg,#00e5ff,#00c853);-webkit-background-clip:text;color:transparent}.side a{display:block;padding:10px 12px;border-radius:9px;color:#bfc5d9;margin:3px 0}.side a:hover{background:#1a1e35;color:#fff}main{max-width:1000px;width:100%;padding:70px 55px}.hero{padding-bottom:45px;border-bottom:1px solid #252943}.hero h1{font-size:46px;margin:0 0 10px}.hero p{color:#aeb5ca;font-size:18px}section{margin-top:48px}h2{font-size:28px}h3{font-size:19px}.card{background:#101225;border:1px solid #252943;border-radius:14px;padding:22px;margin:16px 0}.flow{background:#05060c;border:1px solid #252943;padding:16px;border-radius:10px;font-family:monospace;overflow:auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}.grid .card{margin:0}.footer{margin-top:70px;padding-top:25px;border-top:1px solid #252943;color:#7f879d}@media(max-width:800px){.layout{display:block}.side{width:auto;height:auto;position:static}.side nav{display:grid;grid-template-columns:1fr 1fr}.side a{font-size:13px}main{padding:40px 20px}.hero h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="side">
+<div class="brand">NotyCaption Pro</div>
+<nav>
+<a href="#overview">Overview</a><a href="#architecture">Architecture</a><a href="#installation">Installation</a><a href="#usage">Usage</a><a href="#configuration">Configuration</a><a href="#faq">FAQ</a><a href="#troubleshooting">Troubleshooting</a><a href="#contributing">Contributing</a><a href="#security">Security</a>
+</nav>
+</aside>
+<main>
+<header class="hero" id="overview">
+<h1>Documentation</h1>
+<p>Technical documentation for NotyCaption Pro, its processing pipeline, and project workflow.</p>
+<p><a href="https://notycaption.rf.gd">Website</a> · <a href="https://github.com/NotY215/NotyCaption-Official">GitHub</a></p>
+</header>
+<section id="architecture"><h2>Architecture</h2><div class="card"><p>Audio is uploaded to Google Drive, a processing notebook is generated and opened in Google Colab, and the website tracks the resulting Drive file through operation metadata.</p><div class="flow">Website → Drive → Colab → Drive result → Website</div></div></section>
+<section id="installation"><h2>Installation</h2><div class="card"><p>Deploy the repository to a static web host and configure the Google OAuth application used by the project.</p><p><strong>Placeholder:</strong> Add the complete production deployment procedure here.</p></div></section>
+<section id="usage"><h2>Usage</h2><div class="grid"><div class="card"><h3>Generate Captions</h3><p>Upload audio, select caption settings, run the generated Colab notebook, and wait for automatic result detection.</p></div><div class="card"><h3>Enhance Audio</h3><p>Upload audio, start vocal enhancement, execute the Colab workflow, and wait for the enhanced Drive result.</p></div></div></section>
+<section id="configuration"><h2>Configuration</h2><div class="card"><p>Processing settings include language, words per line, and output format.</p><p><strong>Placeholder:</strong> Document all configurable values and deployment-specific settings.</p></div></section>
+<section id="faq"><h2>FAQ</h2><div class="card"><h3>Can the Colab tab be closed?</h3><p>Yes. The website tracker is independent of the Colab tab and continues waiting for the Drive result.</p><h3>Does progress show exact AI percentage?</h3><p>No. It represents processing stages because the website does not receive an exact Whisper or Spleeter percentage.</p></div></section>
+<section id="troubleshooting"><h2>Troubleshooting</h2><div class="card"><p>If a result is not detected, verify that Colab finished successfully, Drive authentication succeeded, and the result file was uploaded with the correct operation metadata.</p><p><strong>Placeholder:</strong> Add a complete error reference.</p></div></section>
+<section id="contributing"><h2>Contributing</h2><div class="card"><p>Keep authentication behavior stable, never commit credentials, test changes, and update documentation when behavior changes.</p></div></section>
+<section id="security"><h2>Security</h2><div class="card"><p>Do not expose OAuth credentials, access tokens, or private Drive information. Report sensitive vulnerabilities privately.</p></div></section>
+<div class="footer">NotyCaption Pro · GNU AGPL v3.0 · <a href="LICENSE">License</a></div>
+</main>
+</div>
+</body>
+</html>
