@@ -1,4 +1,4 @@
-/* Arrow Dash infinite progression, account persistence and leaderboard. */
+/* Arrow Dash infinite progression and account persistence. */
 (function () {
   'use strict';
 
@@ -95,25 +95,6 @@
     style.textContent = `
       .infinite-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 20px}
       .infinite-badge{padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.05);font:600 10px Orbitron;letter-spacing:1px;color:#dce7ff}
-      .leaderboard-btn{display:none!important;position:fixed;right:18px;bottom:18px;z-index:450;padding:12px 18px;border:1px solid #00f5ff;border-radius:10px;background:rgba(5,5,16,.92);color:#00f5ff;font:700 11px Orbitron;letter-spacing:2px;cursor:pointer}
-      .leaderboard-panel{position:fixed;inset:0;z-index:10050;background:rgba(3,4,12,.94);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:20px}
-      .leaderboard-panel.open{display:flex}
-      .leaderboard-card{width:min(720px,96vw);max-height:86vh;overflow:auto;border:1px solid rgba(0,245,255,.25);border-radius:18px;background:#0a0d1c;padding:22px;box-shadow:0 0 50px rgba(0,245,255,.12)}
-      .leaderboard-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
-      .leaderboard-head h2{font:900 22px Orbitron;color:#00f5ff}
-      .leaderboard-close{border:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
-      .leaderboard-tabs{display:flex;gap:8px;margin-bottom:16px}
-      .leaderboard-tab{flex:1;padding:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#aaa;border-radius:8px;cursor:pointer;font:700 10px Orbitron}
-      .leaderboard-tab.active{color:#fff;border-color:#00f5ff;background:rgba(0,245,255,.12)}
-      .leaderboard-row{display:grid;grid-template-columns:60px 1fr 100px 80px;gap:10px;padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.06);font:600 12px Rajdhani}
-      .leaderboard-row.head{color:#6f7890;font:700 9px Orbitron;text-transform:uppercase}
-      .leaderboard-row.me{background:rgba(255,229,0,.08);border-radius:8px}
-      .username-modal{display:none!important;position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px}
-      .username-modal.open{display:flex}.username-card{width:min(440px,94vw);background:#101225;border:1px solid rgba(0,245,255,.25);border-radius:18px;padding:25px}
-      .username-card h2{font:800 20px Orbitron;color:#00f5ff;margin-bottom:8px}.username-card p{color:#9ca5bd;font:13px Rajdhani;margin-bottom:15px}
-      .username-card input{width:100%;padding:12px;border-radius:9px;border:1px solid #30364e;background:#080a15;color:#fff;margin-bottom:10px}
-      .username-actions{display:flex;gap:10px}.username-actions button{flex:1;padding:11px;border-radius:9px;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff}
-      .username-actions .save{border-color:#00f5ff;color:#00f5ff}
       @media(max-width:600px){.leaderboard-row{grid-template-columns:42px 1fr 80px 55px}.leaderboard-card{padding:15px}}
     `;
     document.head.appendChild(style);
