@@ -193,7 +193,7 @@
     const myScore = Number(profile.score && profile.score[difficulty] || 0);
     const myStage = Number(profile.stage && profile.stage[difficulty] || 1);
 
-    if (!loggedIn() && myScore > 0) {
+    if (!loggedIn()) {
       remote = remote.slice();
       remote.push({rank:0,username:myName,score:myScore,stage:myStage,guest:true});
       remote.sort((a,b)=>b.score-a.score);
