@@ -971,9 +971,13 @@ function playJumpSound() {
 
 // ---- CAMERA ----
 function updateCamera() {
-  const targetX = player.x - canvas.width * 0.3;
-  state.cameraX += (targetX - state.cameraX) * 0.12;
+  // Keep player roughly at 28% from left so you can see ahead
+  const targetX = player.x - canvas.width * 0.28;
+  // Snappier follow so the ball never drifts off-screen
+  state.cameraX += (targetX - state.cameraX) * 0.18;
   state.cameraX = Math.max(0, state.cameraX);
+  // Soft vertical look-ahead when jumping high (optional, mild)
+  // (player.y is already screen-ish for platforms; we keep Y camera fixed)
 }
 
 // ---- COLLISION ----
@@ -986,10 +990,10 @@ function checkPlatformCollision() {
   player.onGround = false;
 
   for (const p of platforms) {
-    const px = p.x - state.cameraX;
-    if (px + p.w < -100 || px > canvas.width + 100) continue;
+    // Cull using world vs camera (approx on-screen)
+    if (p.x + p.w < state.cameraX - 100 || p.x > state.cameraX + canvas.width + 100) continue;
 
-    if (rectsOverlap(player.x, player.y, player.w, player.h, px, p.y, p.w, p.h)) {
+    if (rectsOverlap(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
       // Falling onto top of platform
       if (player.vy >= 0 && player.y + player.h <= p.y + 20) {
         player.y = p.y - player.h;
@@ -1010,12 +1014,13 @@ function checkPlatformCollision() {
 function checkObstacleCollision() {
   const cfg = DIFFICULTIES[state.difficulty];
   for (const ob of obstacles) {
-    const ox = ob.x - state.cameraX;
-    let hitX = ox, hitW = ob.w, hitY = ob.y, hitH = ob.h;
+    if (ob.x + ob.w < state.cameraX - 50 || ob.x > state.cameraX + canvas.width + 50) continue;
+
+    let hitX = ob.x, hitW = ob.w, hitY = ob.y, hitH = ob.h;
 
     if (ob.type === 'spike') {
       // Tighter hitbox for spike
-      hitX = ox + 4; hitW = ob.w - 8;
+      hitX = ob.x + 4; hitW = ob.w - 8;
       hitY = ob.y + 8; hitH = ob.h - 8;
     }
 
@@ -1041,12 +1046,11 @@ function checkCoinCollection() {
   const cfg = DIFFICULTIES[state.difficulty];
   for (const c of coins) {
     if (c.collected) continue;
-    const cx = c.x - state.cameraX;
-    if (rectsOverlap(player.x, player.y, player.w, player.h, cx - 8, c.y - 8, 16, 16)) {
+    if (rectsOverlap(player.x, player.y, player.w, player.h, c.x - 8, c.y - 8, 16, 16)) {
       c.collected = true;
       state.score += 50;
       updateHUD();
-      spawnParticles(cx, c.y, '#ffe500', 10, 4);
+      spawnParticles(c.x, c.y, '#ffe500', 10, 4);
       playCoinSound();
     }
   }
@@ -1072,14 +1076,13 @@ function playCoinSound() {
 function checkPowerupCollection() {
   for (const pu of powerups) {
     if (pu.collected) continue;
-    const px = pu.x - state.cameraX;
     const bobY = pu.y + Math.sin(tick * 0.08 + pu.bob) * 6;
-    if (rectsOverlap(player.x, player.y, player.w, player.h, px - 14, bobY - 14, 28, 28)) {
+    if (rectsOverlap(player.x, player.y, player.w, player.h, pu.x - 14, bobY - 14, 28, 28)) {
       pu.collected = true;
       state.score += 100;
       updateHUD();
       applyPowerup(pu.type);
-      spawnParticles(px, bobY, powerupColor(pu.type), 16, 5);
+      spawnParticles(pu.x, bobY, powerupColor(pu.type), 16, 5);
       playPowerupSound();
     }
   }
@@ -1442,7 +1445,7 @@ function drawTrail() {
     ctx.shadowBlur = 10;
     ctx.shadowColor = cfg.color;
     ctx.save();
-    ctx.translate(t.x, t.y);
+    ctx.translate(t.x - state.cameraX, t.y);
     drawDiamondShape(ctx, 0, 0, size * 0.4, size * 0.4);
     ctx.restore();
     t.life -= 0.06;
@@ -1454,7 +1457,8 @@ function drawTrail() {
 function drawPlayer() {
   if (player.dead) return;
   const cfg = DIFFICULTIES[state.difficulty];
-  const px = player.x;
+  // Screen-space position so camera follows the ball
+  const px = player.x - state.cameraX;
   const py = player.y;
   const w = player.w;
   const h = player.h;
@@ -1499,6 +1503,7 @@ function drawDiamondShape(ctx, x, y, hw, hh) {
 }
 
 function drawParticles() {
+  const cam = (state.running || state.dead) ? state.cameraX : 0;
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     if (p.life <= 0) { particles.splice(i, 1); continue; }
@@ -1510,7 +1515,7 @@ function drawParticles() {
       ctx.shadowColor = p.color;
     }
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.arc(p.x - cam, p.y, p.size * p.life, 0, Math.PI * 2);
     ctx.fill();
 
     p.x += p.vx;
@@ -1555,25 +1560,26 @@ function drawPowerups() {
     ctx.fillText(icon, px, bobY);
   }
 
-  // Active power-up indicators near player
+  // Active power-up indicators near player (screen space)
+  const screenPX = player.x + player.w/2 - state.cameraX;
   let indY = player.y - 18;
   if (player.speedBoostTimer > 0) {
     ctx.fillStyle = '#00f5ff';
     ctx.font = '11px Orbitron';
     ctx.textAlign = 'center';
-    ctx.fillText('⚡', player.x + player.w/2 - state.cameraX, indY);
+    ctx.fillText('⚡', screenPX, indY);
     indY -= 14;
   }
   if (player.superJumpTimer > 0) {
     ctx.fillStyle = '#ffe500';
     ctx.font = '11px Orbitron';
     ctx.textAlign = 'center';
-    ctx.fillText('⬆', player.x + player.w/2 - state.cameraX, indY);
+    ctx.fillText('⬆', screenPX, indY);
     indY -= 14;
   }
   if (player.shieldActive) {
-    // Shield aura
-    const cx = player.x + player.w/2 - state.cameraX;
+    // Shield aura follows the ball
+    const cx = screenPX;
     const cy = player.y + player.h/2;
     ctx.strokeStyle = '#bf00ff88';
     ctx.lineWidth = 2;
