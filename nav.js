@@ -6,6 +6,7 @@
     { key: 'app', href: '/app', label: 'App' },
     { key: 'game', href: '/game', label: 'Game' },
     { key: 'documentation', href: '/documentation', label: 'Documentation' },
+    { key: 'leaderboard', href: '/leaderboard', label: 'Leaderboard' },
     { key: 'settings', href: '/settings', label: 'Settings' },
     { key: 'contact', href: '/contact', label: 'Contact' }
   ];
