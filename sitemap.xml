@@ -17,6 +17,10 @@
     <priority>0.9000</priority>
   </url>
   <url>
+    <loc>https://notycaptiongen.free.nf/leaderboard</loc>
+    <priority>0.8000</priority>
+  </url>
+  <url>
     <loc>https://notycaptiongen.free.nf/privacy</loc>
     <priority>0.5000</priority>
   </url>
