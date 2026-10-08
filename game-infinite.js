@@ -59,8 +59,8 @@
   async function saveProgress() {
     const profile = browserProfile();
     const difficulty = state.difficulty;
-    const score = Math.max(0, Math.floor(state.score + state.totalScore));
-    const stage = Math.max(1, state.stageIndex + 1);
+    const score = Math.max(0, Math.floor(Math.max(state.score, state.totalScore)));
+    const stage = Math.max(1, state.stageIndex + (state.dead ? 2 : 1));
     profile.stage = profile.stage || {easy:1,normal:1,hard:1};
     profile.score = profile.score || {easy:0,normal:0,hard:0};
     profile.stage[difficulty] = Math.max(profile.stage[difficulty] || 1, stage);
