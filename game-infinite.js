@@ -129,37 +129,7 @@
     const cards = document.querySelector('.diff-cards');
     if (cards) cards.after(badge);
 
-    const button = document.createElement('button');
-    button.className = 'leaderboard-btn';
-    button.textContent = 'LEADERBOARD';
-    button.onclick = openLeaderboard;
-    document.body.appendChild(button);
-
-    const panel = document.createElement('div');
-    panel.className = 'leaderboard-panel';
-    panel.id = 'leaderboardPanel';
-    panel.innerHTML = '<div class="leaderboard-card"><div class="leaderboard-head"><h2>LEADERBOARD</h2><button class="leaderboard-close">CLOSE</button></div><div class="leaderboard-tabs"><button class="leaderboard-tab active" data-diff="easy">EASY</button><button class="leaderboard-tab" data-diff="normal">NORMAL</button><button class="leaderboard-tab" data-diff="hard">HARD</button></div><div id="leaderboardRows"></div></div>';
-    document.body.appendChild(panel);
-    panel.querySelector('.leaderboard-close').onclick = () => panel.classList.remove('open');
-    panel.addEventListener('click', e => { if (e.target === panel) panel.classList.remove('open'); });
-    panel.querySelectorAll('.leaderboard-tab').forEach(btn => btn.onclick = () => loadLeaderboard(btn.dataset.diff));
-
-    const modal = document.createElement('div');
-    modal.className = 'username-modal';
-    modal.id = 'usernameModal';
-    modal.innerHTML = '<div class="username-card"><h2>YOUR USERNAME</h2><p>Choose a unique username. It is not case-sensitive and can be changed any time.</p><input id="usernameInput" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3-20 letters, numbers or underscores"><div id="usernameError" style="min-height:20px;color:#ff6688;font:12px Rajdhani"></div><div class="username-actions"><button id="usernameCancel">CANCEL</button><button id="usernameSave" class="save">SAVE</button></div></div>';
-    document.body.appendChild(modal);
-    modal.querySelector('#usernameCancel').onclick = () => modal.classList.remove('open');
-    modal.querySelector('#usernameSave').onclick = async () => {
-      const input = modal.querySelector('#usernameInput');
-      const error = modal.querySelector('#usernameError');
-      const name = input.value.trim();
-      if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) { error.textContent = 'Use 3-20 letters, numbers or underscores.'; return; }
-      try { await saveUsername(name); modal.classList.remove('open'); if(window.showToast) window.showToast('Username updated'); } catch(e) { error.textContent = e.message; }
-    };
-
-    if (loggedIn()) {
-      const profileButton = document.createElement('button');
+    if (loggedIn()) {      const profileButton = document.createElement('button');
       profileButton.className = 'leaderboard-btn';
       profileButton.style.bottom = '68px';
       profileButton.textContent = 'USERNAME';
@@ -355,6 +325,8 @@
     if (animId) cancelAnimationFrame(animId);
     state.running=false;
     state.dead=false;
+    const leaderboardButton = document.getElementById('gameLeaderboardButton');
+    if (leaderboardButton) leaderboardButton.style.display='block';
     document.getElementById('menu').style.display='flex';
     document.getElementById('hud').style.display='none';
     document.getElementById('progressWrap').style.display='none';
