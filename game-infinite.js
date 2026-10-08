@@ -129,54 +129,7 @@
     const cards = document.querySelector('.diff-cards');
     if (cards) cards.after(badge);
 
-    if (loggedIn()) {      const profileButton = document.createElement('button');
-      profileButton.className = 'leaderboard-btn';
-      profileButton.style.bottom = '68px';
-      profileButton.textContent = 'USERNAME';
-      profileButton.onclick = async () => {
-        const p = await loadProfile();
-        modal.querySelector('#usernameInput').value = p.username || '';
-        modal.classList.add('open');
-      };
-      document.body.appendChild(profileButton);
-    }
   }
-
-  async function openLeaderboard() {
-    document.getElementById('leaderboardPanel').classList.add('open');
-    await loadLeaderboard(state.difficulty);
-  }
-
-  async function loadLeaderboard(difficulty) {
-    const rows = document.getElementById('leaderboardRows');
-    rows.innerHTML = '<p style="padding:20px;text-align:center;color:#777">Loading...</p>';
-    document.querySelectorAll('.leaderboard-tab').forEach(x => x.classList.toggle('active', x.dataset.diff === difficulty));
-    let remote = [];
-    try {
-      const data = await api('leaderboard.php?difficulty=' + encodeURIComponent(difficulty));
-      remote = data.leaderboard || [];
-    } catch (_) {}
-
-    const profile = browserProfile();
-    const guest = !loggedIn();
-    const myName = guest ? guestName() : (profile.username || 'Player');
-    const myScore = Number(profile.score && profile.score[difficulty] || 0);
-    const myStage = Number(profile.stage && profile.stage[difficulty] || 1);
-
-    if (!loggedIn()) {
-      remote = remote.slice();
-      remote.push({rank:0,username:myName,score:myScore,stage:myStage,guest:true});
-      remote.sort((a,b)=>b.score-a.score);
-    }
-
-    rows.innerHTML = '<div class="leaderboard-row head"><span>#</span><span>PLAYER</span><span>SCORE</span><span>STAGE</span></div>' +
-      (remote.length ? remote.map((r,i)=>'<div class="leaderboard-row '+((r.username===myName)?'me':'')+'"><span>'+(i+1)+'</span><span>'+escapeHtml(r.username)+(r.guest?' <small>(GUEST)</small>':'')+'</span><span>'+Number(r.score).toLocaleString()+'</span><span>'+Number(r.stage)+'</span></div>').join('') : '<p style="padding:20px;color:#777;text-align:center">No scores yet.</p>');
-  }
-
-  function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-  }
-
   function refreshProfileUI() {
     const p = browserProfile();
     const name = p.username || 'Player';
