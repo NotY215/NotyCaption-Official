@@ -1,1 +1,14 @@
+# Local OAuth credentials
 client.json
+client_secret.json
+.env
+.env.*
+
+# Runtime server data
+cache/*.json
+!cache/.gitkeep
+
+# Local development
+node_modules/
+dist/
+*.log
