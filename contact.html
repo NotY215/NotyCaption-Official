@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="canonical" href="https://notycaptiongen.free.nf/contact.html">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Contact NotyCaption Pro and NotY215 for questions, feedback, or project support.">
+    <title>Contact - NotyCaption Pro</title>
+    <link rel="icon" type="image/x-icon" href="App.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;min-height:100vh;font-family:Inter,sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff}
+        .navbar{position:sticky;top:0;z-index:10;padding:16px 40px;background:rgba(15,12,41,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center}
+        .brand{font-weight:800;font-size:20px;background:linear-gradient(90deg,#00e5ff,#00c853);-webkit-background-clip:text;background-clip:text;color:transparent}
+        nav{display:flex;gap:22px;flex-wrap:wrap}
+        nav a{color:#ddd;text-decoration:none;font-size:14px}
+        nav a:hover{color:#00e5ff}
+        main{max-width:900px;margin:0 auto;padding:70px 25px}
+        .hero{text-align:center;margin-bottom:35px}
+        .hero h1{font-size:44px;margin:0 0 12px}
+        .hero p{color:#aeb5ca}
+        .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:30px;backdrop-filter:blur(10px)}
+        label{display:block;margin:0 0 8px;color:#bfc5d9;font-size:13px}
+        input,textarea{width:100%;padding:13px;margin-bottom:18px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(0,0,0,.3);color:#fff;font:inherit}
+        textarea{min-height:150px;resize:vertical}
+        button{border:0;border-radius:25px;padding:13px 28px;background:linear-gradient(90deg,#00e5ff,#00c853);color:#101225;font-weight:700;cursor:pointer}
+        .email{margin-top:25px;color:#aaa;text-align:center}
+        .email a{color:#65e6ff}
+        footer{text-align:center;margin-top:55px;padding-top:25px;border-top:1px solid rgba(255,255,255,.1);color:#888;font-size:12px}
+        @media(max-width:700px){.navbar{padding:14px 20px;flex-direction:column;gap:12px}.hero h1{font-size:34px}main{padding:45px 18px}}
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <a class="brand" href="index.html" style="text-decoration:none">NotyCaption Pro</a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="game.html">Game</a>
+        <a href="documentation.html">Documentation</a>
+        <a href="Privacy%20Policy.html">Privacy</a>
+        <a href="T%26C.html">Terms</a>
+    </nav>
+</header>
+
+<main>
+    <section class="hero">
+        <h1>Contact</h1>
+        <p>Have a question, feedback, or something to report? Send a message directly.</p>
+    </section>
+
+    <section class="card">
+        <form id="contactForm">
+            <label for="name">Name</label>
+            <input id="name" type="text" required>
+
+            <label for="email">Email</label>
+            <input id="email" type="email" required>
+
+            <label for="subject">Subject</label>
+            <input id="subject" type="text" required>
+
+            <label for="message">Message</label>
+            <textarea id="message" required></textarea>
+
+            <button type="submit">Send Message</button>
+        </form>
+        <div class="email">Or email directly: <a href="mailto:NotY215@outlook.com">NotY215@outlook.com</a></div>
+    </section>
+
+    <footer>© 2025-2026 NotY215 | NotyCaption Pro</footer>
+</main>
+
+<script>
+document.getElementById("contactForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const subject = document.getElementById("subject").value;
+    const message = document.getElementById("message").value;
+
+    const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+    window.location.href =
+        `mailto:NotY215@outlook.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+});
+</script>
+</body>
+</html>
