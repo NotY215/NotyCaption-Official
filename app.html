@@ -520,58 +520,45 @@
     }
     
     async function generateCaptions() {
-        if (!window.currentAudioId) {
-            window.showToast('❌ Please upload audio first', true);
-            return;
-        }
+        if (!window.currentAudioId) { window.showToast('❌ Please upload audio first', true); return; }
         if (isProcessing) return;
-        
         isProcessing = true;
         const language = document.getElementById('languageSelect').value;
         const wordsPerLine = document.getElementById('wordsPerLine').value;
         const outputFormat = document.getElementById('outputFormat').value;
-        
-        showModal('🎬 Generating AI Captions', `Processing with Whisper AI...\nLanguage: ${language === 'auto' ? 'Auto Detect' : language}\nThis may take a few minutes.`);
+        showModal('🎬 Generating AI Captions', 'Processing with Whisper AI...\\nThe page will track the Drive result automatically.');
         window.showProgress(true, 'Preparing Colab notebook...', 10);
-        
         try {
-            if (typeof createAndOpenColabNotebook === 'undefined') {
-                throw new Error('Colab module not loaded. Please refresh.');
-            }
-            
+            if (typeof createAndOpenColabNotebook === 'undefined') throw new Error('Colab module not loaded. Please refresh.');
             await createAndOpenColabNotebook('generate', {
-                audioId: window.currentAudioId,
-                audioName: window.currentAudioName,
-                language: language,
-                wordsPerLine: wordsPerLine,
-                outputFormat: outputFormat
-            }, 
+                audioId: window.currentAudioId, audioName: window.currentAudioName,
+                language: language, wordsPerLine: wordsPerLine, outputFormat: outputFormat
+            },
             async (fileId, fileName) => {
                 try {
                     const token = localStorage.getItem('notycaption_access_token');
-                    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                    if (!token) throw new Error('Authentication token not found');
+                    const response = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+                        headers: { 'Authorization': 'Bearer ' + token }
                     });
-                    const content = await fileResponse.text();
-                    displayCaptions(content, fileName);
-                    window.showProgress(false);
+                    if (!response.ok) throw new Error('Download failed: ' + response.status);
+                    displayCaptions(await response.text(), fileName);
+                    window.showProgress(true, 'Captions generated successfully!', 100);
                     closeModal();
                     window.showToast('✅ Captions generated successfully!');
                 } catch (err) {
                     window.showToast('❌ Download failed: ' + err.message, true);
-                }
-                isProcessing = false;
+                    window.showProgress(false);
+                } finally { isProcessing = false; }
             },
             (error) => {
                 window.showToast('❌ Failed: ' + error, true);
                 window.showProgress(false);
                 closeModal();
                 isProcessing = false;
-            });
-            
-            window.showProgress(true, 'Opening Google Colab...', 60);
-            window.showToast('📓 Colab notebook opened! Click "Run All" to start processing.', false);
-            
+            },
+            (message, percent) => window.showProgress(true, message, percent));
+            window.showToast('📓 Colab opened. Click "Run All" to start processing.', false);
         } catch (error) {
             window.showToast('❌ Error: ' + error.message, true);
             isProcessing = false;
@@ -579,47 +566,41 @@
             closeModal();
         }
     }
-    
+
     async function enhanceAudio() {
-        if (!window.currentAudioId) {
-            window.showToast('❌ Please upload audio first', true);
-            return;
-        }
+        if (!window.currentAudioId) { window.showToast('❌ Please upload audio first', true); return; }
         if (isProcessing) return;
-        
         isProcessing = true;
-        showModal('🎤 Vocal Enhancement', 'Extracting vocals with Spleeter AI...\nThis may take a few minutes.');
+        showModal('🎤 Vocal Enhancement', 'Extracting vocals with Spleeter AI...\\nThe page will track the Drive result automatically.');
         window.showProgress(true, 'Preparing vocal extraction...', 10);
-        
         try {
-            if (typeof createAndOpenColabNotebook === 'undefined') {
-                throw new Error('Colab module not loaded. Please refresh.');
-            }
-            
-            await createAndOpenColabNotebook('enhance', { 
-                audioId: window.currentAudioId,
-                audioName: window.currentAudioName
+            if (typeof createAndOpenColabNotebook === 'undefined') throw new Error('Colab module not loaded. Please refresh.');
+            await createAndOpenColabNotebook('enhance', {
+                audioId: window.currentAudioId, audioName: window.currentAudioName
             },
             async (fileId, fileName) => {
-                const token = localStorage.getItem('notycaption_access_token');
-                currentEnhancedFileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${token}`;
-                document.getElementById('enhancedPlayer').src = currentEnhancedFileUrl;
-                document.getElementById('enhancedSection').style.display = 'block';
-                window.showProgress(false);
-                closeModal();
-                window.showToast('✅ Vocal extraction complete! Enhanced audio ready.');
-                isProcessing = false;
+                try {
+                    const token = localStorage.getItem('notycaption_access_token');
+                    if (!token) throw new Error('Authentication token not found');
+                    currentEnhancedFileUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media&access_token=' + encodeURIComponent(token);
+                    document.getElementById('enhancedPlayer').src = currentEnhancedFileUrl;
+                    document.getElementById('enhancedSection').style.display = 'block';
+                    window.showProgress(true, 'Vocal extraction complete!', 100);
+                    closeModal();
+                    window.showToast('✅ Vocal extraction complete! Enhanced audio ready.');
+                } catch (err) {
+                    window.showToast('❌ Failed to load enhanced audio: ' + err.message, true);
+                    window.showProgress(false);
+                } finally { isProcessing = false; }
             },
             (error) => {
                 window.showToast('❌ Failed: ' + error, true);
                 window.showProgress(false);
                 closeModal();
                 isProcessing = false;
-            });
-            
-            window.showProgress(true, 'Opening Google Colab...', 60);
-            window.showToast('📓 Colab notebook opened! Click "Run All" to start vocal extraction.', false);
-            
+            },
+            (message, percent) => window.showProgress(true, message, percent));
+            window.showToast('📓 Colab opened. Click "Run All" to start vocal extraction.', false);
         } catch (error) {
             window.showToast('❌ Error: ' + error.message, true);
             isProcessing = false;
@@ -627,7 +608,7 @@
             closeModal();
         }
     }
-    
+
     function loadSettings() {
         const saved = localStorage.getItem('notycaption_settings');
         if (saved) {
