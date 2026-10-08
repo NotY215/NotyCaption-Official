@@ -1,37 +1,69 @@
 # ========================================
 # NotyCaption Pro - Apache Rewrite Rules
-# For: notycaptiongen.free.nf
 # ========================================
 
 RewriteEngine On
 RewriteBase /
 
-# Don't rewrite real files
+# Sitemap aliases must always remain directly accessible.
+RewriteRule ^(?:[^/]+/)?sitemap\.cml$ sitemap.xml [L]
+RewriteRule ^[^/]+/sitemap\.xml$ sitemap.xml [L]
+
+# Keep real files and directories accessible.
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Don't rewrite real directories
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Don't rewrite files with extensions
+# Public page routes. Both /page and /page/ are valid.
+RewriteRule ^(?:home)/?$ index.html [L]
+RewriteRule ^(?:app)/?$ app.html [L]
+RewriteRule ^(?:game)/?$ game.html [L]
+RewriteRule ^(?:documentation|docs)/?$ documentation.html [L]
+RewriteRule ^(?:privacy)/?$ "Privacy Policy.html" [L]
+RewriteRule ^(?:terms|tc)/?$ "T&C.html" [L]
+RewriteRule ^(?:contact)/?$ contact.html [L]
+
+# Redirect legacy public HTML URLs to their clean routes.
+RewriteCond %{THE_REQUEST} \s/+index\.html(?:[\s?]|$) [NC]
+RewriteRule ^index\.html$ /home [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+app\.html(?:[\s?]|$) [NC]
+RewriteRule ^app\.html$ /app [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+game\.html(?:[\s?]|$) [NC]
+RewriteRule ^game\.html$ /game [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+documentation\.html(?:[\s?]|$) [NC]
+RewriteRule ^documentation\.html$ /documentation [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+Privacy(?:%20|\s+)Policy\.html(?:[\s?]|$) [NC]
+RewriteRule ^Privacy(?:%20|\s+)Policy\.html$ /privacy [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+T(?:%26|&)C\.html(?:[\s?]|$) [NC]
+RewriteRule ^T(?:%26|&)C\.html$ /terms [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/+contact\.html(?:[\s?]|$) [NC]
+RewriteRule ^contact\.html$ /contact [R=301,L]
+
+# Do not rewrite extension-based resources.
 RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{2,5}$
 RewriteRule ^ - [L]
 
-# Route /app to app.html
-RewriteRule ^app/?$ app.html [L]
-
-# Route everything else to index.html
+# Unknown clean routes fall back to the landing page.
 RewriteRule ^(.*)$ index.html [L,QSA]
 
 Options -Indexes
 
-# Cache static assets
-<FilesMatch "\.(ico|png|jpg|jpeg|gif|css|js|woff|woff2|ttf)$">
-    Header set Cache-Control "public, max-age=2592000"
-</FilesMatch>
+# Cache static assets.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(ico|png|jpg|jpeg|gif|css|js|woff|woff2|ttf)$">
+      Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
 
-# No cache for notebooks and JSON
-<FilesMatch "\.(ipynb|json)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-</FilesMatch>
+  # No cache for notebooks and JSON.
+  <FilesMatch "\.(ipynb|json)$">
+      Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
