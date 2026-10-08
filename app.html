@@ -86,6 +86,11 @@
     <link rel="stylesheet" href="/nav.css?v=4">
 </head>
 <body>
+<script>
+  if (window.location.hash) {
+    history.replaceState(null, '', '/app');
+  }
+</script>
 
 <nav class="navbar">
     <div class="logo" onclick="window.open('https://www.youtube.com/@NotY215', '_blank')">
