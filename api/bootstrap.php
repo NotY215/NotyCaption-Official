@@ -74,7 +74,7 @@ function ensure_cache(): void {
     }
 }
 
-function read_json(string $name, array $fallback): array {
+function acquire_cache_lock() {\n    ensure_cache();\n    $fp = @fopen(CACHE_DIR . '/.lock', 'c');\n    if (!$fp || !flock($fp, LOCK_EX)) json_response(['ok' => false, 'error' => 'Server storage busy'], 503);\n    return $fp;\n}\n\nfunction release_cache_lock($fp): void {\n    if ($fp) { flock($fp, LOCK_UN); fclose($fp); }\n}\n\nfunction read_json(string $name, array $fallback): array {
     ensure_cache();
     $path = CACHE_DIR . '/' . $name;
     $fp = @fopen($path, 'c+');
