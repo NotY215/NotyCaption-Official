@@ -1,0 +1,8 @@
+{
+  "CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+  "CLIENT_SECRET": "YOUR_GOOGLE_CLIENT_SECRET",
+  "AUTH_URI": "https://accounts.google.com/o/oauth2/auth",
+  "TOKEN_URI": "https://oauth2.googleapis.com/token",
+  "SCOPES": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+  "REDIRECT_URI": "https://notycaptiongen.free.nf/callback.html"
+}
