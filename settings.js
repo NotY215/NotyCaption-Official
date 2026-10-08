@@ -12,15 +12,19 @@
   const message = document.getElementById('settingsMessage');
 
   function showMessage(text, error) {
+    if (!message) return;
     message.textContent = text || '';
     message.classList.toggle('error', Boolean(error));
   }
 
   async function api(path, options) {
     const headers = Object.assign(
-      { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() },
+      { 'Content-Type': 'application/json' },
       (options && options.headers) || {}
     );
+    const accessToken = token();
+    if (accessToken) headers.Authorization = 'Bearer ' + accessToken;
+
     const response = await fetch('/api/' + path, Object.assign({}, options || {}, { headers }));
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Request failed');
@@ -37,34 +41,25 @@
 
     document.documentElement.dataset.notyTheme = resolved;
     document.documentElement.classList.toggle('noty-theme-light', resolved === 'light');
+
     document.querySelectorAll('.theme-option').forEach(button => {
       button.classList.toggle('active', button.dataset.theme === value);
     });
   }
 
-  function lockAccountControls(messageText) {
+  function setAccountLocked(locked) {
     const input = document.getElementById('usernameInput');
     const save = document.getElementById('saveUsername');
-    const signOutButton = document.getElementById('signOut');
-    if (input) input.disabled = true;
-    if (save) save.disabled = true;
-    if (signOutButton) signOutButton.disabled = false;
-    if (messageText) showMessage(messageText, true);
+    if (input) input.disabled = locked;
+    if (save) save.disabled = locked;
   }
 
   async function loadProfile() {
     if (!token()) {
-      const cached = localStorage.getItem('notycaption_user_info');
-      if (cached) {
-        try {
-          const user = JSON.parse(cached);
-          document.getElementById('emailValue').textContent = user.email || 'Not signed in';
-          document.getElementById('accountAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
-        } catch (_) {}
-      } else {
-        document.getElementById('emailValue').textContent = 'Not signed in';
-      }
-      lockAccountControls('Sign in to manage your account. The  is still available.');
+      document.getElementById('emailValue').textContent = 'Not signed in';
+      setAccountLocked(true);
+      showMessage('Sign in to edit your username. The leaderboard is available without signing in.', true);
+      renderScores({ score: {}, stage: {} });
       return;
     }
 
@@ -72,18 +67,16 @@
       const profile = await api('profile.php');
       document.getElementById('usernameInput').value = profile.username || '';
       document.getElementById('emailValue').textContent = profile.email || '';
-      document.getElementById('accountAvatar').textContent = (profile.username || 'U').charAt(0).toUpperCase();
+      document.getElementById('accountAvatar').textContent =
+        (profile.username || 'U').charAt(0).toUpperCase();
+      setAccountLocked(false);
       renderScores(profile);
+      showMessage('');
+      localStorage.setItem('notycaption_username', profile.username || '');
     } catch (error) {
-      const cached = localStorage.getItem('notycaption_user_info');
-      if (cached) {
-        try {
-          const user = JSON.parse(cached);
-          document.getElementById('emailValue').textContent = user.email || 'Session unavailable';
-          document.getElementById('accountAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
-        } catch (_) {}
-      }
-      lockAccountControls('Your Google session could not be verified. You are not logged out. Sign in again only if account changes are required.');
+      setAccountLocked(true);
+      document.getElementById('emailValue').textContent = 'Session unavailable';
+      showMessage('Your Google session could not be verified. Sign in again to edit your username.', true);
     }
   }
 
@@ -104,6 +97,7 @@
   async function saveUsername() {
     const input = document.getElementById('usernameInput');
     const name = input.value.trim();
+
     if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
       showMessage('Username must be 3 to 20 characters and use only letters, numbers or underscores.', true);
       return;
@@ -117,11 +111,17 @@
         method: 'POST',
         body: JSON.stringify({ username: name })
       });
+
       localStorage.setItem('notycaption_username', data.username);
+      localStorage.setItem('notycaption_game_profile',
+        JSON.stringify(Object.assign({}, JSON.parse(localStorage.getItem('notycaption_game_profile') || '{}'), {
+          username: data.username
+        }))
+      );
+
       input.value = data.username;
       document.getElementById('accountAvatar').textContent = data.username.charAt(0).toUpperCase();
-      showMessage('Username updated.');
-      await loadLeaderboard();
+      showMessage('Username updated successfully.');
     } catch (error) {
       showMessage(error.message, true);
     } finally {
@@ -129,27 +129,24 @@
     }
   }
 
-
   function signOut() {
     [
       'notycaption_access_token',
+      'notycaption_token_expiry',
       'notycaption_username',
       'notycaption_user',
-      'notycaption_email'
+      'notycaption_email',
+      'notycaption_user_info'
     ].forEach(key => localStorage.removeItem(key));
 
     document.cookie.split(';').forEach(cookie => {
       const name = cookie.split('=')[0].trim();
-      if (name) document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
+      if (name) {
+        document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
+      }
     });
 
-    window.location.replace('/home');
-  }
-
-  function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, char => ({
-      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
-    }[char]));
+    window.location.replace('/');
   }
 
   document.querySelectorAll('.theme-option').forEach(button => {
@@ -163,12 +160,8 @@
   document.getElementById('usernameInput').addEventListener('keydown', event => {
     if (event.key === 'Enter') saveUsername();
   });
-  document.getElementById('Difficulty').addEventListener('change', loadLeaderboard);
   document.getElementById('signOut').addEventListener('click', signOut);
 
   applyTheme(localStorage.getItem('notycaption_theme') || 'dark');
-
-  }
-
   loadProfile();
 })();
