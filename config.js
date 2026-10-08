@@ -7,7 +7,9 @@ const CONFIG = {
     CLIENT_SECRET: null,
     AUTH_URI: null,
     TOKEN_URI: null,
-    SCOPES: null,
+    AUTH_PROVIDER_CERT_URL: null,
+    PROJECT_ID: null,
+    SCOPES: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
     REDIRECT_URI: null,
 
     MAX_FILE_SIZE: 50 * 1024 * 1024,
@@ -46,13 +48,41 @@ async function loadConfig() {
                 throw new Error("client.json contains invalid configuration.");
             }
 
-            Object.assign(CONFIG, clientConfig);
+            // Google OAuth client files use the standard:
+            // { "web": { ... } } structure.
+            const webConfig = clientConfig.web;
+
+            if (!webConfig || typeof webConfig !== "object") {
+                throw new Error(
+                    'client.json must contain a "web" OAuth configuration object.'
+                );
+            }
+
+            // Only public/client-side configuration is copied into CONFIG.
+            // client_secret is intentionally ignored because this file is
+            // fetched by the browser and therefore cannot keep secrets private.
+            Object.assign(CONFIG, {
+                CLIENT_ID: webConfig.client_id || null,
+                AUTH_URI: webConfig.auth_uri || null,
+                TOKEN_URI: webConfig.token_uri || null,
+                AUTH_PROVIDER_CERT_URL:
+                    webConfig.auth_provider_x509_cert_url || null,
+                PROJECT_ID: webConfig.project_id || null,
+                REDIRECT_URI:
+                    Array.isArray(webConfig.redirect_uris) &&
+                    webConfig.redirect_uris.length
+                        ? webConfig.redirect_uris[0]
+                        : null
+            });
+
+            if (Array.isArray(webConfig.scopes) && webConfig.scopes.length) {
+                CONFIG.SCOPES = webConfig.scopes.join(" ");
+            }
 
             const required = [
                 "CLIENT_ID",
                 "AUTH_URI",
                 "TOKEN_URI",
-                "SCOPES",
                 "REDIRECT_URI"
             ];
 
@@ -62,17 +92,21 @@ async function loadConfig() {
 
             if (missing.length) {
                 throw new Error(
-                    `Missing required configuration: ${missing.join(", ")}`
+                    `Missing required Google OAuth configuration: ${missing.join(", ")}`
                 );
             }
 
-            console.log("✅ client.json loaded");
+            // Never expose or store the Google client secret in CONFIG.
+            CONFIG.CLIENT_SECRET = null;
+
+            console.log("client.json loaded");
+            console.log("Google OAuth project:", CONFIG.PROJECT_ID || "unknown");
             console.log("Domain:", window.location.origin);
             console.log("Redirect URI:", CONFIG.REDIRECT_URI);
 
             return CONFIG;
         } catch (error) {
-            console.error("❌ Failed to load client.json:", error);
+            console.error("Failed to load client.json:", error);
             throw error;
         }
     })();
@@ -84,4 +118,4 @@ window.CONFIG = CONFIG;
 window.STORAGE_KEYS = STORAGE_KEYS;
 window.configReady = loadConfig();
 
-console.log("✅ config.js loaded");
+console.log("config.js loaded");
