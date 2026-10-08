@@ -1,8 +1,16 @@
 {
-  "CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-  "CLIENT_SECRET": "YOUR_GOOGLE_CLIENT_SECRET",
-  "AUTH_URI": "https://accounts.google.com/o/oauth2/auth",
-  "TOKEN_URI": "https://oauth2.googleapis.com/token",
-  "SCOPES": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-  "REDIRECT_URI": "https://notycaptiongen.free.nf/callback.html"
+  "web": {
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "project_id": "YOUR_GOOGLE_CLOUD_PROJECT_ID",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "YOUR_GOOGLE_CLIENT_SECRET",
+    "redirect_uris": [
+      "https://notycaptiongen.free.nf/callback.html"
+    ],
+    "javascript_origins": [
+      "https://notycaptiongen.free.nf"
+    ]
+  }
 }
