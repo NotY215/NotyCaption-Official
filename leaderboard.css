@@ -1,0 +1,27 @@
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,sans-serif}
+body{background:radial-gradient(circle at top,#18214a 0,#0a0d1c 48%,#050510 100%);color:#fff}
+.leaderboard-shell{width:min(1100px,calc(100% - 32px));margin:0 auto;padding:110px 0 50px}
+.leaderboard-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:25px;margin-bottom:28px}
+.eyebrow{margin:0 0 7px;color:#00e5ff;font-size:12px;letter-spacing:4px;font-weight:800}
+h1{margin:0;font-size:clamp(38px,7vw,72px)}
+.leaderboard-hero p:not(.eyebrow){color:#aab2c7;max-width:680px;line-height:1.6}
+.leaderboard-actions{display:flex;gap:10px;flex-wrap:wrap}
+.secondary-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:10px;border:1px solid rgba(0,229,255,.3);color:#dffcff;background:rgba(0,229,255,.07);text-decoration:none}
+.board-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);backdrop-filter:blur(14px)}
+.difficulty-tabs{display:flex;gap:10px;margin-bottom:18px}
+.difficulty-tab{flex:1;padding:13px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#aab2c7;cursor:pointer;font-weight:800;text-transform:uppercase}
+.difficulty-tab.active{color:#fff;border-color:#00e5ff;background:rgba(0,229,255,.12)}
+.board-status{min-height:22px;margin-bottom:10px;color:#8792aa}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th,td{text-align:left;padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#69758f}
+td{color:#e8edf8}
+tr.me td{background:rgba(0,229,255,.08)}
+.guest{font-size:11px;color:#8893aa;margin-left:5px}
+.empty{text-align:center;color:#69758f;padding:30px}
+footer{display:flex;justify-content:center;gap:22px;margin-top:25px}
+footer a{color:#78849b;text-decoration:none}
+footer a:hover{color:#00e5ff}
+@media(max-width:700px){.leaderboard-shell{padding-top:90px}.leaderboard-hero{align-items:flex-start;flex-direction:column}.board-card{padding:14px}.difficulty-tabs{gap:6px}}
