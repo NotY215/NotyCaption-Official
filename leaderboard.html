@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="canonical" href="https://notycaptiongen.free.nf/leaderboard">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NotyCaption Pro Arrow Dash leaderboard.">
+  <title>Leaderboard - NotyCaption Pro</title>
+  <link rel="icon" href="/App.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/nav.css?v=5">
+  <link rel="stylesheet" href="/leaderboard.css?v=1">
+</head>
+<body class="leaderboard-page">
+  <main class="leaderboard-shell">
+    <header class="leaderboard-hero">
+      <div>
+        <p class="eyebrow">ARROW DASH</p>
+        <h1>Leaderboard</h1>
+        <p>See the highest scores for every difficulty. Guests can view the board without signing in.</p>
+      </div>
+      <div class="leaderboard-actions">
+        <a href="/game" class="secondary-btn">Play Game</a>
+        <a href="/settings" class="secondary-btn">Settings</a>
+      </div>
+    </header>
+    <section class="board-card">
+      <div class="difficulty-tabs" role="tablist" aria-label="Difficulty">
+        <button class="difficulty-tab active" data-difficulty="easy" type="button">Easy</button>
+        <button class="difficulty-tab" data-difficulty="normal" type="button">Normal</button>
+        <button class="difficulty-tab" data-difficulty="hard" type="button">Hard</button>
+      </div>
+      <div id="boardStatus" class="board-status" aria-live="polite">Loading...</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Player</th><th>Stage</th><th>Score</th></tr></thead>
+        <tbody id="leaderboardBody"></tbody></table>
+      </div>
+    </section>
+    <footer><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/documentation">Documentation</a></footer>
+  </main>
+  <script src="/nav.js?v=5"></script>
+  <script src="/leaderboard.js?v=1"></script>
+</body>
+</html>
