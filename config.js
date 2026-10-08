@@ -39,23 +39,21 @@ async function loadConfig() {
             });
 
             if (!response.ok) {
-                throw new Error(`Unable to load client.json: HTTP ${response.status}`);
+                throw new Error(`Unable to load OAuth configuration: HTTP ${response.status}`);
             }
 
             const clientConfig = await response.json();
 
             if (!clientConfig || typeof clientConfig !== "object") {
-                throw new Error("client.json contains invalid configuration.");
+                throw new Error("OAuth configuration contains invalid data.");
             }
 
             // Google OAuth client files use the standard:
             // { "web": { ... } } structure.
-            const webConfig = clientConfig.web;
+            const webConfig = clientConfig;
 
-            if (!webConfig || typeof webConfig !== "object") {
-                throw new Error(
-                    'client.json must contain a "web" OAuth configuration object.'
-                );
+            if (!webConfig || typeof webConfig !== "object" || !webConfig.client_id) {
+                throw new Error("OAuth configuration endpoint returned invalid public data.");
             }
 
             // Only public/client-side configuration is copied into CONFIG.
@@ -99,14 +97,14 @@ async function loadConfig() {
             // Never expose or store the Google client secret in CONFIG.
             CONFIG.CLIENT_SECRET = null;
 
-            console.log("client.json loaded");
+            console.log("OAuth public configuration loaded");
             console.log("Google OAuth project:", CONFIG.PROJECT_ID || "unknown");
             console.log("Domain:", window.location.origin);
             console.log("Redirect URI:", CONFIG.REDIRECT_URI);
 
             return CONFIG;
         } catch (error) {
-            console.error("Failed to load client.json:", error);
+            console.error("Failed to load OAuth configuration:", error);
             throw error;
         }
     })();
