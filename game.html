@@ -468,7 +468,7 @@
     <button class="btn-play" onclick="startGame()">▶ PLAY</button>
 
     <div class="controls-hint">
-      <span>SPACE</span> or <span>↑</span> or <span>CLICK</span> - JUMP &nbsp;|&nbsp; <span>↓</span> - FAST FALL
+      <span>SPACE</span> / <span>↑</span> / <span>CLICK</span> - JUMP (hold for higher) &nbsp;|&nbsp; <span>↓</span> - FAST FALL &nbsp;|&nbsp; Collect power-ups!
     </div>
   </div>
 
@@ -604,9 +604,9 @@ const DIFFICULTIES = {
   easy: {
     name: 'Easy',
     stages: 3,
-    speed: 4.5,
-    gravity: 0.55,
-    jumpPower: -13,
+    speed: 4.8,
+    gravity: 0.52,
+    jumpPower: -14.2,
     bpm: 82,
     color: '#39ff14',
     glow: '0 0 20px #39ff14',
@@ -617,9 +617,9 @@ const DIFFICULTIES = {
   normal: {
     name: 'Normal',
     stages: 4,
-    speed: 6.5,
-    gravity: 0.65,
-    jumpPower: -14.5,
+    speed: 6.8,
+    gravity: 0.62,
+    jumpPower: -15.5,
     bpm: 128,
     color: '#00f5ff',
     glow: '0 0 20px #00f5ff',
@@ -630,9 +630,9 @@ const DIFFICULTIES = {
   hard: {
     name: 'Hard',
     stages: 5,
-    speed: 9,
-    gravity: 0.78,
-    jumpPower: -16,
+    speed: 9.2,
+    gravity: 0.74,
+    jumpPower: -16.8,
     bpm: 140,
     color: '#ff0080',
     glow: '0 0 20px #ff0080',
@@ -739,6 +739,12 @@ const player = {
   jumpCount: 0,
   maxJumps: 1,
   rotation: 0,
+  // Power-up state
+  speedBoostTimer: 0,
+  superJumpTimer: 0,
+  shieldActive: false,
+  coyoteTimer: 0,
+  jumpBuffer: 0,
 };
 
 // ---- PARTICLES ----
@@ -776,6 +782,7 @@ function spawnTrail() {
 let platforms = [];
 let obstacles = [];
 let coins = [];
+let powerups = [];
 let levelEnd = 0;
 let groundY = 0;
 
@@ -791,6 +798,7 @@ function buildStageLayout() {
   platforms = [];
   obstacles = [];
   coins = [];
+  powerups = [];
   const stageLen = STAGE_LENGTHS[state.difficulty][state.stageIndex];
   levelEnd = stageLen;
 
@@ -863,6 +871,20 @@ function buildStageLayout() {
     }
   }
 
+  // Power-ups (a few per stage)
+  const puTypes = ['speed', 'superjump', 'shield'];
+  let puX = 700;
+  while (puX < stageLen - 600) {
+    if (rng() < 0.35) {
+      const type = puTypes[Math.floor(rng() * puTypes.length)];
+      const py = groundY - 70 - rng() * 100;
+      powerups.push({ type, x: puX, y: py, collected: false, bob: rng() * Math.PI * 2 });
+      puX += 450 + rng() * 400;
+    } else {
+      puX += 280 + rng() * 200;
+    }
+  }
+
   // End flag platform
   platforms.push({ x: stageLen - 50, y: groundY - 60, w: 120, h: 60, isEnd: true });
 }
@@ -883,23 +905,48 @@ window.addEventListener('keydown', e => {
   if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
   keys[e.code] = true;
   if ((e.code === 'Space' || e.code === 'ArrowUp') && state.running && !state.dead) {
+    player.jumpBuffer = 8; // frames of jump buffer
     doJump();
   }
 });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
-canvas.addEventListener('pointerdown', () => { if (state.running && !state.dead) doJump(); });
+window.addEventListener('keyup', e => {
+  keys[e.code] = false;
+  // Variable jump height: release early = shorter hop
+  if ((e.code === 'Space' || e.code === 'ArrowUp') && player.vy < 0) {
+    player.vy *= 0.45;
+  }
+});
+canvas.addEventListener('pointerdown', () => {
+  if (state.running && !state.dead) {
+    player.jumpBuffer = 8;
+    doJump();
+  }
+});
+// Pointer up also cuts jump for touch/mouse
+window.addEventListener('pointerup', () => {
+  if (player.vy < 0) player.vy *= 0.45;
+});
 document.addEventListener('pointerdown', (e) => {
   if (!state.running && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'DIV') return;
 });
 
 function doJump() {
-  if (player.onGround || player.jumpCount < player.maxJumps) {
+  const canCoyote = player.coyoteTimer > 0;
+  if (player.onGround || canCoyote || player.jumpCount < player.maxJumps) {
     const cfg = DIFFICULTIES[state.difficulty];
-    player.vy = cfg.jumpPower;
+    let power = cfg.jumpPower;
+    // Super Jump power-up
+    if (player.superJumpTimer > 0) {
+      power *= 1.35;
+    }
+    player.vy = power;
     player.onGround = false;
+    player.coyoteTimer = 0;
+    player.jumpBuffer = 0;
     player.jumping = true;
     player.jumpCount++;
-    spawnParticles(player.x + player.w/2, player.y + player.h, cfg.color, 8, 3);
+    const color = player.superJumpTimer > 0 ? '#ffe500' : cfg.color;
+    spawnParticles(player.x + player.w/2, player.y + player.h, color, player.superJumpTimer > 0 ? 14 : 8, 3);
     playJumpSound();
   }
 }
@@ -949,6 +996,7 @@ function checkPlatformCollision() {
         player.vy = 0;
         player.onGround = true;
         player.jumpCount = 0;
+        player.coyoteTimer = 6;
 
         if (p.isEnd) {
           stageComplete();
@@ -972,6 +1020,12 @@ function checkObstacleCollision() {
     }
 
     if (rectsOverlap(player.x + 3, player.y + 3, player.w - 6, player.h - 6, hitX, hitY, hitW, hitH)) {
+      if (player.shieldActive) {
+        player.shieldActive = false;
+        spawnParticles(player.x + player.w/2, player.y + player.h/2, '#bf00ff', 22, 6);
+        ob.x = -9999; // remove from play
+        return;
+      }
       killPlayer();
       return;
     }
@@ -1012,6 +1066,55 @@ function playCoinSound() {
     g.connect(ac.destination);
     osc.start();
     osc.stop(ac.currentTime + 0.15);
+  } catch(e) {}
+}
+
+function checkPowerupCollection() {
+  for (const pu of powerups) {
+    if (pu.collected) continue;
+    const px = pu.x - state.cameraX;
+    const bobY = pu.y + Math.sin(tick * 0.08 + pu.bob) * 6;
+    if (rectsOverlap(player.x, player.y, player.w, player.h, px - 14, bobY - 14, 28, 28)) {
+      pu.collected = true;
+      state.score += 100;
+      updateHUD();
+      applyPowerup(pu.type);
+      spawnParticles(px, bobY, powerupColor(pu.type), 16, 5);
+      playPowerupSound();
+    }
+  }
+}
+
+function powerupColor(type) {
+  if (type === 'speed') return '#00f5ff';
+  if (type === 'superjump') return '#ffe500';
+  return '#bf00ff'; // shield
+}
+
+function applyPowerup(type) {
+  if (type === 'speed') {
+    player.speedBoostTimer = 300; // ~5s at 60fps
+  } else if (type === 'superjump') {
+    player.superJumpTimer = 360;
+  } else if (type === 'shield') {
+    player.shieldActive = true;
+  }
+}
+
+function playPowerupSound() {
+  try {
+    const ac = getAudioCtx();
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ac.currentTime + 0.2);
+    g.gain.setValueAtTime(0.12, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+    osc.connect(g);
+    g.connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime + 0.25);
   } catch(e) {}
 }
 
@@ -1419,6 +1522,70 @@ function drawParticles() {
   ctx.shadowBlur = 0;
 }
 
+function drawPowerups() {
+  for (const pu of powerups) {
+    if (pu.collected) continue;
+    const px = pu.x - state.cameraX;
+    const bobY = pu.y + Math.sin(tick * 0.08 + pu.bob) * 6;
+    if (px < -40 || px > canvas.width + 40) continue;
+
+    const col = powerupColor(pu.type);
+    // Outer glow ring
+    ctx.save();
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = col;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px, bobY, 14 + Math.sin(tick * 0.12) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    // Core
+    ctx.fillStyle = col + 'aa';
+    ctx.beginPath();
+    ctx.arc(px, bobY, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Icon
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const icon = pu.type === 'speed' ? '⚡' : pu.type === 'superjump' ? '⬆' : '🛡';
+    ctx.fillText(icon, px, bobY);
+  }
+
+  // Active power-up indicators near player
+  let indY = player.y - 18;
+  if (player.speedBoostTimer > 0) {
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = '11px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡', player.x + player.w/2 - state.cameraX, indY);
+    indY -= 14;
+  }
+  if (player.superJumpTimer > 0) {
+    ctx.fillStyle = '#ffe500';
+    ctx.font = '11px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText('⬆', player.x + player.w/2 - state.cameraX, indY);
+    indY -= 14;
+  }
+  if (player.shieldActive) {
+    // Shield aura
+    const cx = player.x + player.w/2 - state.cameraX;
+    const cy = player.y + player.h/2;
+    ctx.strokeStyle = '#bf00ff88';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#bf00ff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 22 + Math.sin(tick * 0.15) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+}
+
 // ---- UPDATE ----
 function update() {
   if (!state.running || state.dead) return;
@@ -1426,21 +1593,31 @@ function update() {
   const cfg = DIFFICULTIES[state.difficulty];
   tick++;
 
+  // Power-up timers
+  if (player.speedBoostTimer > 0) player.speedBoostTimer--;
+  if (player.superJumpTimer > 0) player.superJumpTimer--;
+  if (player.coyoteTimer > 0 && !player.onGround) player.coyoteTimer--;
+  if (player.jumpBuffer > 0) {
+    player.jumpBuffer--;
+    if (player.jumpBuffer > 0) doJump();
+  }
+
   // Fast fall
-  if (keys['ArrowDown'] || keys['KeyS']) player.vy += cfg.gravity * 1.5;
+  if (keys['ArrowDown'] || keys['KeyS']) player.vy += cfg.gravity * 1.6;
   else player.vy += cfg.gravity;
 
   // Cap fall speed
-  player.vy = Math.min(player.vy, 22);
+  player.vy = Math.min(player.vy, 24);
 
   player.y += player.vy;
 
-  // Auto-scroll player
-  player.x += cfg.speed;
+  // Auto-scroll player (speed boost multiplies)
+  const speedMul = player.speedBoostTimer > 0 ? 1.45 : 1;
+  player.x += cfg.speed * speedMul;
 
   // Rotation while in air
   if (!player.onGround) {
-    player.rotation += 0.12;
+    player.rotation += 0.12 * (speedMul > 1 ? 1.2 : 1);
   } else {
     player.rotation = 0;
   }
@@ -1449,6 +1626,7 @@ function update() {
   checkPlatformCollision();
   checkObstacleCollision();
   checkCoinCollection();
+  checkPowerupCollection();
 
   // Trail
   spawnTrail();
@@ -1462,7 +1640,7 @@ function update() {
 
   // Score ticks
   if (tick % 10 === 0) {
-    state.score += Math.floor(cfg.speed);
+    state.score += Math.floor(cfg.speed * speedMul);
     updateHUD();
   }
 
@@ -1497,6 +1675,7 @@ function gameLoop() {
   drawBackground();
   drawPlatforms();
   drawCoins();
+  drawPowerups();
   drawObstacles();
   drawTrail();
   drawPlayer();
@@ -1543,6 +1722,11 @@ function loadAndStartStage() {
   player.trail = [];
   player.jumpCount = 0;
   player.rotation = 0;
+  player.speedBoostTimer = 0;
+  player.superJumpTimer = 0;
+  player.shieldActive = false;
+  player.coyoteTimer = 0;
+  player.jumpBuffer = 0;
   state.dead = false;
   state.running = false;
   state.cameraX = 0;
