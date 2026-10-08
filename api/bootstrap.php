@@ -28,10 +28,30 @@ function request_json(): array {
 }
 
 function bearer_token(): ?string {
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/^Bearer\s+(.+)$/i', $header, $m)) {
-        return trim($m[1]);
+    $headers = [];
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
     }
+
+    $candidates = [
+        $_SERVER['HTTP_AUTHORIZATION'] ?? '',
+        $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '',
+        $headers['Authorization'] ?? '',
+        $headers['authorization'] ?? '',
+        $_COOKIE['notycaption_access_token'] ?? ''
+    ];
+
+    foreach ($candidates as $value) {
+        $value = trim((string)$value);
+        if ($value === '') continue;
+        if (preg_match('/^Bearer\\s+(.+)$/i', $value, $m)) {
+            return trim($m[1]);
+        }
+        if (!str_contains($value, ' ') && strlen($value) >= 20) {
+            return $value;
+        }
+    }
+
     return null;
 }
 
