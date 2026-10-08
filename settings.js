@@ -3,10 +3,16 @@
 
   const token = () => {
     try {
-      return localStorage.getItem('notycaption_access_token') || '';
-    } catch (_) {
-      return '';
-    }
+      const local = localStorage.getItem('notycaption_access_token');
+      if (local) return local;
+      for (const cookie of document.cookie.split(';')) {
+        const item = cookie.trim();
+        if (item.startsWith('notycaption_access_token=')) {
+          return decodeURIComponent(item.slice('notycaption_access_token='.length));
+        }
+      }
+    } catch (_) {}
+    return '';
   };
 
   const message = document.getElementById('settingsMessage');
