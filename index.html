@@ -309,10 +309,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             return false;
         }
         
-        // If already logged in, redirect to app.html#web immediately
-        if (isLoggedIn()) {
-            window.location.href = '/app#web';
+        // Keep the landing URL at / even after login.
+        // The navbar and welcome card update to reflect the signed-in state.
+        function updateLandingState() {
+            const loggedIn = isLoggedIn();
+            const card = document.querySelector('.login-card');
+            if (!card) return;
+
+            const heading = card.querySelector('h2');
+            const text = card.querySelector('p');
+            const button = card.querySelector('.google-btn');
+
+            if (loggedIn) {
+                if (heading) heading.textContent = 'Welcome back!';
+                if (text) text.textContent = 'You are signed in. Open the caption generator whenever you are ready.';
+                if (button) {
+                    button.textContent = '🚀 Open App';
+                    button.onclick = () => { window.location.href = '/app'; };
+                }
+            } else {
+                if (heading) heading.textContent = 'Welcome!';
+                if (text) text.textContent = 'Sign in to generate AI captions for your audio files';
+                if (button) {
+                    button.textContent = '🔐 Sign in with Google';
+                    button.onclick = loginWithGoogle;
+                }
+            }
         }
+
+        updateLandingState();
         
         function loginWithGoogle() {
             console.log('🔐 Login button clicked!');
@@ -382,6 +407,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             }
         });
     </script>
-    <script src="/nav.js?v=4"></script>
+    <script src="/nav.js?v=5"></script>
 </body>
 </html>
