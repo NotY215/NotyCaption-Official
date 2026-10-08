@@ -45,7 +45,7 @@
     const nav = document.createElement('div');
     nav.className = 'noty-global-nav';
     nav.innerHTML =
-      '<div class="noty-nav-inner">' +
+      '<div class="noty-nav-inner">'
         '<button class="noty-nav-menu" type="button" aria-label="Open menu" aria-expanded="false" data-noty-menu><span></span><span></span><span></span></button>' +
         '<a class="noty-nav-brand" href="/" data-noty-home><img src="/App.ico" alt="NotyCaption Pro">NotyCaption Pro</a>' +
         '<div class="noty-nav-links">' + LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '">' + x.label + '</a>').join('') + '</div>' +
