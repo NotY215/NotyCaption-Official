@@ -1,7 +1,6 @@
-/* NotyCaption Pro shared navigation - polished & buttery smooth */
 (function () {
   'use strict';
-  const BASE = 'https://notycaptiongen.free.nf';
+
   const LINKS = [
     { key: 'home', href: '/', label: 'Home' },
     { key: 'app', href: '/app', label: 'App' },
@@ -9,47 +8,72 @@
     { key: 'documentation', href: '/documentation', label: 'Documentation' },
     { key: 'contact', href: '/contact', label: 'Contact' }
   ];
-  const DRAWER = [
-    { key: 'home', href: '/', label: 'Home' },
-    { key: 'app', href: '/app', label: 'App' },
-    { key: 'game', href: '/game', label: 'Arrow Dash' },
-    { key: 'documentation', href: '/documentation', label: 'Documentation' },
-    { key: 'privacy', href: '/privacy', label: 'Privacy Policy' },
-    { key: 'terms', href: '/terms', label: 'Terms & Conditions' },
-    { key: 'contact', href: '/contact', label: 'Contact' }
-  ];
 
-  function loggedIn() {
+  function isLoggedIn() {
     try {
-      if (localStorage.getItem('notycaption_access_token')) return true;
-      return document.cookie.split(';').some(c => c.trim().startsWith('notycaption_access_token='));
-    } catch (e) {
+      return Boolean(localStorage.getItem('notycaption_access_token'));
+    } catch (_) {
       return false;
     }
   }
 
+  function applyTheme() {
+    let theme = 'dark';
+    try {
+      theme = localStorage.getItem('notycaption_theme') || 'dark';
+    } catch (_) {}
+
+    const resolved = theme === 'system'
+      ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : theme;
+
+    document.documentElement.dataset.notyTheme = resolved;
+    document.documentElement.classList.toggle('noty-theme-light', resolved === 'light');
+  }
+
   function currentKey() {
-    const p = location.pathname.replace(/\/+$/, '') || '/';
-    if (p === '/' || p === '/home') return 'home';
-    const key = p.split('/')[1].toLowerCase();
-    return key === 'privacy' ? 'privacy' : key === 'terms' ? 'terms' : key;
+    const path = location.pathname.replace(/\\/+$/, '') || '/';
+    if (path === '/' || path === '/home') return 'home';
+    const key = path.split('/')[1].toLowerCase();
+    if (key === 'privacy') return 'privacy';
+    if (key === 'terms' || key === 'tc') return 'terms';
+    return key;
   }
 
   function appHref() {
-    return loggedIn() ? '/app' : '/home';
+    return isLoggedIn() ? '/app' : '/home';
+  }
+
+  function settingsMarkup() {
+    return isLoggedIn()
+      ? '<a class="noty-nav-settings" data-nav-settings href="/settings">Settings</a>'
+      : '';
   }
 
   function render() {
     if (document.querySelector('.noty-global-nav')) return;
+
     const active = currentKey();
-    const nav = document.createElement('div');
+    const loggedIn = isLoggedIn();
+
+    const nav = document.createElement('header');
     nav.className = 'noty-global-nav';
     nav.innerHTML =
-      '<div class="noty-nav-inner">'
-        '<button class="noty-nav-menu" type="button" aria-label="Open menu" aria-expanded="false" data-noty-menu><span></span><span></span><span></span></button>' +
-        '<a class="noty-nav-brand" href="/" data-noty-home><img src="/App.ico" alt="NotyCaption Pro">NotyCaption Pro</a>' +
-        '<div class="noty-nav-links">' + LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '">' + x.label + '</a>').join('') + '</div>' +
-        '<div class="noty-nav-actions"><a class="noty-nav-primary" data-nav-app href="' + appHref() + '">' + (loggedIn() ? 'Open App' : 'Sign In') + '</a></div>' +
+      '<div class="noty-nav-inner">' +
+        '<button class="noty-nav-menu" type="button" aria-label="Open menu" aria-expanded="false" data-noty-menu>' +
+          '<span></span><span></span><span></span>' +
+        '</button>' +
+        '<a class="noty-nav-brand" href="/" data-noty-home>' +
+          '<img src="/App.ico" alt="NotyCaption Pro">' +
+          '<span>NotyCaption Pro</span>' +
+        '</a>' +
+        '<nav class="noty-nav-links" aria-label="Primary navigation">' +
+          LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '">' + x.label + '</a>').join('') +
+        '</nav>' +
+        '<div class="noty-nav-actions">' +
+          settingsMarkup() +
+          '<a class="noty-nav-primary" data-nav-app href="' + appHref() + '">' + (loggedIn ? 'Open App' : 'Sign In') + '</a>' +
+        '</div>' +
       '</div>';
 
     const backdrop = document.createElement('div');
@@ -57,15 +81,17 @@
     backdrop.innerHTML =
       '<aside class="noty-nav-drawer" data-noty-drawer role="dialog" aria-label="Navigation menu">' +
         '<div class="noty-nav-drawer-head">' +
-          '<span class="noty-nav-drawer-title">NotyCaption Pro</span>' +
-          '<button class="noty-nav-close" type="button" data-noty-close aria-label="Close menu">✕</button>' +
+          '<a class="noty-nav-drawer-brand" href="/"><img src="/App.ico" alt=""> <span>NotyCaption Pro</span></a>' +
+          '<button class="noty-nav-close" type="button" data-noty-close aria-label="Close menu">×</button>' +
         '</div>' +
-        '<div class="noty-nav-drawer-list">' +
-          DRAWER.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '"><span>' + x.label + '</span><span>›</span></a>').join('') +
-        '</div>' +
+        '<nav class="noty-nav-drawer-list" aria-label="Mobile navigation">' +
+          LINKS.map(x => '<a data-nav-key="' + x.key + '" href="' + (x.key === 'app' ? appHref() : x.href) + '"><span>' + x.label + '</span><span aria-hidden="true">›</span></a>').join('') +
+          (loggedIn ? '<a data-nav-key="settings" href="/settings"><span>Settings</span><span aria-hidden="true">›</span></a>' : '') +
+          '<a data-nav-key="privacy" href="/privacy"><span>Privacy Policy</span><span aria-hidden="true">›</span></a>' +
+          '<a data-nav-key="terms" href="/terms"><span>Terms & Conditions</span><span aria-hidden="true">›</span></a>' +
+        '</nav>' +
         '<div class="noty-nav-drawer-actions">' +
-          (loggedIn() ? '<button type="button" class="noty-drawer-signout" data-nav-signout>Sign out</button>' : '') +
-          '<a href="https://github.com/NotY215/NotyCaption-Official" target="_blank" rel="noopener">⌘ Source</a>' +
+          '<a href="https://github.com/NotY215/NotyCaption-Official" target="_blank" rel="noopener">Source code</a>' +
         '</div>' +
       '</aside>';
 
@@ -86,39 +112,31 @@
       drawer.classList.remove('open');
       backdrop.classList.remove('open');
       menu.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('noty-drawer-open');
     };
+
     const open = () => {
       drawer.classList.add('open');
       backdrop.classList.add('open');
       menu.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('noty-drawer-open');
     };
 
-    menu.addEventListener('click', () => (drawer.classList.contains('open') ? close() : open()));
-    backdrop.addEventListener('click', e => {
-      if (e.target === backdrop || e.target.closest('[data-noty-close]')) close();
+    menu.addEventListener('click', () => drawer.classList.contains('open') ? close() : open());
+    backdrop.addEventListener('click', event => {
+      if (event.target === backdrop || event.target.closest('[data-noty-close]')) close();
     });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') close();
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') close();
     });
 
-    document.querySelectorAll('[data-noty-home]').forEach(a => a.addEventListener('click', () => {}));
-
-    const signOut = () => {
-      [
-        'notycaption_access_token',
-        'notycaption_username',
-        'notycaption_user',
-        'notycaption_email'
-      ].forEach(key => localStorage.removeItem(key));
-      document.cookie.split(';').forEach(cookie => {
-        const name = cookie.split('=')[0].trim();
-        if (name) document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
-      });
-      window.location.href = '/home';
+    window.NotyCaptionNav = {
+      loggedIn: isLoggedIn,
+      applyTheme
     };
-    const signOutButton = nav.querySelector('[data-nav-signout]') || backdrop.querySelector('[data-nav-signout]');
-    if (signOutButton) signOutButton.addEventListener('click', signOut);
   }
+
+  applyTheme();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', render);
@@ -126,21 +144,14 @@
     render();
   }
 
-  window.NotyCaptionNav = { loggedIn };
+  window.NotyCaptionNav = window.NotyCaptionNav || { loggedIn: isLoggedIn, applyTheme };
 })();
 
 (function loadArrowDashEnhancements() {
-  if (location.pathname.replace(/\/+$/, '') !== '/game') return;
+  const path = location.pathname.replace(/\\/+$/, '');
+  if (path !== '/game') return;
   const script = document.createElement('script');
   script.src = '/game-infinite.js';
-  script.defer = false;
-  document.body.appendChild(script);
-})();
-
-(function loadProfileManager() {
-  if (!localStorage.getItem('notycaption_access_token')) return;
-  const script = document.createElement('script');
-  script.src = '/profile.js';
   script.defer = false;
   document.body.appendChild(script);
 })();
