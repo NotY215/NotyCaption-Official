@@ -15,7 +15,7 @@
     if (document.getElementById('notyProfileStyle')) return;
     const s=document.createElement('style');
     s.id='notyProfileStyle';
-    s.textContent=`.noty-account{position:relative}.noty-account-btn{border:1px solid rgba(0,229,255,.25);background:rgba(0,229,255,.08);color:#fff;border-radius:9px;padding:9px 12px;cursor:pointer;font:600 13px Inter,sans-serif}.noty-account-pop{position:absolute;right:0;top:48px;width:260px;padding:16px;border:1px solid rgba(0,229,255,.2);border-radius:14px;background:#101225;box-shadow:0 18px 50px rgba(0,0,0,.35);display:none}.noty-account-pop.open{display:block}.noty-account-name{font-weight:800;color:#fff;margin-bottom:3px}.noty-account-email{font-size:11px;color:#8992aa;margin-bottom:14px;word-break:break-word}.noty-account-pop button{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;cursor:pointer}.noty-account-pop button:hover{border-color:#00e5ff;color:#00e5ff}`;
+    s.textContent=`.noty-account{position:relative}.noty-account-btn{border:1px solid rgba(0,229,255,.25);background:rgba(0,229,255,.08);color:#fff;border-radius:9px;padding:9px 12px;cursor:pointer;font:600 13px Inter,sans-serif}.noty-account-pop{position:absolute;right:0;top:48px;width:260px;padding:16px;border:1px solid rgba(0,229,255,.2);border-radius:14px;background:#101225;box-shadow:0 18px 50px rgba(0,0,0,.35);display:none}.noty-account-pop.open{display:block}.noty-account-name{font-weight:800;color:#fff;margin-bottom:3px}.noty-account-email{font-size:11px;color:#8992aa;margin-bottom:14px;word-break:break-word}.noty-account-pop button{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;cursor:pointer;margin-top:7px}.noty-account-pop button:hover{border-color:#00e5ff;color:#00e5ff}.noty-account-pop .noty-signout{border-color:rgba(255,80,100,.25);color:#ff8fa0}.noty-account-pop .noty-signout:hover{border-color:#ff6688;color:#ff6688}`;
     document.head.appendChild(s);
   }
 
@@ -30,12 +30,34 @@
     if (!navActions || document.querySelector('.noty-account')) return;
     const wrap=document.createElement('div');
     wrap.className='noty-account';
-    wrap.innerHTML='<button class="noty-account-btn">'+escapeHtml(profile.username || 'Account')+'</button><div class="noty-account-pop"><div class="noty-account-name"></div><div class="noty-account-email"></div><button class="noty-change-name">Change username</button></div>';
+    wrap.innerHTML='<button class="noty-account-btn">'+escapeHtml(profile.username || 'Account')+'</button><div class="noty-account-pop"><div class="noty-account-name"></div><div class="noty-account-email"></div><button class="noty-change-name">Change username</button><button class="noty-signout">Sign out</button></div>';
     navActions.prepend(wrap);
     wrap.querySelector('.noty-account-name').textContent=profile.username || 'User';
     wrap.querySelector('.noty-account-email').textContent=profile.email || '';
     wrap.querySelector('.noty-account-btn').onclick=()=>wrap.querySelector('.noty-account-pop').classList.toggle('open');
     wrap.querySelector('.noty-change-name').onclick=()=>openModal(profile.username || '');
+    wrap.querySelector('.noty-signout').onclick=signOut;
+  }
+
+  async function signOut() {
+    try {
+      const currentToken = token();
+      if (currentToken) {
+        await fetch('/api/logout.php', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        }).catch(() => {});
+      }
+    } finally {
+      [
+        'notycaption_access_token',
+        'notycaption_username',
+        'notycaption_user',
+        'notycaption_email'
+      ].forEach(key => localStorage.removeItem(key));
+      document.cookie = 'notycaption_access_token=; Max-Age=0; path=/; SameSite=Lax';
+      window.location.href = '/home';
+    }
   }
 
   function openModal(current) {
