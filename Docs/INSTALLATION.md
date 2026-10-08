@@ -14,7 +14,7 @@ Deploy the repository while preserving its file structure.
 
 Current configured website:
 
-https://notycaption.rf.gd
+https://notycaptiongen.free.nf
 
 ## OAuth
 
