@@ -12,7 +12,7 @@ This directory contains the project documentation.
 - Security
 - Third-Party Software
 
-Website: https://notycaption.rf.gd
+Website: https://notycaptiongen.free.nf
 Repository: https://github.com/NotY215/NotyCaption-Official
 
 > Placeholder: Add project-specific documentation links, screenshots, deployment information, and release information here.
