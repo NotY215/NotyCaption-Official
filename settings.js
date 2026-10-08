@@ -166,6 +166,10 @@
 
   applyTheme(localStorage.getItem('notycaption_theme') || 'dark');
 
+  if (location.hash === '#leaderboard') {
+    setTimeout(() => document.getElementById('scoresSection')?.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  }
+
   Promise.all([loadProfile(), loadLeaderboard()]).catch(error => {
     showMessage(error.message, true);
     if (/authentication|session|expired/i.test(error.message)) {
