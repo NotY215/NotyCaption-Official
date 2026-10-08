@@ -33,7 +33,7 @@ async function loadConfig() {
 
     configReady = (async () => {
         try {
-            const response = await fetch("client.json", {
+            const response = await fetch("/api/config.php", {
                 method: "GET",
                 cache: "no-store"
             });
