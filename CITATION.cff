@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "NotyCaption Pro"
+message: "If you use NotyCaption Pro, please cite this repository."
+type: software
+authors:
+  - given-names: Shreyas
+    family-names: Mishra
+    affiliation: NotY215
+repository-code: "https://github.com/NotY215/NotyCaption-Official"
+url: "https://notycaptiongen.free.nf"
+license: "AGPL-3.0"
+version: "current"
