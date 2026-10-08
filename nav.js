@@ -32,7 +32,7 @@
   }
 
   function currentKey() {
-    const path = location.pathname.replace(/\\/+$/, '') || '/';
+    const path = location.pathname.replace(/\/+$/, '') || '/';
     if (path === '/' || path === '/home') return 'home';
     const key = path.split('/')[1].toLowerCase();
     if (key === 'privacy') return 'privacy';
