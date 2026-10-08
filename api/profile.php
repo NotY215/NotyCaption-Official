@@ -61,5 +61,5 @@ update_json('scores.json', function(array $data) use ($key, $username): array {
     return $data;
 }, ['easy'=>[],'normal'=>[],'hard'=>[]]);
 
-json_response(['ok' => true, 'username' => $username]);
+release_cache_lock($cacheLock);\njson_response(['ok' => true, 'username' => $username]);
 ?>
