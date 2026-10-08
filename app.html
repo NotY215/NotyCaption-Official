@@ -15,7 +15,6 @@
     <script src="colab.js"></script>
     <script src="rename.js"></script>
     <script src="audioManager.js"></script>
-    <script src="sectionManager.js"></script>
     
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -93,12 +92,12 @@
         <h1>NotyCaption Pro</h1>
     </div>
     <div class="nav-links">
-        <a data-section="home">Home</a>
-        <a data-section="game">Game</a>
-        <a data-section="about">About</a>
-        <a data-section="policies">Privacy</a>
-        <a data-section="terms">Terms</a>
-        <a data-section="contact">Contact</a>
+        <a href="app.html">Home</a>
+        <a href="game.html">Game</a>
+        <a href="documentation.html">Documentation</a>
+        <a href="Privacy%20Policy.html">Privacy</a>
+        <a href="T%26C.html">Terms</a>
+        <a href="contact.html">Contact</a>
         <a onclick="logout()">Logout</a>
     </div>
 </nav>
@@ -108,12 +107,12 @@
     <div class="sidebar">
         <h3>📁 Explore</h3>
         <div class="sidebar-links">
-            <a data-section="home">🏠 Home</a>
-            <a data-section="game">🎮 Arrow Dash Game</a>
-            <a data-section="about">📖 About</a>
-            <a data-section="policies">🔒 Privacy Policy</a>
-            <a data-section="terms">📜 Terms & Conditions</a>
-            <a data-section="contact">📞 Contact</a>
+            <a href="app.html">🏠 Home</a>
+            <a href="game.html">🎮 Arrow Dash Game</a>
+            <a href="documentation.html">📖 Documentation</a>
+            <a href="Privacy%20Policy.html">🔒 Privacy Policy</a>
+            <a href="T%26C.html">📜 Terms & Conditions</a>
+            <a href="contact.html">📞 Contact</a>
         </div>
     </div>
     
@@ -207,55 +206,6 @@
             <div class="footer">© 2025-2026 NotY215 | AI-Powered Caption Generation</div>
         </div>
         
-        <!-- Game Section -->
-        <div id="gameSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>🎮 ARROW DASH - Rhythm Platformer</h2>
-            </div>
-            <iframe id="gameIframe" src="game.html" class="game-iframe"></iframe>
-        </div>
-        
-        <!-- About Section -->
-        <div id="aboutSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📖 About NotyCaption Pro</h2>
-            </div>
-            <iframe src="documentation.html" class="content-iframe"></iframe>
-        </div>
-        
-        <!-- Privacy Policy Section -->
-        <div id="policiesSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>🔒 Privacy Policy</h2>
-            </div>
-            <iframe src="Privacy%20Policy.html" class="content-iframe"></iframe>
-        </div>
-        
-        <!-- Terms Section -->
-        <div id="termsSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📜 Terms & Conditions</h2>
-            </div>
-            <iframe src="T&C.html" class="content-iframe"></iframe>
-        </div>
-        
-        <!-- Contact Section -->
-        <div id="contactSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📞 Contact Me</h2>
-            </div>
-            <div style="padding: 20px;">
-                <p style="margin-bottom: 20px;">Have questions or feedback? Send me a message directly!</p>
-                <form class="contact-form" id="contactForm">
-                    <input type="text" id="contactName" placeholder="Your Name" required>
-                    <input type="email" id="contactEmail" placeholder="Your Email" required>
-                    <input type="text" id="contactSubject" placeholder="Subject" required>
-                    <textarea id="contactMessage" placeholder="Your Message" required></textarea>
-                    <button type="submit">📧 Send Message</button>
-                    <div id="formStatus"></div>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
 
