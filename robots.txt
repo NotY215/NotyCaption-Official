@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Private application/configuration files
+Disallow: /client.json
+Disallow: /config.js
+Disallow: /callback.html
+Disallow: /caption.ipynb
+Disallow: /enhance.ipynb
+
+Sitemap: https://notycaptiongen.free.nf/sitemap.xml
