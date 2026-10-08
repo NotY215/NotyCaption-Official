@@ -129,7 +129,7 @@ function find_username_for_email(string $email): ?string {
 
 function ensure_user(string $email, string $displayName = 'User'): array {
     $existing = find_username_for_email($email);
-    if ($existing) return ['username' => $existing];
+    if ($existing) { release_cache_lock($cacheLock); return ['username' => $existing]; }
 
     $base = preg_replace('/[^A-Za-z0-9_]/', '', $displayName);
     $base = $base !== '' ? substr($base, 0, 16) : 'Player';
