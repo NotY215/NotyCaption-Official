@@ -24,6 +24,8 @@
     let profile;
     try { profile = await request('profile.php'); } catch (_) { return; }
     localStorage.setItem('notycaption_username', profile.username || '');
+    const appName=document.getElementById('userName'); if(appName) appName.textContent=profile.username || 'User';
+    const appAvatar=document.getElementById('userAvatar'); if(appAvatar) appAvatar.textContent=(profile.username || 'U').charAt(0).toUpperCase();
     const navActions=document.querySelector('.noty-nav-actions');
     if (!navActions || document.querySelector('.noty-account')) return;
     const wrap=document.createElement('div');
