@@ -9,11 +9,6 @@
     }
   };
 
-  if (!token()) {
-    window.location.replace('/home');
-    return;
-  }
-
   const message = document.getElementById('settingsMessage');
 
   function showMessage(text, error) {
@@ -47,12 +42,49 @@
     });
   }
 
+  function lockAccountControls(messageText) {
+    const input = document.getElementById('usernameInput');
+    const save = document.getElementById('saveUsername');
+    const signOutButton = document.getElementById('signOut');
+    if (input) input.disabled = true;
+    if (save) save.disabled = true;
+    if (signOutButton) signOutButton.disabled = false;
+    if (messageText) showMessage(messageText, true);
+  }
+
   async function loadProfile() {
-    const profile = await api('profile.php');
-    document.getElementById('usernameInput').value = profile.username || '';
-    document.getElementById('emailValue').textContent = profile.email || '';
-    document.getElementById('accountAvatar').textContent = (profile.username || 'U').charAt(0).toUpperCase();
-    renderScores(profile);
+    if (!token()) {
+      const cached = localStorage.getItem('notycaption_user_info');
+      if (cached) {
+        try {
+          const user = JSON.parse(cached);
+          document.getElementById('emailValue').textContent = user.email || 'Not signed in';
+          document.getElementById('accountAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
+        } catch (_) {}
+      } else {
+        document.getElementById('emailValue').textContent = 'Not signed in';
+      }
+      lockAccountControls('Sign in to manage your account. The leaderboard is still available.');
+      return;
+    }
+
+    try {
+      const profile = await api('profile.php');
+      document.getElementById('usernameInput').value = profile.username || '';
+      document.getElementById('emailValue').textContent = profile.email || '';
+      document.getElementById('accountAvatar').textContent = (profile.username || 'U').charAt(0).toUpperCase();
+      renderScores(profile);
+    } catch (error) {
+      const cached = localStorage.getItem('notycaption_user_info');
+      if (cached) {
+        try {
+          const user = JSON.parse(cached);
+          document.getElementById('emailValue').textContent = user.email || 'Session unavailable';
+          document.getElementById('accountAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
+        } catch (_) {}
+      }
+      lockAccountControls('Your Google session could not be verified. You are not logged out. Sign in again only if account changes are required.');
+    }
   }
 
   function renderScores(profile) {
@@ -170,10 +202,6 @@
     setTimeout(() => document.getElementById('scoresSection')?.scrollIntoView({behavior:'smooth', block:'start'}), 100);
   }
 
-  Promise.all([loadProfile(), loadLeaderboard()]).catch(error => {
-    showMessage(error.message, true);
-    if (/authentication|session|expired/i.test(error.message)) {
-      setTimeout(signOut, 700);
-    }
-  });
+  loadProfile();
+  loadLeaderboard();
 })();
