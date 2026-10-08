@@ -268,65 +268,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="sidebar">
                 <h3>📁 Explore</h3>
                 <div class="sidebar-links">
-                    <a onclick="showSection('game')">🎮 Arrow Dash Game</a>
-                    <a onclick="showSection('about')">📖 About</a>
-                    <a onclick="showSection('policies')">🔒 Privacy Policy</a>
-                    <a onclick="showSection('terms')">📜 Terms & Conditions</a>
-                    <a onclick="showSection('contact')">📞 Contact</a>
+                    <a href="game.html">🎮 Arrow Dash Game</a>
+                    <a href="documentation.html">📖 Documentation</a>
+                    <a href="Privacy%20Policy.html">🔒 Privacy Policy</a>
+                    <a href="T%26C.html">📜 Terms & Conditions</a>
+                    <a href="contact.html">📞 Contact</a>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Game Section -->
-        <div id="gameSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>🎮 ARROW DASH - Rhythm Platformer</h2>
-                <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-            </div>
-            <div class="game-container" id="gameContainer">
-                <iframe src="game.html" class="game-iframe" id="gameIframe"></iframe>
-            </div>
-        </div>
-        
-        <!-- About Section -->
-        <div id="aboutSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📖 About NotyCaption Pro</h2>
-            </div>
-            <iframe src="documentation.html" class="content-iframe" style="min-height:500px"></iframe>
-        </div>
-        
-        <!-- Privacy Policy Section -->
-        <div id="policiesSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>🔒 Privacy Policy</h2>
-            </div>
-            <iframe src="Privacy%20Policy.html" class="content-iframe" style="min-height:500px"></iframe>
-        </div>
-        
-        <!-- Terms Section -->
-        <div id="termsSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📜 Terms & Conditions</h2>
-            </div>
-            <iframe src="T&C.html" class="content-iframe" style="min-height:500px"></iframe>
-        </div>
-        
-        <!-- Contact Section -->
-        <div id="contactSection" class="section-container" style="display:none">
-            <div class="section-header">
-                <h2>📞 Contact Me</h2>
-            </div>
-            <div style="padding: 20px;">
-                <p style="margin-bottom: 20px;">Have questions or feedback? Send me a message directly!</p>
-                <form class="contact-form" id="contactForm">
-                    <input type="text" id="contactName" placeholder="Your Name" required>
-                    <input type="email" id="contactEmail" placeholder="Your Email" required>
-                    <input type="text" id="contactSubject" placeholder="Subject" required>
-                    <textarea id="contactMessage" placeholder="Your Message" required></textarea>
-                    <button type="submit">📧 Send Message</button>
-                    <div id="formStatus"></div>
-                </form>
             </div>
         </div>
         
@@ -374,17 +321,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             window.location.href = authUrl;
         }
         
-        function showSection(section) {
-            const sections = ['game', 'about', 'policies', 'terms', 'contact'];
-            sections.forEach(s => {
-                const el = document.getElementById(`${s}Section`);
-                if (el) el.style.display = 'none';
-            });
-            const target = document.getElementById(`${section}Section`);
-            if (target) target.style.display = 'block';
-            window.location.hash = section;
-        }
-        
         function toggleFullscreen() {
             const gameContainer = document.getElementById('gameContainer');
             const hint = document.getElementById('exitFullscreenHint');
@@ -415,13 +351,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             }
         });
         
-        function handleHash() {
-            const hash = window.location.hash.substring(1);
-            if (hash && ['game', 'about', 'policies', 'terms', 'contact'].includes(hash)) {
-                showSection(hash);
-            }
-        }
-        
         // Contact Form
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
@@ -441,9 +370,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 setTimeout(() => statusDiv.innerHTML = '', 5000);
             });
         }
-        
-        handleHash();
-        window.addEventListener('hashchange', handleHash);
         
         // Anti-inspect
         document.addEventListener('contextmenu', e => e.preventDefault());
