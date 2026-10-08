@@ -429,7 +429,8 @@
     transition: border 0.05s, box-shadow 0.05s;
   }
 </style>
-    <link rel="stylesheet" href="/nav.css">\n</head>
+    <link rel="stylesheet" href="/nav.css">
+</head>
 <body class="noty-nav-overlay">
 
 <div id="app">
@@ -467,7 +468,7 @@
     <button class="btn-play" onclick="startGame()">▶ PLAY</button>
 
     <div class="controls-hint">
-      <span>SPACE</span> or <span>↑</span> or <span>CLICK</span> — JUMP &nbsp;|&nbsp; <span>↓</span> — FAST FALL
+      <span>SPACE</span> or <span>↑</span> or <span>CLICK</span> - JUMP &nbsp;|&nbsp; <span>↓</span> - FAST FALL
     </div>
   </div>
 
@@ -568,7 +569,7 @@
 
 <script>
 // ============================================================
-//  ARROW DASH — GAME ENGINE
+//  ARROW DASH - GAME ENGINE
 // ============================================================
 
 const canvas = document.getElementById('gameCanvas');
@@ -666,7 +667,7 @@ function preloadAllMusic() {
 }
 preloadAllMusic();
 
-// Called when user selects a difficulty card — starts music preview immediately
+// Called when user selects a difficulty card - starts music preview immediately
 function playMusicForDiff(diff) {
   // Pause any currently playing audio
   ['easy','normal','hard'].forEach(d => {
@@ -676,11 +677,11 @@ function playMusicForDiff(diff) {
   const el = getOrCreateAudio(diff);
   el.currentTime = 0;
   el.volume = 0.55;
-  el.play().catch(() => {}); // browser may block until user gesture — will auto-play after first click
+  el.play().catch(() => {}); // browser may block until user gesture - will auto-play after first click
   currentAudio = el;
 }
 
-// Called when game starts — reset timestamp and play at full volume
+// Called when game starts - reset timestamp and play at full volume
 function startGameMusic() {
   stopMusic();
   const el = getOrCreateAudio(state.difficulty);
@@ -1097,7 +1098,7 @@ function stageComplete() {
   setTimeout(() => {
     if (state.stageIndex >= totalStages - 1) {
       // Game won
-      document.getElementById('winSub').textContent = `${cfg.name.toUpperCase()} — ALL ${totalStages} STAGES`;
+      document.getElementById('winSub').textContent = `${cfg.name.toUpperCase()} - ALL ${totalStages} STAGES`;
       document.getElementById('wScore').textContent = state.totalScore;
       document.getElementById('wAttempts').textContent = state.attempts;
       document.getElementById('winOverlay').classList.add('active');
@@ -1648,5 +1649,6 @@ function hideOverlays() {
 })();
 
 </script>
-    <script src="/nav.js"></script>\n</body>
+    <script src="/nav.js"></script>
+</body>
 </html>
