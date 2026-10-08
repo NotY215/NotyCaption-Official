@@ -125,6 +125,7 @@
     const badge = document.createElement('div');
     badge.className = 'infinite-badges';
     badge.innerHTML = '<div class="infinite-badge">∞ INFINITE STAGES</div><div class="infinite-badge">RANDOMIZED EVERY STAGE</div><div class="infinite-badge">PROGRESS SAVED</div>';
+    document.querySelectorAll('.diff-stages').forEach(el => el.textContent = '∞ INFINITE STAGES');
     const cards = document.querySelector('.diff-cards');
     if (cards) cards.after(badge);
 
