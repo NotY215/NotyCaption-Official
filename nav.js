@@ -119,3 +119,11 @@
   script.defer = false;
   document.body.appendChild(script);
 })();
+
+(function loadProfileManager() {
+  if (!localStorage.getItem('notycaption_access_token')) return;
+  const script = document.createElement('script');
+  script.src = '/profile.js';
+  script.defer = false;
+  document.body.appendChild(script);
+})();
