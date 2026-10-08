@@ -309,14 +309,14 @@
         <h1 class="title">Privacy Policy</h1>
         <div class="effective-date">Effective Date: April 2026 | Last Updated: April 25, 2026</div>
         <div class="version-badge">Web Version 6.4</div>
-        <div class="warning-badge">⚠️ NO DATA COLLECTION • BROWSER STORAGE • YOUR RISK</div>
+        <div class="warning-badge">🔐 MINIMAL ACCOUNT DATA • GAME PROGRESS • YOUR GOOGLE DRIVE FILES STAY IN YOUR DRIVE</div>
     </div>
 
     <!-- Section 1: Introduction -->
     <div class="section" id="privacy">
         <h2>1. Introduction</h2>
         <p>Welcome to <strong>NotyCaption Pro Web Version</strong> ("we", "our", "us", "NotY215"). This Privacy Policy explains how we handle your information when you use our web application. By using NotyCaption Pro Web, you agree to the terms of this Privacy Policy.</p>
-        <p><strong>Important Note:</strong> This is a <strong>pure client-side web application</strong>. All processing happens in Google Colab via your browser. No backend servers are involved.</p>
+        <p><strong>Important Note:</strong> Caption processing still happens through your browser, Google Drive, and Google Colab. A small server-side API now stores authenticated game usernames, stage progress, and leaderboard scores. It does not receive or store your audio or generated caption files.</p>
     </div>
 
     <!-- Section 2: Data We DO NOT Collect -->
@@ -326,7 +326,7 @@
         <ul>
             <li>❌ Your audio files (they stay in your Google Drive)</li>
             <li>❌ Your generated subtitles/captions</li>
-            <li>❌ Your personal identifiable information</li>
+            <li>❌ Your Google password or OAuth client secret</li>
             <li>❌ Your IP address</li>
             <li>❌ Your browsing history</li>
             <li>❌ Your keystrokes or mouse movements</li>
@@ -339,8 +339,8 @@
         <h2>3. Browser Storage (Cookies & LocalStorage)</h2>
         <p>Our web application stores the following data in your browser:</p>
         <ul>
-            <li>📦 <strong>LocalStorage:</strong> Google OAuth tokens (encrypted), user preferences (language, words per line, output format)</li>
-            <li>🍪 <strong>Session Storage:</strong> Temporary operation data during Colab processing</li>
+            <li>📦 <strong>LocalStorage:</strong> Google OAuth session data, user preferences, and guest game progress</li>
+            <li>🍪 <strong>Cookies:</strong> Session compatibility data used by the application</li>
         </ul>
         <p><strong>Important:</strong></p>
         <ul>
@@ -420,7 +420,7 @@
         <ul>
             <li><strong>Browser Storage:</strong> Remains until you clear browser data or logout</li>
             <li><strong>Google Drive files:</strong> Temporary files are deleted after processing. User files remain until you delete them.</li>
-            <li><strong>No server-side storage:</strong> We operate no backend servers.</li>
+            <li><strong>Game server storage:</strong> Logged-in game username, stage progress, and scores are stored server-side. Guest game progress is browser-only.</li>
         </ul>
     </div>
 
