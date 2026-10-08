@@ -4,7 +4,17 @@ const API='/api/';
 const GUEST_KEY='notycaption_guest_name';
 const PROFILE_KEY='notycaption_game_profile';
 
-function token(){try{return localStorage.getItem('notycaption_access_token')||'';}catch(_){return '';}}
+function token(){
+  try{
+    const local=localStorage.getItem('notycaption_access_token');
+    if(local)return local;
+    for(const cookie of document.cookie.split(';')){
+      const item=cookie.trim();
+      if(item.startsWith('notycaption_access_token='))return decodeURIComponent(item.slice('notycaption_access_token='.length));
+    }
+  }catch(_){}
+  return '';
+}
 function guestName(){
   let name=''; try{name=localStorage.getItem(GUEST_KEY)||'';}catch(_){}
   if(!name){name='Guest-'+Math.floor(1000+Math.random()*9000);try{localStorage.setItem(GUEST_KEY,name);}catch(_){}}
