@@ -143,3 +143,77 @@ body:not(:has(#game))::before {
   :where(.settings-card,.board-card,.left-panel,.right-panel,.sidebar,.login-card) { border-radius: 18px; }
   .settings-card { padding: 20px !important; }
 }
+
+
+/* Consistent dark and light themes across the whole site */
+:root {
+  color-scheme: dark;
+  --nc-page-text: #eef3ff;
+  --nc-muted-text: #aab4ca;
+  --nc-panel: rgba(17, 22, 43, .72);
+  --nc-panel-solid: #11162b;
+  --nc-edge: rgba(255,255,255,.15);
+  --nc-input: rgba(4, 8, 22, .48);
+  --nc-link: #65e6ff;
+  --nc-table-line: rgba(255,255,255,.09);
+}
+html.noty-theme-light {
+  color-scheme: light;
+  --nc-page-text: #182238;
+  --nc-muted-text: #58657d;
+  --nc-panel: rgba(255,255,255,.72);
+  --nc-panel-solid: #ffffff;
+  --nc-edge: rgba(31,48,77,.16);
+  --nc-input: rgba(255,255,255,.82);
+  --nc-link: #075bb5;
+  --nc-table-line: rgba(31,48,77,.12);
+}
+html.noty-theme-light body:not(:has(#game)) {
+  color: var(--nc-page-text) !important;
+  background-color: #edf3ff !important;
+  background-image: radial-gradient(ellipse at 12% 8%,rgba(0,153,210,.12),transparent 34%),radial-gradient(ellipse at 88% 20%,rgba(124,77,255,.09),transparent 32%),linear-gradient(135deg,#f8faff,#eaf1ff 60%,#f8fbff) !important;
+}
+html.noty-theme-light body:not(:has(#game)) :is(h1,h2,h3,h4,h5,h6,p,li,label,strong,b,small,span,summary,dt,dd,th,td,figcaption) {
+  color: inherit;
+}
+html.noty-theme-light body:not(:has(#game)) :is(.settings-subtitle,.field-help,.field-label,.danger-zone span,.theme-option small,.score-card .stage,.loading-card,.leaderboard th,.settings-footer a,.muted,.subtitle,.description,.hero p,.card p) {
+  color: var(--nc-muted-text) !important;
+}
+html.noty-theme-light body:not(:has(#game)) :is(a:not(.noty-nav-primary),.settings-footer a) {
+  color: var(--nc-link);
+}
+html.noty-theme-light body:not(:has(#game)) :is(.login-card,.left-panel,.right-panel,.sidebar,.user-info,.settings-card,.leaderboard-card,.leaderboard-panel,.card,.flow,.contact-card,.section-card,.game-card,.profile-card,.hero-card,.board-card,.diff-card,.feature,.score-card,.audio-player,.captions-box,.enhanced-player) {
+  color: var(--nc-page-text) !important;
+  border-color: var(--nc-edge) !important;
+  background: linear-gradient(135deg,rgba(255,255,255,.92),rgba(247,250,255,.72) 58%,rgba(220,244,255,.72)) !important;
+  box-shadow: 0 22px 60px rgba(40,65,110,.11),inset 0 1px 0 rgba(255,255,255,.95);
+}
+html.noty-theme-light body:not(:has(#game)) :is(input,textarea,select,.username-row input,.leaderboard-head select) {
+  color: #182238 !important;
+  background: var(--nc-input) !important;
+  border-color: rgba(31,48,77,.2) !important;
+}
+html.noty-theme-light body:not(:has(#game)) :is(input,textarea,select)::placeholder { color: #7a869b !important; }
+html.noty-theme-light body:not(:has(#game)) :is(.theme-option,.score-card,.readonly-value,.leaderboard-wrap) {
+  color: var(--nc-page-text) !important;
+  background: rgba(255,255,255,.62) !important;
+  border-color: var(--nc-edge) !important;
+}
+html.noty-theme-light .noty-global-nav {
+  background: rgba(247,250,255,.72) !important;
+  border-bottom-color: rgba(31,48,77,.15);
+  box-shadow: 0 12px 42px rgba(40,65,110,.12),inset 0 1px 0 rgba(255,255,255,.9);
+}
+html.noty-theme-light .noty-nav-primary { color: #07111a !important; }
+html.noty-theme-light .noty-nav-drawer { background: rgba(248,250,255,.94) !important; }
+html.noty-theme-light .noty-nav-drawer-list a,
+html.noty-theme-light .noty-nav-close { color: #344058 !important; }
+html.noty-theme-light .noty-nav-drawer-backdrop { background: rgba(30,42,65,.22); }
+html.noty-theme-light .settings-kicker,
+html.noty-theme-light .score-card .difficulty { color: #087fa1 !important; }
+html.noty-theme-light .settings-message { color: #08764b !important; }
+html.noty-theme-light .settings-message.error { color: #b4233d !important; }
+html.noty-theme-light .danger-zone { border-top-color: var(--nc-edge); }
+html.noty-theme-light .leaderboard th,
+html.noty-theme-light .leaderboard td { border-bottom-color: var(--nc-table-line); }
+@media (prefers-reduced-motion: reduce) { body:not(:has(#game))::before { animation: none !important; } }
