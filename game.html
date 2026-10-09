@@ -279,7 +279,7 @@
   .hud-score-num { font-size: 24px; font-weight: 900; color: var(--neon-yellow); text-shadow: var(--glow-yellow); }
   .score-meter { width: clamp(110px, 18vw, 210px); height: 5px; margin: 5px 0 0 auto; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); }
   .score-meter-fill { width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--neon-yellow), var(--neon-green)); box-shadow: 0 0 12px rgba(255,229,0,.8); transition: width .18s ease; }
-  #stageClearBanner { position: fixed; top: 42px; left: 50%; z-index: 230; transform: translate(-50%,-18px) scale(.94); opacity: 0; pointer-events: none; padding: 12px 22px; border: 1px solid rgba(57,255,20,.8); border-radius: 14px; background: rgba(4,20,18,.88); color: #baffad; font: 800 12px Orbitron, monospace; letter-spacing: 2px; box-shadow: 0 0 26px rgba(57,255,20,.22); backdrop-filter: blur(14px); white-space: nowrap; }
+  #stageClearBanner { position: fixed; top: 42px; left: 50%; z-index: 350; transform: translate(-50%,-18px) scale(.94); opacity: 0; pointer-events: none; padding: 12px 22px; border: 1px solid rgba(57,255,20,.8); border-radius: 14px; background: rgba(4,20,18,.88); color: #baffad; font: 800 12px Orbitron, monospace; letter-spacing: 2px; box-shadow: 0 0 26px rgba(57,255,20,.22); backdrop-filter: blur(14px); white-space: nowrap; }
   #stageClearBanner.show { animation: stageBannerIn 2.1s cubic-bezier(.2,.8,.2,1) both; }
   #stageClearBanner strong { color: var(--neon-yellow); margin-left: 8px; }
   @keyframes stageBannerIn { 0% { opacity:0; transform:translate(-50%,-18px) scale(.94); } 12%,72% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-8px) scale(.98); } }
@@ -943,7 +943,14 @@ window.addEventListener('keydown', e => {
   if (e.repeat && ['Enter','ArrowLeft','ArrowRight'].includes(e.code)) return;
   keys[e.code] = true;
   if (e.code === 'Enter') { activateFocusedOrPrimary(); return; }
-  if (e.code === 'ArrowLeft') { moveKeyboardSelection(-1); return; }
+  if (e.code === 'ArrowLeft') {
+    if (state.running && !state.dead) {
+      player.jumpBuffer = 8;
+      doJump();
+      if (player.vy < 0) player.vy *= 0.78; // quick, lower hop
+    } else moveKeyboardSelection(-1);
+    return;
+  }
   if (e.code === 'ArrowRight') {
     if (state.running && !state.dead) { player.jumpBuffer = 8; doJump(); }
     else moveKeyboardSelection(1);
