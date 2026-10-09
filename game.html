@@ -913,29 +913,14 @@ const keys = {};
 let jumpQueued = false;
 
 let menuDifficultyIndex = 0;
-const MAX_JUMP_CHARGE_MS = 950;
-let jumpChargeStartedAt = 0;
-let jumpChargeActive = false;
-let jumpChargePointer = false;
-function canStartChargedJump() {
-  return state.running && !state.dead &&
-    (player.onGround || player.coyoteTimer > 0 || player.jumpCount < player.maxJumps);
-}
 function beginJumpCharge(source) {
-  if (!canStartChargedJump() || jumpChargeActive) return false;
-  jumpChargeActive = true;
-  jumpChargePointer = source === 'pointer';
-  jumpChargeStartedAt = performance.now();
-  player.jumpBuffer = 0;
+  // Keep the old immediate jump behaviour. Holding Space does not charge jump height.
+  if (!state.running || state.dead) return false;
+  doJump(0);
   return true;
 }
-function releaseJumpCharge(source) {
-  if (!jumpChargeActive || (source === 'pointer' && !jumpChargePointer)) return;
-  const heldMs = Math.max(0, Math.min(MAX_JUMP_CHARGE_MS, performance.now() - jumpChargeStartedAt));
-  const charge = heldMs / MAX_JUMP_CHARGE_MS;
-  jumpChargeActive = false;
-  jumpChargePointer = false;
-  doJump(charge);
+function releaseJumpCharge() {
+  // No key-release action is required for an immediate jump.
 }
 function activeOverlayButtons() {
   const overlay = document.querySelector('.overlay.active');
@@ -997,7 +982,7 @@ function doJump(charge = 0) {
   if (player.onGround || canCoyote || player.jumpCount < player.maxJumps) {
     const cfg = DIFFICULTIES[state.difficulty];
     const chargeRatio = Math.max(0, Math.min(1, Number(charge) || 0));
-    let power = cfg.jumpPower * (0.62 + chargeRatio * 0.88);
+    let power = cfg.jumpPower;
     // Super Jump power-up
     if (player.superJumpTimer > 0) {
       power *= 1.35;
@@ -1106,7 +1091,6 @@ function checkObstacleCollision() {
 }
 
 function checkCoinCollection() {
-  if (jumpChargeActive) return;
   for (const c of coins) {
     if (c.collected) continue;
     if (rectsOverlap(player.x, player.y, player.w, player.h, c.x - 8, c.y - 8, 16, 16)) {
@@ -1137,7 +1121,6 @@ function playCoinSound() {
 }
 
 function checkPowerupCollection() {
-  if (jumpChargeActive) return;
   for (const pu of powerups) {
     if (pu.collected) continue;
     const bobY = pu.y + Math.sin(tick * 0.08 + pu.bob) * 6;
@@ -1672,7 +1655,7 @@ function update() {
 
   // Auto-scroll player (speed boost multiplies)
   const speedMul = player.speedBoostTimer > 0 ? 1.45 : 1;
-  if (!jumpChargeActive) player.x += cfg.speed * speedMul;
+  player.x += cfg.speed * speedMul;
 
   // Rotation while in air
   if (!player.onGround) {
@@ -1698,7 +1681,7 @@ function update() {
   document.getElementById('progressFill').style.width = (state.progress * 100) + '%';
 
   // Score increases only while advancing, never while jump charge is held.
-  if (!jumpChargeActive && tick % 10 === 0 && player.x > (state.lastScoreX || 0)) {
+  if (tick % 10 === 0 && player.x > (state.lastScoreX || 0)) {
     state.score += Math.floor(cfg.speed * speedMul);
     state.lastScoreX = player.x;
     updateHUD();
