@@ -220,6 +220,7 @@
     const bonus = 1000 + state.stageIndex * 100;
     state.score += bonus;
     state.totalScore += state.score;
+    if (typeof updateHUD === 'function') updateHUD();
 
     await saveProgress();
 
