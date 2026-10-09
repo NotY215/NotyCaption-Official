@@ -190,7 +190,41 @@ const AudioManager = {
         return folderData.id;
     },
     
-    unloadAudio() {
+    async unloadAudio() {
+        const driveId = this.currentAudioDriveId;
+        let driveDeleteSucceeded = !driveId;
+        let driveDeleteError = null;
+
+        // Delete the uploaded source audio from Google Drive before clearing its ID.
+        if (driveId) {
+            try {
+                let token = localStorage.getItem('notycaption_access_token');
+                if (!token) {
+                    const cookie = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('notycaption_access_token='));
+                    if (cookie) token = decodeURIComponent(cookie.slice('notycaption_access_token='.length));
+                }
+                if (!token) throw new Error('Google access token is missing. Sign in again to delete the Drive upload.');
+
+                const response = await fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(driveId), {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    let detail = '';
+                    try {
+                        const body = await response.json();
+                        detail = body.error && body.error.message ? ': ' + body.error.message : '';
+                    } catch (_) {}
+                    throw new Error('Google Drive deletion failed (' + response.status + ')' + detail);
+                }
+                driveDeleteSucceeded = true;
+                console.log('Deleted uploaded source audio from Drive:', driveId);
+            } catch (error) {
+                driveDeleteError = error;
+                console.error('Could not delete uploaded source audio from Drive:', error);
+            }
+        }
+
         if (this.audioPlayer) {
             this.audioPlayer.pause();
             this.audioPlayer.src = '';
@@ -201,8 +235,15 @@ const AudioManager = {
             this.currentAudioBlobUrl = null;
         }
         
-        this.currentAudioDriveId = null;
-        this.currentAudioFile = null;
+        if (driveDeleteSucceeded) {
+            this.currentAudioDriveId = null;
+            this.currentAudioFile = null;
+            this.currentAudioName = null;
+        } else {
+            // Keep the Drive ID so the user can retry deletion by pressing Unload again.
+            this.currentAudioDriveId = driveId;
+            this.currentAudioFile = null;
+        }
         
         if (this.fileInfo) {
             this.fileInfo.innerHTML = 'No file loaded';
@@ -232,7 +273,11 @@ const AudioManager = {
             enhancedPlayer.src = '';
         }
         
-        this.showToast('✅ Audio unloaded');
+        if (driveDeleteError) {
+            this.showToast('⚠️ Audio unloaded locally, but its Drive copy was not deleted. Press Unload again to retry. ' + driveDeleteError.message, true);
+        } else {
+            this.showToast(driveId ? '🗑️ Audio unloaded and deleted from Google Drive.' : '✅ Audio unloaded');
+        }
     },
     
     getAudioDriveId() {
