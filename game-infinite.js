@@ -362,7 +362,7 @@
     }
     const doorX = stageLen - 170;
     platforms.push({x:doorX,y:groundY-110,w:170,h:110,isEnd:true});
-  };;
+  };
 
   const originalDrawPlatforms = window.drawPlatforms;
   window.drawPlatforms = function () {
