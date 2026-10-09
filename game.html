@@ -672,7 +672,7 @@ function getOrCreateAudio(diff) {
   if (audioEls[diff]) return audioEls[diff];
   const cfg = DIFFICULTIES[diff];
   const el = new Audio();
-  el.src = cfg.musicUrl;
+  if (cfg.musicUrl) el.src = cfg.musicUrl;
   el.loop = true;
   el.volume = 0.7;
   el.crossOrigin = 'anonymous';
@@ -697,8 +697,8 @@ function playMusicForDiff(diff) {
   const el = getOrCreateAudio(diff);
   el.currentTime = 0;
   el.volume = 0.55;
-  el.play().catch(() => {}); // browser may block until user gesture - will auto-play after first click
-  currentAudio = el;
+  if (cfg.musicUrl) el.play().catch(() => {});
+  currentAudio = cfg.musicUrl ? el : null;
 }
 
 // Called when game starts - reset timestamp and play at full volume
@@ -708,8 +708,8 @@ function startGameMusic() {
   el.currentTime = 0;
   el.volume = 0.7;
   el.loop = true;
-  el.play().catch(() => {});
-  currentAudio = el;
+  if (DIFFICULTIES[state.difficulty].musicUrl) el.play().catch(() => {});
+  currentAudio = DIFFICULTIES[state.difficulty].musicUrl ? el : null;
 
   // Start beat pulse scheduler synced to BPM
   const cfg = DIFFICULTIES[state.difficulty];
