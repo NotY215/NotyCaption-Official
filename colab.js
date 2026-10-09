@@ -25,16 +25,29 @@ function setProcessingStatus(message, percent) {
     if (typeof window.showProgress === 'function') window.showProgress(true, message, percent);
 }
 
-async function findOperationResult(operationId) {
+async function findOperationResult(operationId, expectedName, startedAt) {
     const token = getAccessToken();
     if (!token) throw new Error('Authentication token not found');
-    const query = "trashed=false and appProperties has { key='notycaption_operation_id' and value='" + operationId + "' } and appProperties has { key='notycaption_status' and value='completed' }";
-    const response = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(query) + '&pageSize=10&fields=files(id,name,mimeType,createdTime,appProperties)', {
-        headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (!response.ok) throw new Error('Drive status check failed: ' + response.status);
-    const data = await response.json();
-    return data.files && data.files.length ? data.files[0] : null;
+    const headers = { 'Authorization': 'Bearer ' + token };
+    const fields = 'files(id,name,mimeType,createdTime,appProperties)';
+    const operationQuery = "trashed=false and appProperties has { key='notycaption_operation_id' and value='" + operationId + "' } and appProperties has { key='notycaption_status' and value='completed' }";
+    const operationResponse = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(operationQuery) + '&pageSize=10&orderBy=createdTime desc&fields=' + encodeURIComponent(fields), { headers });
+    if (!operationResponse.ok) throw new Error('Drive status check failed: ' + operationResponse.status);
+    const operationData = await operationResponse.json();
+    if (operationData.files && operationData.files.length) return operationData.files[0];
+
+    // Fallback for Drive indexing/metadata issues: match the expected output filename
+    // but only accept files created after this operation started.
+    if (expectedName && startedAt) {
+        const safeName = expectedName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const startedIso = new Date(startedAt - 5000).toISOString();
+        const fallbackQuery = "trashed=false and name='" + safeName + "' and createdTime > '" + startedIso + "'";
+        const fallbackResponse = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(fallbackQuery) + '&pageSize=10&orderBy=createdTime desc&fields=' + encodeURIComponent(fields), { headers });
+        if (!fallbackResponse.ok) throw new Error('Drive fallback search failed: ' + fallbackResponse.status);
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.files && fallbackData.files.length) return fallbackData.files[0];
+    }
+    return null;
 }
 
 async function deleteOperationNotebook(operationId) {
@@ -71,18 +84,22 @@ function closeColabWindow() {
     colabWindow = null;
 }
 
-function startPolling(operationId, operationType, onSuccess, onError, onProgress) {
+function startPolling(operationId, operationType, onSuccess, onError, onProgress, tracking = {}) {
     let attempts = 0;
+    let checking = false;
     const maxAttempts = 360;
     const pollEveryMs = 5000;
+    const startedAt = tracking.startedAt || Date.now();
 
     stopPolling();
     setProcessingStatus(operationType === 'enhance' ? 'Waiting for vocal extraction...' : 'Waiting for Whisper processing...', 65);
 
     const check = async () => {
+        if (checking) return;
+        checking = true;
         attempts++;
         try {
-            const result = await findOperationResult(operationId);
+            const result = await findOperationResult(operationId, tracking.expectedName, startedAt);
             if (result) {
                 stopPolling();
                 if (onProgress) onProgress('Result found. Loading output...', 95);
@@ -110,6 +127,8 @@ function startPolling(operationId, operationType, onSuccess, onError, onProgress
                 stopPolling();
                 if (onError) onError('Unable to track the Colab result: ' + error.message);
             }
+        } finally {
+            checking = false;
         }
     };
 
@@ -124,6 +143,9 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
     }
 
     const operationId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 8);
+    const startedAt = Date.now();
+    const audioBaseName = (params.audioName || 'captions').replace(/\\.(mp3|wav|m4a|flac|ogg|aac)$/i, '');
+    const expectedName = audioBaseName + '.' + (params.outputFormat || 'srt');
 
     try {
         if (onProgress) onProgress('Preparing notebook...', 10);
@@ -159,7 +181,7 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
         await openNotebookInColab(notebookDriveId);
 
         if (onProgress) onProgress('Colab opened. Waiting for processing...', 60);
-        startPolling(operationId, operationType, onSuccess, onError, onProgress);
+        startPolling(operationId, operationType, onSuccess, onError, onProgress, { expectedName, startedAt });
         return operationId;
     } catch (error) {
         console.error('Failed to create notebook:', error);
