@@ -95,55 +95,13 @@
     style.textContent = `
       .infinite-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 20px}
       .infinite-badge{padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.05);font:600 10px Orbitron;letter-spacing:1px;color:#dce7ff}
-      #musicCredit{position:fixed;left:12px;bottom:12px;z-index:180;max-width:min(80vw,420px);font:600 10px Rajdhani,sans-serif;letter-spacing:.5px;color:rgba(230,245,255,.65);pointer-events:none}
+      #musicCredit{display:none!important}
       @media(max-width:600px){.leaderboard-row{grid-template-columns:42px 1fr 80px 55px}.leaderboard-card{padding:15px}}
     `;
     document.head.appendChild(style);
   }
 
-  const YOUTUBE_MUSIC_ID = 'jNxFmRn7Nbg';
-  let youtubeMusicPlayer = null;
-  let youtubeApiLoading = false;
-  let youtubeApiReady = false;
-  function loadYouTubePlayerAPI() {
-    if (youtubeApiLoading || youtubeApiReady) return;
-    youtubeApiLoading = true;
-    window.onYouTubeIframeAPIReady = function () {
-      youtubeApiReady = true;
-      youtubeMusicPlayer = new YT.Player('youtubeMusicPlayer', {
-        width: '200', height: '200', videoId: YOUTUBE_MUSIC_ID,
-        playerVars: {autoplay: 0, controls: 1, playsinline: 1, rel: 0},
-        events: {onError: function (event) { console.warn('YouTube music player error:', event.data); }}
-      });
-    };
-    const script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    script.async = true;
-    document.head.appendChild(script);
-  }
-  window.startYouTubeMusic = function () {
-    const wrap = document.getElementById('youtubeMusicWrap');
-    if (wrap) wrap.style.display = 'block';
-    if (youtubeMusicPlayer && youtubeApiReady) {
-      try { youtubeMusicPlayer.loadVideoById(YOUTUBE_MUSIC_ID); youtubeMusicPlayer.setVolume(55); youtubeMusicPlayer.playVideo(); } catch (_) {}
-      return;
-    }
-    loadYouTubePlayerAPI();
-    const previousReady = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = function () {
-      if (typeof previousReady === 'function') previousReady();
-      if (youtubeMusicPlayer) {
-        try { youtubeMusicPlayer.setVolume(55); youtubeMusicPlayer.playVideo(); } catch (_) {}
-      }
-    };
-  };
-  window.stopYouTubeMusic = function () {
-    try { if (youtubeMusicPlayer && youtubeApiReady) youtubeMusicPlayer.stopVideo(); } catch (_) {}
-    const wrap = document.getElementById('youtubeMusicWrap');
-    if (wrap) wrap.style.display = 'none';
-  };
-  loadYouTubePlayerAPI();
-
+  // Audio-only royalty-free API playback is used; no video or song label is displayed.
   const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/all';
   let musicRequest = null, apiMusicFailed = false, currentApiTrackUrl = '';
   function extractPlayableTracks(payload) {
@@ -186,17 +144,19 @@
       }
       const track = choices[Math.floor(Math.random() * choices.length)];
       if (!track) return;
-      currentApiTrackUrl = track.url;
-      audio.src = track.url; audio.loop = true; audio.volume = 0.38;
-      audio.play().then(() => {
-        const credit = document.getElementById('musicCredit');
-        if (credit) credit.textContent = 'Music: ' + track.title + ' · ' + track.artist;
-      }).catch(() => {});
+      // Select once, then keep the same song and its currentTime across pauses and retries.
+      if (!currentApiTrackUrl || !audio.src) {
+        currentApiTrackUrl = track.url;
+        audio.src = track.url;
+      }
+      audio.loop = true;
+      audio.volume = 0.38;
+      audio.play().catch(() => {});
     });
   }
   function stopApiTrack() {
     const audio = window.__arrowDashApiAudio;
-    if (audio) { audio.pause(); audio.currentTime = 0; }
+    if (audio) audio.pause();
   }
   function setGameplayNav(active) {
     document.body.classList.toggle('arrow-dash-playing', Boolean(active));
@@ -204,11 +164,6 @@
 
   function injectUI() {
     injectStyles();
-    const credit = document.createElement('div');
-    credit.id = 'musicCredit'; credit.setAttribute('aria-live','polite');
-    credit.textContent = 'Royalty-free music API';
-    document.body.appendChild(credit);
-
     const badge = document.createElement('div');
     badge.className = 'infinite-badges';
     badge.innerHTML = '<div class="infinite-badge">∞ INFINITE STAGES</div><div class="infinite-badge">RANDOMIZED EVERY STAGE</div><div class="infinite-badge">PROGRESS SAVED</div>';
@@ -235,7 +190,7 @@
   const originalKillPlayer = window.killPlayer;
   window.startGameMusic = function () {
     if (typeof originalStartMusic === 'function') originalStartMusic();
-    if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
+    playApiTrackForDiff(state.difficulty);
   };
   window.stopMusic = function () {
     if (typeof originalStopMusic === 'function') originalStopMusic();
@@ -252,7 +207,6 @@
 
   window.startGame = async function () {
     setGameplayNav(true);
-    if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
     const profile = await loadProfile();
     state.stageIndex = Math.max(0, Number(profile.stage && profile.stage[state.difficulty] || 1) - 1);
     state.score = 0;
