@@ -484,7 +484,7 @@
         const language = document.getElementById('languageSelect').value;
         const wordsPerLine = document.getElementById('wordsPerLine').value;
         const outputFormat = document.getElementById('outputFormat').value;
-        showModal('🎬 Generating AI Captions', 'Processing with Whisper AI...\\nThe page will track the Drive result automatically.');
+        showModal('🎬 Generating AI Captions', 'Run all cells in Google Colab. This page will detect the finished result automatically.');
         window.showProgress(true, 'Preparing Colab notebook...', 10);
         try {
             if (typeof createAndOpenColabNotebook === 'undefined') throw new Error('Colab module not loaded. Please refresh.');
@@ -505,8 +505,9 @@
                     closeModal();
                     window.showToast('✅ Captions generated successfully!');
                 } catch (err) {
-                    window.showToast('❌ Download failed: ' + err.message, true);
+                    window.showToast('❌ Could not load generated captions: ' + err.message, true);
                     window.showProgress(false);
+                    closeModal();
                 } finally { isProcessing = false; }
             },
             (error) => {
@@ -529,7 +530,7 @@
         if (!window.currentAudioId) { window.showToast('❌ Please upload audio first', true); return; }
         if (isProcessing) return;
         isProcessing = true;
-        showModal('🎤 Vocal Enhancement', 'Extracting vocals with Spleeter AI...\\nThe page will track the Drive result automatically.');
+        showModal('🎤 Vocal Enhancement', 'Run all cells in Google Colab. This page will detect the finished result automatically.');
         window.showProgress(true, 'Preparing vocal extraction...', 10);
         try {
             if (typeof createAndOpenColabNotebook === 'undefined') throw new Error('Colab module not loaded. Please refresh.');
@@ -549,6 +550,7 @@
                 } catch (err) {
                     window.showToast('❌ Failed to load enhanced audio: ' + err.message, true);
                     window.showProgress(false);
+                    closeModal();
                 } finally { isProcessing = false; }
             },
             (error) => {
