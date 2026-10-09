@@ -710,9 +710,10 @@ function playMusicForDiff(diff) {
 
 // Called when game starts - reset timestamp and play at full volume
 function startGameMusic() {
-  stopMusic();
-  if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
+  if (beatScheduler) { clearInterval(beatScheduler); beatScheduler = null; }
+  if (currentAudio) currentAudio.pause();
   currentAudio = null;
+  if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
   const cfg = DIFFICULTIES[state.difficulty];
   startBeatSync(cfg.bpm);
 }
