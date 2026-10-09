@@ -44,7 +44,7 @@ function bearer_token(): ?string {
     foreach ($candidates as $value) {
         $value = trim((string)$value);
         if ($value === '') continue;
-        if (preg_match('/^Bearer\\s+(.+)$/i', $value, $m)) {
+        if (preg_match('/^Bearer\s+(.+)$/i', $value, $m)) {
             return trim($m[1]);
         }
         if (!str_contains($value, ' ') && strlen($value) >= 20) {
