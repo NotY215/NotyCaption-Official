@@ -227,7 +227,7 @@ html.noty-theme-light body.noty-settings-page {
 
 .theme-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -416,3 +416,29 @@ html.noty-theme-light body.noty-settings-page {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Theme-aware settings typography and controls */
+.noty-settings-page { color: var(--nc-page-text, #eef3ff); }
+.noty-settings-page :is(h1,h2,h3,p,label,strong,span,small,a,button) { color: inherit; }
+.noty-settings-page .settings-kicker,
+.noty-settings-page .score-card .difficulty { color: #00bcd4; }
+.noty-settings-page .settings-subtitle,
+.noty-settings-page .field-label,
+.noty-settings-page .field-help,
+.noty-settings-page .danger-zone span,
+.noty-settings-page .theme-option small,
+.noty-settings-page .score-card .stage,
+.noty-settings-page .settings-footer a { color: var(--nc-muted-text, #aab4ca); }
+.noty-settings-page .settings-card,
+.noty-settings-page .theme-option,
+.noty-settings-page .score-card { color: var(--nc-page-text, #eef3ff); }
+.noty-theme-light .noty-settings-page .settings-kicker,
+.noty-theme-light .noty-settings-page .score-card .difficulty { color: #087fa1; }
+.noty-theme-light .noty-settings-page .primary-btn { color: #07111a; }
+.noty-theme-light .noty-settings-page .danger-btn { color: #a91f3a; }
+.noty-theme-light .noty-settings-page .theme-option small,
+.noty-theme-light .noty-settings-page .score-card .stage { color: #58657d; }
+.noty-theme-light .noty-settings-page .theme-option.active { color: #182238; border-color: rgba(0,130,170,.45); background: rgba(0,170,210,.09) !important; }
+.noty-theme-light .noty-settings-page .settings-footer a { color: #58657d; }
+.noty-settings-page button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
