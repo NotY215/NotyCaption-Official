@@ -224,10 +224,14 @@
     hideOverlays();
     await originalLoad();
   };
+  const originalRestartStage = window.restartStage;
+  window.restartStage = function () {
+    setGameplayNav(true);
+    if (typeof originalRestartStage === 'function') originalRestartStage();
+  };
 
   window.stageComplete = async function () {
     if (state.dead) return;
-    setGameplayNav(false);
     state.dead = true;
     state.running = false;
     stopMusic();
