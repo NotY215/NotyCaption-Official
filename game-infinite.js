@@ -102,7 +102,7 @@
   }
 
   const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/all';
-  let musicRequest = null, apiMusicFailed = false;
+  let musicRequest = null, apiMusicFailed = false, currentApiTrackUrl = '';
   function extractPlayableTracks(payload) {
     const list = Array.isArray(payload && payload.data) ? payload.data : [];
     return list.filter(t => !t.is_premium && t.status === 1).map(t => {
@@ -136,9 +136,14 @@
     loadApiMusic().then(tracks => {
       if (!tracks || !tracks.length) return;
       const audio = window.__arrowDashApiAudio || (window.__arrowDashApiAudio = new Audio());
-      const index = diff === 'easy' ? 0 : diff === 'normal' ? Math.floor(tracks.length / 2) : tracks.length - 1;
-      const track = tracks[index];
+      let choices = tracks;
+      if (tracks.length > 1 && currentApiTrackUrl) {
+        choices = tracks.filter(item => item.url !== currentApiTrackUrl);
+        if (!choices.length) choices = tracks;
+      }
+      const track = choices[Math.floor(Math.random() * choices.length)];
       if (!track) return;
+      currentApiTrackUrl = track.url;
       audio.src = track.url; audio.loop = true; audio.volume = 0.38;
       audio.play().then(() => {
         const credit = document.getElementById('musicCredit');
@@ -149,6 +154,9 @@
   function stopApiTrack() {
     const audio = window.__arrowDashApiAudio;
     if (audio) { audio.pause(); audio.currentTime = 0; }
+  }
+  function setGameplayNav(active) {
+    document.body.classList.toggle('arrow-dash-playing', Boolean(active));
   }
 
   function injectUI() {
@@ -181,6 +189,7 @@
   const originalStartMusic = window.startGameMusic;
   const originalStopMusic = window.stopMusic;
   const originalPlayMusicForDiff = window.playMusicForDiff;
+  const originalKillPlayer = window.killPlayer;
   window.startGameMusic = function () {
     if (typeof originalStartMusic === 'function') originalStartMusic();
     playApiTrackForDiff(state.difficulty);
@@ -193,8 +202,13 @@
     if (typeof originalPlayMusicForDiff === 'function') originalPlayMusicForDiff(diff);
     playApiTrackForDiff(diff);
   };
+  window.killPlayer = function () {
+    if (typeof originalKillPlayer === 'function') originalKillPlayer();
+    setTimeout(() => setGameplayNav(false), 650);
+  };
 
   window.startGame = async function () {
+    setGameplayNav(true);
     const profile = await loadProfile();
     state.stageIndex = Math.max(0, Number(profile.stage && profile.stage[state.difficulty] || 1) - 1);
     state.score = 0;
@@ -204,6 +218,7 @@
   };
 
   window.nextStage = async function () {
+    setGameplayNav(true);
     await saveProgress();
     state.stageIndex++;
     hideOverlays();
@@ -212,6 +227,7 @@
 
   window.stageComplete = async function () {
     if (state.dead) return;
+    setGameplayNav(false);
     state.dead = true;
     state.running = false;
     stopMusic();
@@ -241,19 +257,15 @@
       document.getElementById('sScore').textContent = state.score;
       document.getElementById('sRating').textContent = '∞';
       document.getElementById('stageOverlay').classList.add('active');
+      setGameplayNav(false);
     }, 400);
   };
 
-  const stageSeeds = new Map();
   function randomStageSeed() {
-    const key = state.difficulty + ':' + state.stageIndex;
-    if (!stageSeeds.has(key)) {
-      let seed;
-      try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
-      catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0; }
-      stageSeeds.set(key, seed || 1);
-    }
-    state.stageSeed = stageSeeds.get(key);
+    let seed;
+    try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
+    catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff) ^ Math.floor(performance.now() * 1000)) >>> 0; }
+    state.stageSeed = seed || 1;
     return state.stageSeed;
   }
 
@@ -336,6 +348,7 @@
   };
 
   window.goMenu = function () {
+    setGameplayNav(false);
     hideOverlays();
     stopMusic();
     if (animId) cancelAnimationFrame(animId);
