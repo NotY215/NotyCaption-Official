@@ -28,9 +28,7 @@
       theme = localStorage.getItem('notycaption_theme') || 'dark';
     } catch (_) {}
 
-    const resolved = theme === 'system'
-      ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-      : theme;
+    const resolved = theme === 'light' ? 'light' : 'dark';
 
     document.documentElement.dataset.notyTheme = resolved;
     document.documentElement.classList.toggle('noty-theme-light', resolved === 'light');
