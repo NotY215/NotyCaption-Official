@@ -38,12 +38,10 @@
   }
 
   function applyTheme(theme) {
-    const value = theme === 'light' || theme === 'system' ? theme : 'dark';
+    const value = theme === 'light' ? 'light' : 'dark';
     localStorage.setItem('notycaption_theme', value);
 
-    const resolved = value === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-      : value;
+    const resolved = value;
 
     document.documentElement.dataset.notyTheme = resolved;
     document.documentElement.classList.toggle('noty-theme-light', resolved === 'light');
@@ -82,7 +80,8 @@
     } catch (error) {
       setAccountLocked(true);
       document.getElementById('emailValue').textContent = 'Session unavailable';
-      showMessage('Your Google session could not be verified. Sign in again to edit your username.', true);
+      const status = error && error.message ? error.message : 'The server could not verify your Google access token.';
+      showMessage(status + ' Check your connection and sign in again only if the session has expired.', true);
     }
   }
 
