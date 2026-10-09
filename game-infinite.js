@@ -101,6 +101,49 @@
     document.head.appendChild(style);
   }
 
+  const YOUTUBE_MUSIC_ID = 'jNxFmRn7Nbg';
+  let youtubeMusicPlayer = null;
+  let youtubeApiLoading = false;
+  let youtubeApiReady = false;
+  function loadYouTubePlayerAPI() {
+    if (youtubeApiLoading || youtubeApiReady) return;
+    youtubeApiLoading = true;
+    window.onYouTubeIframeAPIReady = function () {
+      youtubeApiReady = true;
+      youtubeMusicPlayer = new YT.Player('youtubeMusicPlayer', {
+        width: '200', height: '200', videoId: YOUTUBE_MUSIC_ID,
+        playerVars: {autoplay: 0, controls: 1, playsinline: 1, rel: 0},
+        events: {onError: function (event) { console.warn('YouTube music player error:', event.data); }}
+      });
+    };
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  window.startYouTubeMusic = function () {
+    const wrap = document.getElementById('youtubeMusicWrap');
+    if (wrap) wrap.style.display = 'block';
+    if (youtubeMusicPlayer && youtubeApiReady) {
+      try { youtubeMusicPlayer.loadVideoById(YOUTUBE_MUSIC_ID); youtubeMusicPlayer.setVolume(55); youtubeMusicPlayer.playVideo(); } catch (_) {}
+      return;
+    }
+    loadYouTubePlayerAPI();
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () {
+      if (typeof previousReady === 'function') previousReady();
+      if (youtubeMusicPlayer) {
+        try { youtubeMusicPlayer.setVolume(55); youtubeMusicPlayer.playVideo(); } catch (_) {}
+      }
+    };
+  };
+  window.stopYouTubeMusic = function () {
+    try { if (youtubeMusicPlayer && youtubeApiReady) youtubeMusicPlayer.stopVideo(); } catch (_) {}
+    const wrap = document.getElementById('youtubeMusicWrap');
+    if (wrap) wrap.style.display = 'none';
+  };
+  loadYouTubePlayerAPI();
+
   const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/all';
   let musicRequest = null, apiMusicFailed = false, currentApiTrackUrl = '';
   function extractPlayableTracks(payload) {
@@ -192,7 +235,7 @@
   const originalKillPlayer = window.killPlayer;
   window.startGameMusic = function () {
     if (typeof originalStartMusic === 'function') originalStartMusic();
-    playApiTrackForDiff(state.difficulty);
+    if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
   };
   window.stopMusic = function () {
     if (typeof originalStopMusic === 'function') originalStopMusic();
@@ -200,7 +243,7 @@
   };
   window.playMusicForDiff = function (diff) {
     if (typeof originalPlayMusicForDiff === 'function') originalPlayMusicForDiff(diff);
-    playApiTrackForDiff(diff);
+    stopApiTrack();
   };
   window.killPlayer = function () {
     if (typeof originalKillPlayer === 'function') originalKillPlayer();
@@ -209,6 +252,7 @@
 
   window.startGame = async function () {
     setGameplayNav(true);
+    if (typeof window.startYouTubeMusic === 'function') window.startYouTubeMusic();
     const profile = await loadProfile();
     state.stageIndex = Math.max(0, Number(profile.stage && profile.stage[state.difficulty] || 1) - 1);
     state.score = 0;
@@ -265,11 +309,16 @@
     }, 400);
   };
 
+  const stageSeeds = new Map();
   function randomStageSeed() {
-    let seed;
-    try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
-    catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff) ^ Math.floor(performance.now() * 1000)) >>> 0; }
-    state.stageSeed = seed || 1;
+    const key = state.difficulty + ':' + state.stageIndex;
+    if (!stageSeeds.has(key)) {
+      let seed;
+      try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
+      catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff) ^ Math.floor(performance.now() * 1000)) >>> 0; }
+      stageSeeds.set(key, seed || 1);
+    }
+    state.stageSeed = stageSeeds.get(key);
     return state.stageSeed;
   }
 
@@ -303,7 +352,7 @@
         const pw = 100+rng()*110;
         const py = groundY-115-rng()*110;
         platforms.push({x,y:py,w:pw,h:16,isGround:false});
-        if (rng()<.45) obstacles.push({type:'spike',x:x+pw/2-15,y:py-30,w:30,h:30});
+        // No spikes on top of platforms or their landing points.
         for(let c=0;c<4;c++) coins.push({x:x+18+c*28,y:py-35,collected:false});
         x += pw + gapBase + rng()*100;
       } else if (roll < 0.88) {
