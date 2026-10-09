@@ -95,13 +95,68 @@
     style.textContent = `
       .infinite-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 20px}
       .infinite-badge{padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.05);font:600 10px Orbitron;letter-spacing:1px;color:#dce7ff}
+      #musicCredit{position:fixed;left:12px;bottom:12px;z-index:180;max-width:min(80vw,420px);font:600 10px Rajdhani,sans-serif;letter-spacing:.5px;color:rgba(230,245,255,.65);pointer-events:none}
       @media(max-width:600px){.leaderboard-row{grid-template-columns:42px 1fr 80px 55px}.leaderboard-card{padding:15px}}
     `;
     document.head.appendChild(style);
   }
 
+  const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/search';
+  let musicRequest = null, apiMusicFailed = false;
+  function extractPlayableTracks(payload) {
+    const list = Array.isArray(payload) ? payload :
+      Array.isArray(payload && payload.data) ? payload.data :
+      Array.isArray(payload && payload.tracks) ? payload.tracks :
+      Array.isArray(payload && payload.results) ? payload.results : [];
+    return list.map(t => ({
+      title: t.title || t.name || 'Royalty-free track',
+      artist: t.artist_name || t.artist || (t.artists && t.artists[0] && (t.artists[0].name || t.artists[0])) || 'Unknown artist',
+      url: t.audio_url || t.audioUrl || t.stream_url || t.streamUrl || t.preview_url || t.previewUrl || t.download_url || t.downloadUrl || t.file_url || ''
+    })).filter(t => typeof t.url === 'string' && /^https:\/\//i.test(t.url) && /\.(mp3|ogg|wav|m4a)(\?|$)/i.test(t.url));
+  }
+  async function loadApiMusic() {
+    if (musicRequest || apiMusicFailed) return musicRequest;
+    musicRequest = (async () => {
+      try {
+        const q = state.difficulty === 'easy' ? 'lofi instrumental beat' : state.difficulty === 'normal' ? 'electronic synth instrumental' : 'energetic electronic instrumental';
+        const response = await fetch(MUSIC_API + '?query=' + encodeURIComponent(q) + '&limit=20&order=random', {mode:'cors',credentials:'omit'});
+        if (!response.ok) throw new Error('Music API returned ' + response.status);
+        const tracks = extractPlayableTracks(await response.json());
+        if (!tracks.length) throw new Error('API did not return a direct playable audio URL.');
+        return tracks;
+      } catch (error) {
+        apiMusicFailed = true;
+        console.info('Music API unavailable; game sound effects remain enabled.', error);
+        return [];
+      }
+    })();
+    return musicRequest;
+  }
+  function playApiTrackForDiff(diff) {
+    loadApiMusic().then(tracks => {
+      if (!tracks || !tracks.length) return;
+      const audio = window.__arrowDashApiAudio || (window.__arrowDashApiAudio = new Audio());
+      const index = diff === 'easy' ? 0 : diff === 'normal' ? Math.floor(tracks.length / 2) : tracks.length - 1;
+      const track = tracks[index];
+      if (!track) return;
+      audio.src = track.url; audio.loop = true; audio.volume = 0.38;
+      audio.play().then(() => {
+        const credit = document.getElementById('musicCredit');
+        if (credit) credit.textContent = 'Music: ' + track.title + ' · ' + track.artist;
+      }).catch(() => {});
+    });
+  }
+  function stopApiTrack() {
+    const audio = window.__arrowDashApiAudio;
+    if (audio) { audio.pause(); audio.currentTime = 0; }
+  }
+
   function injectUI() {
     injectStyles();
+    const credit = document.createElement('div');
+    credit.id = 'musicCredit'; credit.setAttribute('aria-live','polite');
+    credit.textContent = 'Royalty-free music API';
+    document.body.appendChild(credit);
 
     const badge = document.createElement('div');
     badge.className = 'infinite-badges';
@@ -123,6 +178,21 @@
   const originalLoad = window.loadAndStartStage;
   const originalNext = window.nextStage;
   const originalStart = window.startGame;
+  const originalStartMusic = window.startGameMusic;
+  const originalStopMusic = window.stopMusic;
+  const originalPlayMusicForDiff = window.playMusicForDiff;
+  window.startGameMusic = function () {
+    if (typeof originalStartMusic === 'function') originalStartMusic();
+    playApiTrackForDiff(state.difficulty);
+  };
+  window.stopMusic = function () {
+    if (typeof originalStopMusic === 'function') originalStopMusic();
+    stopApiTrack();
+  };
+  window.playMusicForDiff = function (diff) {
+    if (typeof originalPlayMusicForDiff === 'function') originalPlayMusicForDiff(diff);
+    playApiTrackForDiff(diff);
+  };
 
   window.startGame = async function () {
     const profile = await loadProfile();
@@ -153,6 +223,14 @@
 
     await saveProgress();
 
+    const banner = document.getElementById('stageClearBanner');
+    const bannerBonus = document.getElementById('stageClearBonus');
+    if (banner && bannerBonus) {
+      bannerBonus.textContent = '+' + bonus;
+      banner.classList.remove('show');
+      void banner.offsetWidth;
+      banner.classList.add('show');
+    }
     spawnParticles(player.x + player.w/2, player.y + player.h/2, '#39ff14', 40, 6);
     spawnParticles(player.x + player.w/2, player.y + player.h/2, '#ffe500', 30, 5);
     playWinSound();
@@ -165,9 +243,17 @@
     }, 400);
   };
 
+  const stageSeeds = new Map();
   function randomStageSeed() {
-    const difficultySeed = {easy: 113, normal: 227, hard: 419}[state.difficulty];
-    return (state.stageIndex + 1) * 1000003 + difficultySeed;
+    const key = state.difficulty + ':' + state.stageIndex;
+    if (!stageSeeds.has(key)) {
+      let seed;
+      try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
+      catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0; }
+      stageSeeds.set(key, seed || 1);
+    }
+    state.stageSeed = stageSeeds.get(key);
+    return state.stageSeed;
   }
 
   window.buildStageLayout = function () {
@@ -179,18 +265,19 @@
     powerups = [];
     const stageLen = 12000 + Math.min(state.stageIndex, 1000) * 80;
     levelEnd = stageLen;
+    // Continuous ground is the guaranteed safe route; floating platforms are optional.
     platforms.push({x:0,y:groundY,w:stageLen+600,h:80,isGround:true});
 
     const rng = seededRandom(randomStageSeed());
     let x = 500;
-    const gapBase = state.difficulty === 'easy' ? 180 : state.difficulty === 'normal' ? 210 : 235;
+    const gapBase = state.difficulty === 'easy' ? 240 : state.difficulty === 'normal' ? 270 : 300;
 
     while (x < stageLen - 450) {
       const roll = rng();
       if (roll < 0.27) {
-        const count = 1 + Math.floor(rng() * (state.difficulty === 'hard' ? 3 : 2));
+        const count = 1 + Math.floor(rng() * 2);
         for (let i=0;i<count;i++) obstacles.push({type:'spike',x:x+i*34,y:groundY-30,w:30,h:30});
-        x += count*34 + gapBase + rng()*110;
+        x += count*34 + gapBase + rng()*100;
       } else if (roll < 0.52) {
         const h = 40 + rng()*55;
         obstacles.push({type:'block',x,y:groundY-h,w:36,h});
@@ -201,20 +288,14 @@
         platforms.push({x,y:py,w:pw,h:16,isGround:false});
         if (rng()<.45) obstacles.push({type:'spike',x:x+pw/2-15,y:py-30,w:30,h:30});
         for(let c=0;c<4;c++) coins.push({x:x+18+c*28,y:py-35,collected:false});
-        x += pw + gapBase*(cfg.maxGapMult||.8) + rng()*80;
+        x += pw + gapBase + rng()*100;
       } else if (roll < 0.88) {
         const h=40+rng()*45;
         obstacles.push({type:'moving',x,y:groundY-h,w:32,h,baseX:x,amplitude:50+rng()*90,speed:.025+rng()*.035,phase:rng()*Math.PI*2});
-        x += 32+gapBase+rng()*110;
+        x += 32+gapBase+rng()*100;
       } else {
-        const gapW=55+rng()*(state.difficulty==='hard'?105:75);
-        const ground=platforms.find(p=>p.isGround);
-        if(ground && x>ground.x+50) {
-          const rightX=x+gapW, rightW=ground.x+ground.w-rightX;
-          ground.w=x-ground.x;
-          if(rightW>0) platforms.push({x:rightX,y:groundY,w:rightW,h:80,isGround:true});
-        }
-        x += gapW+gapBase*.55;
+        // Void gaps are excluded so every stage retains a continuous, solvable route.
+        x += gapBase + rng()*120;
       }
     }
 
