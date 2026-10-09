@@ -438,6 +438,9 @@
     z-index: 5;
     transition: border 0.05s, box-shadow 0.05s;
   }
+  body.arrow-dash-playing .noty-global-nav,
+  body.arrow-dash-playing .noty-nav-spacer,
+  body.arrow-dash-playing .noty-nav-drawer-backdrop { display: none !important; }
 </style>
     <link rel="stylesheet" href="/nav.css?v=7">
   <link rel="stylesheet" href="/visual.css?v=3">
@@ -909,6 +912,30 @@ const keys = {};
 let jumpQueued = false;
 
 let menuDifficultyIndex = 0;
+const MAX_JUMP_CHARGE_MS = 950;
+let jumpChargeStartedAt = 0;
+let jumpChargeActive = false;
+let jumpChargePointer = false;
+function canStartChargedJump() {
+  return state.running && !state.dead &&
+    (player.onGround || player.coyoteTimer > 0 || player.jumpCount < player.maxJumps);
+}
+function beginJumpCharge(source) {
+  if (!canStartChargedJump() || jumpChargeActive) return false;
+  jumpChargeActive = true;
+  jumpChargePointer = source === 'pointer';
+  jumpChargeStartedAt = performance.now();
+  player.jumpBuffer = 0;
+  return true;
+}
+function releaseJumpCharge(source) {
+  if (!jumpChargeActive || (source === 'pointer' && !jumpChargePointer)) return;
+  const heldMs = Math.max(0, Math.min(MAX_JUMP_CHARGE_MS, performance.now() - jumpChargeStartedAt));
+  const charge = heldMs / MAX_JUMP_CHARGE_MS;
+  jumpChargeActive = false;
+  jumpChargePointer = false;
+  doJump(charge);
+}
 function activeOverlayButtons() {
   const overlay = document.querySelector('.overlay.active');
   return overlay ? Array.from(overlay.querySelectorAll('button:not([disabled])')) : [];
@@ -920,10 +947,7 @@ function activateFocusedOrPrimary() {
     (current >= 0 ? buttons[current] : buttons[0]).click();
   } else if (document.getElementById('menu').style.display !== 'none') {
     startGame();
-  } else if (state.running && !state.dead) {
-    player.jumpBuffer = 8;
-    doJump();
-  }
+  } else if (state.running && !state.dead && !beginJumpCharge('keyboard')) doJump(0.25);
 }
 function moveKeyboardSelection(direction) {
   const buttons = activeOverlayButtons();
@@ -935,55 +959,44 @@ function moveKeyboardSelection(direction) {
   if (document.getElementById('menu').style.display !== 'none') {
     const cards = Array.from(document.querySelectorAll('.diff-card'));
     menuDifficultyIndex = Math.max(0, Math.min(cards.length - 1, menuDifficultyIndex + direction));
-    selectDiff(cards[menuDifficultyIndex].dataset.diff);
+    if (cards[menuDifficultyIndex]) selectDiff(cards[menuDifficultyIndex].dataset.diff);
   }
 }
 window.addEventListener('keydown', e => {
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.code)) e.preventDefault();
   if (e.repeat && ['Enter','ArrowLeft','ArrowRight'].includes(e.code)) return;
   keys[e.code] = true;
-  if (e.code === 'Enter') { activateFocusedOrPrimary(); return; }
-  if (e.code === 'ArrowLeft') {
-    if (state.running && !state.dead) {
-      player.jumpBuffer = 8;
-      doJump();
-      if (player.vy < 0) player.vy *= 0.78; // quick, lower hop
-    } else moveKeyboardSelection(-1);
+  if (e.code === 'Enter') {
+    if (state.running && !state.dead) beginJumpCharge('keyboard');
+    else activateFocusedOrPrimary();
     return;
   }
-  if (e.code === 'ArrowRight') {
-    if (state.running && !state.dead) { player.jumpBuffer = 8; doJump(); }
-    else moveKeyboardSelection(1);
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+    if (state.running && !state.dead) beginJumpCharge('keyboard');
+    else moveKeyboardSelection(e.code === 'ArrowLeft' ? -1 : 1);
     return;
   }
-  if ((e.code === 'Space' || e.code === 'ArrowUp') && state.running && !state.dead) {
-    player.jumpBuffer = 8;
-    doJump();
-  }
+  if ((e.code === 'Space' || e.code === 'ArrowUp') && state.running && !state.dead) beginJumpCharge('keyboard');
 });
 window.addEventListener('keyup', e => {
   keys[e.code] = false;
-  if (['Space','ArrowUp','ArrowRight','Enter'].includes(e.code) && player.vy < 0) player.vy *= 0.45;
+  if (['Space','ArrowUp','ArrowLeft','ArrowRight','Enter'].includes(e.code)) releaseJumpCharge('keyboard');
 });
-canvas.addEventListener('pointerdown', () => {
-  if (state.running && !state.dead) {
-    player.jumpBuffer = 8;
-    doJump();
-  }
+canvas.addEventListener('pointerdown', e => {
+  if (state.running && !state.dead) { e.preventDefault(); beginJumpCharge('pointer'); }
 });
-// Pointer up also cuts jump for touch/mouse
-window.addEventListener('pointerup', () => {
-  if (player.vy < 0) player.vy *= 0.45;
-});
+window.addEventListener('pointerup', () => releaseJumpCharge('pointer'));
+window.addEventListener('pointercancel', () => releaseJumpCharge('pointer'));
 document.addEventListener('pointerdown', (e) => {
   if (!state.running && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'DIV') return;
 });
 
-function doJump() {
+function doJump(charge = 0) {
   const canCoyote = player.coyoteTimer > 0;
   if (player.onGround || canCoyote || player.jumpCount < player.maxJumps) {
     const cfg = DIFFICULTIES[state.difficulty];
-    let power = cfg.jumpPower;
+    const chargeRatio = Math.max(0, Math.min(1, Number(charge) || 0));
+    let power = cfg.jumpPower * (0.62 + chargeRatio * 0.88);
     // Super Jump power-up
     if (player.superJumpTimer > 0) {
       power *= 1.35;
@@ -1644,10 +1657,7 @@ function update() {
   if (player.speedBoostTimer > 0) player.speedBoostTimer--;
   if (player.superJumpTimer > 0) player.superJumpTimer--;
   if (player.coyoteTimer > 0 && !player.onGround) player.coyoteTimer--;
-  if (player.jumpBuffer > 0) {
-    player.jumpBuffer--;
-    if (player.jumpBuffer > 0) doJump();
-  }
+  if (player.jumpBuffer > 0) player.jumpBuffer--;
 
   // Fast fall
   if (keys['ArrowDown'] || keys['KeyS']) player.vy += cfg.gravity * 1.6;
@@ -1889,7 +1899,7 @@ function hideOverlays() {
 })();
 
 </script>
-    <script src="/game-infinite.js?v=6"></script>
+    <script src="/game-infinite.js?v=7"></script>
     <script src="/nav.js?v=6"></script>
 </body>
 </html>
