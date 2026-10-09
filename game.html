@@ -905,9 +905,14 @@ let jumpQueued = false;
 
 let menuDifficultyIndex = 0;
 function beginJumpCharge(source) {
-  // Keep the old immediate jump behaviour. Holding Space does not charge jump height.
   if (!state.running || state.dead) return false;
-  doJump(0);
+  if (player.onGround || player.coyoteTimer > 0 || player.jumpCount < player.maxJumps) {
+    jumpQueued = false;
+    doJump(0);
+  } else {
+    // Buffer repeated Space/Up input until the next landing.
+    jumpQueued = true;
+  }
   return true;
 }
 function releaseJumpCharge() {
@@ -1657,6 +1662,10 @@ function update() {
 
   // Collision
   checkPlatformCollision();
+  if (jumpQueued && (player.onGround || player.coyoteTimer > 0) && !state.dead) {
+    jumpQueued = false;
+    doJump(0);
+  }
   checkObstacleCollision();
   checkCoinCollection();
   checkPowerupCollection();
@@ -1769,6 +1778,7 @@ function loadAndStartStage() {
   player.shieldActive = false;
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
+  jumpQueued = false;
   state.dead = false;
   state.running = false;
   state.cameraX = 0;
@@ -1877,7 +1887,7 @@ function hideOverlays() {
 })();
 
 </script>
-    <script src="/game-infinite.js?v=8"></script>
+    <script src="/game-infinite.js?v=9"></script>
     <script src="/nav.js?v=6"></script>
 </body>
 </html>
