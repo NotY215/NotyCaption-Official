@@ -1,0 +1,69 @@
+/* NotyCaption Pro: glassmorphism, spatial depth, and liquid-glass surfaces */
+:root {
+  --nc-glass: rgba(255,255,255,.065);
+  --nc-glass-strong: rgba(20,25,48,.68);
+  --nc-glass-edge: rgba(255,255,255,.15);
+  --nc-glass-shine: rgba(255,255,255,.22);
+  --nc-glow-cyan: rgba(0,229,255,.18);
+  --nc-glow-violet: rgba(124,77,255,.16);
+}
+html { scroll-behavior: smooth; }
+body:not(:has(#game)) {
+  background-image:
+    radial-gradient(ellipse at 12% 8%, var(--nc-glow-cyan), transparent 34%),
+    radial-gradient(ellipse at 88% 20%, var(--nc-glow-violet), transparent 32%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,200,83,.08), transparent 40%);
+  background-attachment: fixed;
+}
+body:not(:has(#game))::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .16;
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+:where(.login-card,.left-panel,.right-panel,.sidebar,.user-info,.settings-card,.leaderboard-card,.leaderboard-panel,.card,.flow,.contact-card,.section-card,.game-card,.profile-card,.hero-card) {
+  border: 1px solid var(--nc-glass-edge) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.105), rgba(255,255,255,.025) 55%, rgba(0,229,255,.035)) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+:where(.login-card,.settings-card,.card,.left-panel,.right-panel,.sidebar,.user-info,.leaderboard-card,.contact-card) {
+  position: relative;
+  overflow: hidden;
+}
+:where(.login-card,.settings-card,.card,.left-panel,.right-panel,.sidebar,.leaderboard-card,.contact-card)::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--nc-glass-shine), transparent);
+}
+:where(button,.google-btn,.primary-btn,.danger-btn,.secondary-btn,.settings-back,.theme-option,.noty-nav-menu) {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
+}
+:where(button,.google-btn,.primary-btn,.secondary-btn,.settings-back,.theme-option):not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.22), 0 0 22px rgba(0,229,255,.09);
+}
+:where(input,textarea,select) {
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+:where(input,textarea,select):focus-visible {
+  outline: none;
+  border-color: rgba(0,229,255,.7) !important;
+  box-shadow: 0 0 0 3px rgba(0,229,255,.13), 0 0 24px rgba(0,229,255,.08);
+}
+::selection { background: rgba(0,229,255,.28); color: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :where(.login-card,.left-panel,.right-panel,.sidebar,.user-info,.settings-card,.leaderboard-card,.card,.contact-card) { background: rgba(15,18,37,.96) !important; }
+}
