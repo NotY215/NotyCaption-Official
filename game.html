@@ -1670,7 +1670,7 @@ function update() {
 
   // Auto-scroll player (speed boost multiplies)
   const speedMul = player.speedBoostTimer > 0 ? 1.45 : 1;
-  player.x += cfg.speed * speedMul;
+  if (!jumpChargeActive) player.x += cfg.speed * speedMul;
 
   // Rotation while in air
   if (!player.onGround) {
