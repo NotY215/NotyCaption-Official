@@ -215,11 +215,11 @@
   };
   window.stopMusic = function () {
     if (typeof originalStopMusic === 'function') originalStopMusic();
-    stopApiTrack();
+    // Keep the background track playing through deaths, restarts and menus.
   };
   window.playMusicForDiff = function (diff) {
     if (typeof originalPlayMusicForDiff === 'function') originalPlayMusicForDiff(diff);
-    stopApiTrack();
+    // Menu previews never interrupt or reset the background track.
   };
   window.killPlayer = function () {
     if (typeof originalKillPlayer === 'function') originalKillPlayer();
@@ -246,6 +246,7 @@
   const originalRestartStage = window.restartStage;
   window.restartStage = function () {
     setGameplayNav(true);
+    randomStageSeed(true);
     if (typeof originalRestartStage === 'function') originalRestartStage();
   };
 
@@ -285,15 +286,27 @@
   };
 
   const stageSeeds = new Map();
-  function randomStageSeed() {
-    const key = state.difficulty + ':' + state.stageIndex;
-    if (!stageSeeds.has(key)) {
-      let seed;
-      try { const values = new Uint32Array(1); crypto.getRandomValues(values); seed = values[0]; }
-      catch (_) { seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff) ^ Math.floor(performance.now() * 1000)) >>> 0; }
-      stageSeeds.set(key, seed || 1);
+  function makeRandomSeed() {
+    let seed;
+    try {
+      const values = new Uint32Array(1);
+      crypto.getRandomValues(values);
+      seed = values[0];
+    } catch (_) {
+      seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff) ^ Math.floor(performance.now() * 1000)) >>> 0;
     }
-    state.stageSeed = stageSeeds.get(key);
+    return seed >>> 0 || 1;
+  }
+  function randomStageSeed(forceNew) {
+    const key = state.difficulty + ':' + state.stageIndex;
+    if (forceNew || !stageSeeds.has(key)) {
+      const seed = makeRandomSeed();
+      stageSeeds.set(key, seed);
+      state.stageSeed = seed;
+      try { localStorage.setItem('arrowDashStageSeed:' + key, String(seed)); } catch (_) {}
+    } else {
+      state.stageSeed = stageSeeds.get(key);
+    }
     return state.stageSeed;
   }
 
@@ -306,53 +319,50 @@
     powerups = [];
     const stageLen = 12000 + Math.min(state.stageIndex, 1000) * 80;
     levelEnd = stageLen;
-    // Continuous ground is the guaranteed safe route; floating platforms are optional.
+
+    // Continuous ground is always available, so no generated void can force a fall.
     platforms.push({x:0,y:groundY,w:stageLen+600,h:80,isGround:true});
-
     const rng = seededRandom(randomStageSeed());
+    const flightFrames = 2 * Math.abs(cfg.jumpPower) / cfg.gravity;
+    const safeSpacing = Math.ceil(cfg.speed * flightFrames + player.w + 70);
     let x = 500;
-    const gapBase = state.difficulty === 'easy' ? 240 : state.difficulty === 'normal' ? 270 : 300;
 
-    while (x < stageLen - 450) {
+    while (x < stageLen - 500) {
       const roll = rng();
-      if (roll < 0.27) {
+      const groupStart = x;
+      if (roll < 0.43) {
         const count = 1 + Math.floor(rng() * 2);
-        for (let i=0;i<count;i++) obstacles.push({type:'spike',x:x+i*34,y:groundY-30,w:30,h:30});
-        x += count*34 + gapBase + rng()*100;
-      } else if (roll < 0.52) {
-        const h = 40 + rng()*55;
-        obstacles.push({type:'block',x,y:groundY-h,w:36,h});
-        x += 36 + gapBase*.75 + rng()*90;
-      } else if (roll < 0.73) {
-        const pw = 100+rng()*110;
-        const py = groundY-115-rng()*110;
-        platforms.push({x,y:py,w:pw,h:16,isGround:false});
-        // No spikes on top of platforms or their landing points.
-        for(let c=0;c<4;c++) coins.push({x:x+18+c*28,y:py-35,collected:false});
-        x += pw + gapBase + rng()*100;
-      } else if (roll < 0.88) {
-        const h=40+rng()*45;
-        obstacles.push({type:'moving',x,y:groundY-h,w:32,h,baseX:x,amplitude:50+rng()*90,speed:.025+rng()*.035,phase:rng()*Math.PI*2});
-        x += 32+gapBase+rng()*100;
+        for (let i=0;i<count;i++) {
+          obstacles.push({type:'spike',x:groupStart+i*34,y:groundY-30,w:30,h:30});
+        }
+        x = groupStart + safeSpacing + rng()*90;
+      } else if (roll < 0.78) {
+        const h = 38 + rng()*28;
+        obstacles.push({type:'block',x:groupStart,y:groundY-h,w:36,h});
+        x = groupStart + safeSpacing + rng()*90;
+      } else if (roll < 0.91) {
+        const pw = 100 + rng()*100;
+        const py = groundY-110-rng()*65;
+        platforms.push({x:groupStart,y:py,w:pw,h:16,isGround:false});
+        for(let c=0;c<4;c++) coins.push({x:groupStart+18+c*28,y:py-35,collected:false});
+        x = groupStart + safeSpacing + rng()*90;
       } else {
-        // Void gaps are excluded so every stage retains a continuous, solvable route.
-        x += gapBase + rng()*120;
+        x = groupStart + safeSpacing + rng()*140;
       }
     }
 
-    let puX=700;
-    const types=['speed','superjump','shield'];
-    while(puX<stageLen-600) {
-      if(rng()<.32) {
-        const type=types[Math.floor(rng()*types.length)];
-        powerups.push({type,x:puX,y:groundY-70-rng()*110,collected:false,bob:rng()*Math.PI*2});
+    let puX = 700;
+    const types = ['speed','superjump','shield'];
+    while(puX < stageLen-600) {
+      if(rng() < .32) {
+        const type = types[Math.floor(rng()*types.length)];
+        powerups.push({type,x:puX,y:groundY-70-rng()*70,collected:false,bob:rng()*Math.PI*2});
       }
-      puX += 300+rng()*420;
+      puX += 420 + rng()*360;
     }
-
     const doorX = stageLen - 170;
     platforms.push({x:doorX,y:groundY-110,w:170,h:110,isEnd:true});
-  };
+  };;
 
   const originalDrawPlatforms = window.drawPlatforms;
   window.drawPlatforms = function () {
