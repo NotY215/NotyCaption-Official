@@ -101,28 +101,28 @@
     document.head.appendChild(style);
   }
 
-  const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/search';
+  const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/all';
   let musicRequest = null, apiMusicFailed = false;
   function extractPlayableTracks(payload) {
-    const list = Array.isArray(payload) ? payload :
-      Array.isArray(payload && payload.data) ? payload.data :
-      Array.isArray(payload && payload.tracks) ? payload.tracks :
-      Array.isArray(payload && payload.results) ? payload.results : [];
-    return list.map(t => ({
-      title: t.title || t.name || 'Royalty-free track',
-      artist: t.artist_name || t.artist || (t.artists && t.artists[0] && (t.artists[0].name || t.artists[0])) || 'Unknown artist',
-      url: t.audio_url || t.audioUrl || t.stream_url || t.streamUrl || t.preview_url || t.previewUrl || t.download_url || t.downloadUrl || t.file_url || ''
-    })).filter(t => typeof t.url === 'string' && /^https:\/\//i.test(t.url) && /\.(mp3|ogg|wav|m4a)(\?|$)/i.test(t.url));
+    const list = Array.isArray(payload && payload.data) ? payload.data : [];
+    return list.filter(t => !t.is_premium && t.status === 1).map(t => {
+      const firstArtist = Array.isArray(t.artists) && t.artists[0];
+      const artist = Array.isArray(firstArtist) ? firstArtist[1] : firstArtist;
+      return {
+        title: t.title || 'Royalty-free track',
+        artist: artist && artist.name ? artist.name : 'Unknown artist',
+        url: t.files && typeof t.files.mp3 === 'string' ? t.files.mp3 : ''
+      };
+    }).filter(t => typeof t.url === 'string' && /^https:\/\//i.test(t.url) && /\.mp3(\?|$)/i.test(t.url));
   }
   async function loadApiMusic() {
     if (musicRequest || apiMusicFailed) return musicRequest;
     musicRequest = (async () => {
       try {
-        const q = state.difficulty === 'easy' ? 'lofi instrumental beat' : state.difficulty === 'normal' ? 'electronic synth instrumental' : 'energetic electronic instrumental';
-        const response = await fetch(MUSIC_API + '?query=' + encodeURIComponent(q) + '&limit=20&order=random', {mode:'cors',credentials:'omit'});
+        const response = await fetch(MUSIC_API + '?limit=100&order=random', {mode:'cors',credentials:'omit'});
         if (!response.ok) throw new Error('Music API returned ' + response.status);
         const tracks = extractPlayableTracks(await response.json());
-        if (!tracks.length) throw new Error('API did not return a direct playable audio URL.');
+        if (!tracks.length) throw new Error('API returned no playable non-premium tracks.');
         return tracks;
       } catch (error) {
         apiMusicFailed = true;
