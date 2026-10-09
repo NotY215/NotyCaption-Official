@@ -103,7 +103,9 @@
 
   // Audio-only royalty-free API playback is used; no video or song label is displayed.
   const MUSIC_API = 'https://api.freetouse.com/v3/music/tracks/all';
-  let musicRequest = null, apiMusicFailed = false, currentApiTrackUrl = '';
+  let musicRequest = null, apiMusicFailed = false;
+  let currentApiTrackUrl = '';
+  try { currentApiTrackUrl = localStorage.getItem('arrowDashMusicUrl') || ''; } catch (_) {}
   function extractPlayableTracks(payload) {
     const list = Array.isArray(payload && payload.data) ? payload.data : [];
     return list.filter(t => !t.is_premium && t.status === 1).map(t => {
@@ -137,6 +139,26 @@
     loadApiMusic().then(tracks => {
       if (!tracks || !tracks.length) return;
       const audio = window.__arrowDashApiAudio || (window.__arrowDashApiAudio = new Audio());
+      if (!audio.__arrowDashPositionTracking) {
+        audio.__arrowDashPositionTracking = true;
+        audio.addEventListener('timeupdate', () => {
+          try {
+            const time = Number.isFinite(audio.duration) && audio.duration - audio.currentTime < 1.5 ? 0 : audio.currentTime;
+            localStorage.setItem('arrowDashMusicTime', String(time));
+          } catch (_) {}
+        });
+        audio.addEventListener('pause', () => {
+          try { localStorage.setItem('arrowDashMusicTime', String(audio.currentTime || 0)); } catch (_) {}
+        });
+        audio.addEventListener('loadedmetadata', () => {
+          try {
+            if (localStorage.getItem('arrowDashMusicUrl') === audio.src) {
+              const saved = Number(localStorage.getItem('arrowDashMusicTime') || 0);
+              if (Number.isFinite(saved) && saved > 0 && saved < audio.duration) audio.currentTime = saved;
+            }
+          } catch (_) {}
+        });
+      }
       let choices = tracks;
       if (tracks.length > 1 && currentApiTrackUrl) {
         choices = tracks.filter(item => item.url !== currentApiTrackUrl);
@@ -145,10 +167,9 @@
       const track = choices[Math.floor(Math.random() * choices.length)];
       if (!track) return;
       // Select once, then keep the same song and its currentTime across pauses and retries.
-      if (!currentApiTrackUrl || !audio.src) {
-        currentApiTrackUrl = track.url;
-        audio.src = track.url;
-      }
+      if (!currentApiTrackUrl) currentApiTrackUrl = track.url;
+      if (!audio.src || audio.src !== currentApiTrackUrl) audio.src = currentApiTrackUrl;
+      try { localStorage.setItem('arrowDashMusicUrl', currentApiTrackUrl); } catch (_) {}
       audio.loop = true;
       audio.volume = 0.38;
       audio.play().catch(() => {});
