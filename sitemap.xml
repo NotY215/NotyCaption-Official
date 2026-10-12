@@ -2,34 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://notycaptiongen.free.nf/</loc>
-    <priority>1.0000</priority>
+    <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://notycaptiongen.free.nf/home</loc>
-    <priority>0.9000</priority>
+    <loc>https://notycaptiongen.free.nf/app</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/game</loc>
-    <priority>0.7000</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/documentation</loc>
-    <priority>0.9000</priority>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://notycaptiongen.free.nf/settings</loc>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/leaderboard</loc>
-    <priority>0.8000</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/privacy</loc>
-    <priority>0.5000</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/terms</loc>
-    <priority>0.5000</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://notycaptiongen.free.nf/contact</loc>
-    <priority>0.6000</priority>
+    <priority>0.6</priority>
   </url>
 </urlset>
