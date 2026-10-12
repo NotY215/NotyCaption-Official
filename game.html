@@ -3,7 +3,7 @@
 <head>
     <link rel="canonical" href="https://notycaptiongen.free.nf/game">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ARROW DASH</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
@@ -440,6 +440,68 @@
   body.arrow-dash-playing .noty-global-nav,
   body.arrow-dash-playing .noty-nav-spacer,
   body.arrow-dash-playing .noty-nav-drawer-backdrop { display: none !important; }
+
+  /* Mobile layout and touch controls */
+  #touchControls { display:none; }
+  @media (max-width: 700px) {
+    body { height:100dvh; min-height:100dvh; }
+    #app { height:100dvh; min-height:100dvh; }
+    #menu {
+      height:100dvh; min-height:100dvh; overflow-y:auto;
+      justify-content:flex-start; padding: max(22px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+      -webkit-overflow-scrolling:touch;
+    }
+    .logo { font-size:clamp(38px, 11vw, 64px); letter-spacing:clamp(3px, 1.4vw, 8px); }
+    .logo-sub { font-size:10px; letter-spacing:3px; margin-bottom:24px; }
+    .diff-title { margin-bottom:12px; font-size:11px; letter-spacing:3px; }
+    .diff-cards { width:100%; gap:9px; margin-bottom:18px; padding:0; }
+    .diff-card { width:calc(33.333% - 6px); min-width:0; padding:14px 7px; clip-path:none; border-radius:12px; }
+    .diff-icon { font-size:25px; }
+    .diff-name { font-size:11px; letter-spacing:1px; }
+    .diff-desc { font-size:10px; letter-spacing:0; }
+    .diff-stages { font-size:8px; letter-spacing:0; }
+    .infinite-badges { margin:4px 0 16px !important; gap:5px !important; }
+    .infinite-badge { font-size:8px !important; padding:6px 8px !important; }
+    .btn-play { padding:15px 35px; font-size:14px; letter-spacing:5px; }
+    .controls-hint { margin-top:18px; font-size:10px; letter-spacing:1px; line-height:1.7; max-width:360px; }
+    #gameLeaderboardButton { right:10px; bottom:max(10px, env(safe-area-inset-bottom)); padding:10px 12px; font-size:10px; letter-spacing:1px; }
+    #hud { padding: max(16px, env(safe-area-inset-top)) 14px 10px; }
+    .hud-stage-num { font-size:19px; }
+    .hud-score-num { font-size:20px; }
+    .hud-score-label { font-size:9px; }
+    .overlay { padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom)); overflow-y:auto; }
+    .overlay-title { font-size:clamp(28px, 8vw, 44px); letter-spacing:4px; text-align:center; }
+    .overlay-sub { font-size:10px; letter-spacing:2px; text-align:center; }
+    .overlay-stats { gap:24px; margin-bottom:22px; }
+    .stat-val { font-size:23px; }
+    .overlay-btns { gap:10px; }
+    .btn-overlay { padding:13px 15px; font-size:10px; letter-spacing:2px; }
+    #touchControls {
+      display:none; position:fixed; inset:auto 0 max(16px, env(safe-area-inset-bottom)) 0;
+      z-index:220; padding:0 18px; justify-content:space-between; align-items:flex-end;
+      pointer-events:none; touch-action:none; user-select:none; -webkit-user-select:none;
+    }
+    body.arrow-dash-playing #touchControls { display:flex; }
+    .touch-game-btn {
+      pointer-events:auto; display:flex; align-items:center; justify-content:center;
+      min-width:74px; min-height:66px; padding:12px 16px; border-radius:18px;
+      border:1px solid rgba(0,245,255,.72); color:#00f5ff;
+      background:rgba(5,5,16,.72); box-shadow:0 0 18px rgba(0,245,255,.16);
+      backdrop-filter:blur(10px); font:700 11px Orbitron,monospace; letter-spacing:1px;
+      -webkit-tap-highlight-color:transparent; touch-action:none;
+    }
+    .touch-game-btn:active { background:rgba(0,245,255,.2); transform:scale(.97); }
+    #touchJumpButton { min-width:94px; min-height:78px; border-color:rgba(255,0,128,.8); color:#ff7fbd; }
+    #touchFastFallButton { opacity:.88; }
+    body.arrow-dash-playing #gameLeaderboardButton { display:none; }
+  }
+  @media (max-width:380px) {
+    .diff-card { padding:12px 4px; }
+    .diff-desc { font-size:9px; }
+    .diff-stages { font-size:7px; }
+    .touch-game-btn { min-width:66px; min-height:60px; padding:10px; }
+    #touchJumpButton { min-width:84px; min-height:72px; }
+  }
 </style>
     <link rel="stylesheet" href="/nav.css?v=7">
   <link rel="stylesheet" href="/visual.css?v=3">
@@ -513,6 +575,12 @@
 
   <!-- CANVAS -->
   <canvas id="gameCanvas"></canvas>
+
+  <!-- Mobile touch controls: tap JUMP, hold FAST FALL -->
+  <div id="touchControls" aria-label="Touch game controls">
+    <button id="touchFastFallButton" class="touch-game-btn" type="button" aria-label="Fast fall">↓ FAST FALL</button>
+    <button id="touchJumpButton" class="touch-game-btn" type="button" aria-label="Jump">↑ JUMP</button>
+  </div>
 
   <!-- DEATH FLASH -->
   <div id="deathFlash"></div>
@@ -967,6 +1035,34 @@ window.addEventListener('keyup', e => {
 canvas.addEventListener('pointerdown', e => {
   if (state.running && !state.dead) { e.preventDefault(); beginJumpCharge('pointer'); }
 });
+
+// Explicit mobile controls. Jump works on tap; fast-fall works while held.
+const touchJumpButton = document.getElementById('touchJumpButton');
+const touchFastFallButton = document.getElementById('touchFastFallButton');
+if (touchJumpButton) {
+  touchJumpButton.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (state.running && !state.dead) beginJumpCharge('touch');
+  });
+}
+if (touchFastFallButton) {
+  const stopFastFall = e => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    keys.ArrowDown = false;
+  };
+  touchFastFallButton.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (state.running && !state.dead) keys.ArrowDown = true;
+    try { touchFastFallButton.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  touchFastFallButton.addEventListener('pointerup', stopFastFall);
+  touchFastFallButton.addEventListener('pointercancel', stopFastFall);
+  touchFastFallButton.addEventListener('lostpointercapture', stopFastFall);
+  touchFastFallButton.addEventListener('contextmenu', e => e.preventDefault());
+}
+
 window.addEventListener('pointerup', () => releaseJumpCharge('pointer'));
 window.addEventListener('pointercancel', () => releaseJumpCharge('pointer'));
 document.addEventListener('pointerdown', (e) => {
