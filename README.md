@@ -30,7 +30,7 @@ This project is licensed under the GNU Affero General Public License v3.0. See L
 
 ## Status
 
-> Placeholder: Add the current stable version, release date, supported browsers, and known limitations here.
+> The repository contains the NotyCaption Pro website, client-side application, and supporting API endpoints. This README does not currently declare a stable release version or a supported-browser matrix; consult the project documentation and repository history for implementation details.
 
 ## Contributing
 
