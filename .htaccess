@@ -5,8 +5,8 @@
 RewriteEngine On
 RewriteBase /
 
-# Server-only files and runtime storage.
-RewriteRule ^(?:cache(?:/|$)|client\.json$|api/bootstrap\.php$) - [F,L,NC]
+# Server-only files, runtime storage, repository metadata and deployment secrets.
+RewriteRule ^(?:cache(?:/|$)|client\.json$|api/bootstrap\.php$|\.git(?:/|$)|\.env(?:\.|$)|.*\.(?:sql|sqlite|bak|backup|old|log)$) - [F,L,NC]
 
 # Sitemap is always directly accessible.
 RewriteRule ^(?:[^/]+/)?sitemap\.xml$ sitemap.xml [L]
