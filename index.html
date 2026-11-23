@@ -400,15 +400,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             });
         }
         
-        // Anti-inspect
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', e => {
-            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u')) {
-                e.preventDefault();
-                window.location.href = 'about:blank';
-                window.close();
-            }
-        });
+        // DevTools access is normal browser functionality, not a security threat.
+        // Protect server-side data and credentials instead of blocking inspection.
     </script>
     <script src="/nav.js?v=6"></script>
 </body>
