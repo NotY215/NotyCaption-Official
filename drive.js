@@ -154,6 +154,20 @@ async function uploadNotebookToDrive(notebookJSONString, notebookName) {
     return data.id;
 }
 
+async function createResultFileInDrive(fileName, mimeType = 'text/plain') {
+    const token = await ensureValidToken();
+    const response = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,size', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fileName, mimeType: mimeType })
+    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error('Could not prepare the result file: ' + response.status + ' - ' + errorText);
+    }
+    return await response.json();
+}
+
 async function getFileContent(fileId) {
     const token = await ensureValidToken();
     
@@ -217,6 +231,7 @@ async function cleanupOldNotebooks() {
 window.uploadAudioToDrive = uploadAudioToDrive;
 window.uploadNotebookToDrive = uploadNotebookToDrive;
 window.getFileContent = getFileContent;
+window.createResultFileInDrive = createResultFileInDrive;
 window.getFileDownloadUrl = getFileDownloadUrl;
 window.deleteDriveFile = deleteDriveFile;
 window.cleanupOldNotebooks = cleanupOldNotebooks;
