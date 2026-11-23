@@ -595,14 +595,8 @@
     document.getElementById('outputFormat').addEventListener('change', saveSettings);
     document.getElementById('languageSelect').addEventListener('change', saveSettings);
     
-    // Anti-inspect
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u')) {
-            e.preventDefault();
-            logout();
-        }
-    });
+    // Browser inspection is not an authentication event. Do not interfere
+    // with DevTools or log users out when they inspect their own browser.
 </script>
     <script src="/nav.js?v=6"></script>
 </body>
