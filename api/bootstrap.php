@@ -144,7 +144,12 @@ function ensure_cache(): void {
 
 function acquire_cache_lock() {
     ensure_cache();
-    $fp = @fopen(CACHE_DIR . '/.lock', 'c');
+    $lockPath = CACHE_DIR . '/.lock';
+    if (is_link($lockPath)) {
+        json_response(['ok' => false, 'error' => 'Private storage is misconfigured'], 500);
+    }
+    $fp = @fopen($lockPath, 'c');
+    if ($fp) @chmod($lockPath, 0600);
     if (!$fp || !flock($fp, LOCK_EX)) {
         json_response(['ok' => false, 'error' => 'Server storage busy'], 503);
     }
