@@ -57,6 +57,7 @@ function getNotebookContent(operationType, params) {
         .replace(/\{\{WORDS_PER_LINE\}\}/g, params.wordsPerLine || '5')
         .replace(/\{\{OUTPUT_FORMAT\}\}/g, params.outputFormat || 'srt')
         .replace(/\{\{OPERATION_ID\}\}/g, params.operationId)
+        .replace(/\{\{OUTPUT_FILE_ID\}\}/g, params.outputFileId || '')
         .replace(/\{\{AUDIO_NAME\}\}/g, audioName);
     
     // Validate JSON
