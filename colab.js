@@ -25,10 +25,19 @@ function setProcessingStatus(message, percent) {
     if (typeof window.showProgress === 'function') window.showProgress(true, message, percent);
 }
 
-async function findOperationResult(operationId, expectedName, startedAt) {
+async function findOperationResult(operationId, expectedName, startedAt, resultFileId) {
     const token = getAccessToken();
     if (!token) throw new Error('Authentication token not found');
     const headers = { 'Authorization': 'Bearer ' + token };
+
+    // Read the result file created by this app. drive.file cannot reliably see files created independently by Colab.
+    if (resultFileId) {
+        const resultResponse = await fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(resultFileId) + '?fields=id,name,mimeType,size,modifiedTime,trashed', { headers });
+        if (resultResponse.ok) {
+            const resultFile = await resultResponse.json();
+            if (!resultFile.trashed && Number(resultFile.size || 0) > 0) return resultFile;
+        } else if (resultResponse.status !== 404) throw new Error('Drive result check failed: ' + resultResponse.status);
+    }
     const fields = 'files(id,name,mimeType,createdTime,appProperties)';
     const operationQuery = "trashed=false and appProperties has { key='notycaption_operation_id' and value='" + operationId + "' } and appProperties has { key='notycaption_status' and value='completed' }";
     const operationResponse = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(operationQuery) + '&pageSize=10&orderBy=createdTime desc&fields=' + encodeURIComponent(fields), { headers });
@@ -99,7 +108,7 @@ function startPolling(operationId, operationType, onSuccess, onError, onProgress
         checking = true;
         attempts++;
         try {
-            const result = await findOperationResult(operationId, tracking.expectedName, startedAt);
+            const result = await findOperationResult(operationId, tracking.expectedName, startedAt, tracking.resultFileId);
             if (result) {
                 stopPolling();
                 if (onProgress) onProgress('Result found. Loading output...', 95);
@@ -145,10 +154,15 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
     const operationId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 8);
     const startedAt = Date.now();
     const audioBaseName = (params.audioName || 'captions').replace(/\\.(mp3|wav|m4a|flac|ogg|aac)$/i, '');
-    const expectedName = audioBaseName + '.' + (params.outputFormat || 'srt');
+    const expectedName = operationType === 'enhance' ? audioBaseName + '_vocals.wav' : audioBaseName + '.' + (params.outputFormat || 'srt');
 
     try {
         if (onProgress) onProgress('Preparing notebook...', 10);
+
+        if (typeof createResultFileInDrive !== 'function') throw new Error('Result-file setup is unavailable. Please refresh the page.');
+        if (onProgress) onProgress('Preparing a result file in Google Drive...', 18);
+        const resultFile = await createResultFileInDrive(expectedName, operationType === 'enhance' ? 'audio/wav' : 'text/plain');
+        if (!resultFile || !resultFile.id) throw new Error('Google Drive did not create the result file.');
 
         const result = getNotebookContent(operationType, {
             audioId: params.audioId,
@@ -156,7 +170,8 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
             language: params.language || 'en',
             wordsPerLine: params.wordsPerLine || '5',
             outputFormat: params.outputFormat || 'srt',
-            operationId: operationId
+            operationId: operationId,
+            outputFileId: resultFile.id
         });
 
         let notebookJSONString, notebookName;
@@ -181,7 +196,7 @@ async function createAndOpenColabNotebook(operationType, params, onSuccess, onEr
         await openNotebookInColab(notebookDriveId);
 
         if (onProgress) onProgress('Colab opened. Waiting for processing...', 60);
-        startPolling(operationId, operationType, onSuccess, onError, onProgress, { expectedName, startedAt });
+        startPolling(operationId, operationType, onSuccess, onError, onProgress, { expectedName, startedAt, resultFileId: resultFile.id });
         return operationId;
     } catch (error) {
         console.error('Failed to create notebook:', error);
