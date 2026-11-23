@@ -114,18 +114,31 @@ function google_user(): array {
 }
 
 function ensure_cache(): void {
-    if (!is_dir(CACHE_DIR)) {
-        @mkdir(CACHE_DIR, 0755, true);
+    // Refuse symlinked storage paths so data cannot be redirected outside the
+    // intended private directory by an untrusted filesystem entry.
+    if (is_link(CACHE_DIR)) {
+        json_response(['ok' => false, 'error' => 'Private storage is misconfigured'], 500);
     }
+
+    if (!is_dir(CACHE_DIR) && !@mkdir(CACHE_DIR, 0700, true) && !is_dir(CACHE_DIR)) {
+        json_response(['ok' => false, 'error' => 'Private storage unavailable'], 503);
+    }
+    @chmod(CACHE_DIR, 0700);
 
     foreach (['scores.json', 'username.json', 'Id.json'] as $name) {
         $path = CACHE_DIR . '/' . $name;
+        if (is_link($path)) {
+            json_response(['ok' => false, 'error' => 'Private storage is misconfigured'], 500);
+        }
         if (!file_exists($path)) {
             $initial = $name === 'scores.json'
                 ? ['easy' => [], 'normal' => [], 'hard' => []]
                 : [];
-            @file_put_contents($path, json_encode($initial, JSON_PRETTY_PRINT));
+            if (@file_put_contents($path, json_encode($initial, JSON_PRETTY_PRINT), LOCK_EX) === false) {
+                json_response(['ok' => false, 'error' => 'Private storage unavailable'], 503);
+            }
         }
+        @chmod($path, 0600);
     }
 }
 
