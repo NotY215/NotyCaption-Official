@@ -1,0 +1,23 @@
+Options -Indexes
+
+# Internal implementation files must never be served as source.
+<FilesMatch "^(bootstrap\.php|README\.md|game-api\.ts)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Deny common backup, dump and environment files.
+<FilesMatch "\.(?:bak|backup|old|sql|sqlite|env|log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
